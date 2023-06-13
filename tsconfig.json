@@ -1,0 +1,53 @@
+{
+  "extends": "@tsconfig/svelte/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "outDir": "./dist",
+
+    // "module": "es6",
+    "module": "esnext",
+    // "module": "CommonJS",
+    // "moduleResolution": "node",
+		// "isolatedModules": true,
+		// "esModuleInterop": true,
+    // "target": "es5",
+    // "target": "ES2017",
+    
+
+    
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": false,
+    "removeComments": true,
+    "skipLibCheck": true,
+    "strict": true,
+
+    // "preserveValueImports": true,
+    // "verbatimModuleSyntax": true,
+    "allowJs": true,
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "noUnusedLocals": false,
+    "traceResolution": true,
+    "allowSyntheticDefaultImports": true,
+
+    // "typeRoots": ["./node_modules/@types", "./src/@types"],
+		"types": [
+			"svelte",
+			"svelte/store",
+			"svelte/motion",
+			"svelte/transition",
+			"svelte/animate",
+			"svelte/easing",
+      "node",
+      "webpack",
+      "webpack-dev-server",
+		],
+    // "ts-node": {
+    //   "compilerOptions": {
+    //     "module": "commonjs"
+    //   }
+    // }
+  }
+  // "include": ["./vendor/*", "./typings/*", "./assets/*", "./src/**/*"]
+}
