@@ -25,7 +25,7 @@
 	import {onDestroy} from 'svelte'
 	import {get} from 'svelte/store'
 
-	import {Texture, Framebuffer, ShaderProgram, init_utils, resizeIfNeeded} from './gl_utils'
+	import {Texture, Framebuffer, ShaderProgram, init_utils, resizeIfNeeded, finish_frame} from './gl_utils'
 
 	import Knob from 'Knob.svelte'
 	import ColourDisplay from 'ColourDisplay.svelte'
@@ -42,12 +42,12 @@
 
 	let modals: SemiModal[] = []
 
-	let stroke_col: Array<number> = [0.5, 0, 0, 1]
+	let stroke_col: Array<number> = [0.5, 0.4, 0.3, 1]
 
-	let chaos_lch: Array<number> = [0, 0, 0]
-	let chaos_speed: number = 0.1
+	let chaos_lch: Array<number> = [0.3, 0.3, 0.5]
+	let chaos_speed: number = 0.3
 
-	let chaos: number = 0
+	let chaos: number = 0.3
 
 	let io = new IO()
 
@@ -85,15 +85,19 @@
 
 		default_framebuffer = Object.create(Framebuffer.prototype)
 		default_framebuffer.default = true
+		default_framebuffer.pongable = false
+		default_framebuffer.needs_pong = false
+		default_framebuffer.pong_idx = 0
 		// @ts-ignore
-		default_framebuffer.fb = null
-		default_framebuffer.textures = [Object.create(Texture.prototype)]
+		default_framebuffer._fb = null
+		// @ts-ignore
+		default_framebuffer._textures = [Object.create(Texture.prototype)]
 		default_framebuffer.textures[0].res = [...userRes]
 
 		resizeIfNeeded(canvasElement, default_framebuffer, userRes, (e) => {})
 
 		gl.disable(gl.DEPTH_TEST)
-		gl.enable(gl.BLEND)
+		// gl.enable(gl.BLEND)
 	}
 	const initOtherStuff = () => {
 		modals = [chaosSemiModal]
@@ -127,63 +131,7 @@
 	onMount(async () => {
 		initWebGL()
 		initOtherStuff()
-
-		const draw_temp_stroke_to_canvas_program = new ShaderProgram(
-			// vs
-			vs_prepend_includes +
-				`void main(){` +
-				vs_prepend +
-				`	uv = gl_Position.xy*0.5 + 0.5;
-}  
-`,
-			// fs
-			`#version 300 es
-  precision highp float;
-  uniform float time;
-  uniform sampler2D canvas;
-  uniform sampler2D temp_tex;
-	in vec2 uv;
-  out vec4 col;
-  void main() {
-		col = vec4(1);
-		col.xyz = texture(canvas,uv).xyz;
-
-		vec4 temp_tex = texture(temp_tex,uv);
-		col.xyz = mix(col.xyz, temp_tex.xyz, temp_tex.w);
-		
-		col = pow(col,vec4(0.454545454545));
-  }
-`,
-		)
-
-		const composite_canvas_program = new ShaderProgram(
-			// vs
-			vs_prepend_includes +
-				`void main(){` +
-				vs_prepend +
-				`	uv = gl_Position.xy*0.5 + 0.5;
-}  
-`,
-			// fs
-			`#version 300 es
-  precision highp float;
-  uniform float time;
-  uniform sampler2D canvas;
-  uniform sampler2D temp_tex;
-	in vec2 uv;
-  out vec4 col;
-  void main() {
-		col = vec4(1);
-		col.xyz = texture(canvas,uv).xyz;
-
-		vec4 temp_tex = texture(temp_tex,uv);
-		col.xyz = mix(col.xyz, temp_tex.xyz, temp_tex.w);
-		
-		col = pow(col,vec4(0.454545454545));
-  }
-`,
-		)
-
+		//! ------------------- TEMP STROKE
 		const draw_temp_stroke_program = new ShaderProgram(
 			// vs
 			vs_prepend_includes +
@@ -198,8 +146,46 @@
 				gl_Position.xy *= 0.2 * pressure;
 				gl_Position.xy *= rot(-tilt.y);
 
-	uv = gl_Position.xy*0.5 + 0.5;
-	gl_Position.xy += stroke_pos;
+				uv = gl_Position.xy*0.5 + 0.5;
+				gl_Position.xy += stroke_pos;
+		}  
+		`,
+			// fs
+			`#version 300 es
+				precision highp float;
+				uniform float time;
+				uniform sampler2D canvas;
+				uniform vec4 stroke_col;
+				uniform float pressure;
+				uniform vec2 tilt;
+				in vec2 uv;
+				out vec4 col;
+				void main() {
+					col = vec4(1);
+					col.xyz = stroke_col.xyz;
+					
+					vec2 u = uv;
+					u = abs(u) - 0.6;
+					float rect_sdf = max(u.x,u.y);
+					float fw = abs(fwidth(rect_sdf));
+					rect_sdf += fw;
+
+					
+					col.w = smoothstep(fw,0.,rect_sdf);
+					col.xyz *= 1.;
+
+					// col.xyz = texture(canvas,uv).xyz;
+				}
+		`,
+		)
+
+		//! ------------------- COMPOSITE TEMP STROKE
+		const composite_temp_stroke_to_canvas_program = new ShaderProgram(
+			// vs
+			vs_prepend_includes +
+				`void main(){` +
+				vs_prepend +
+				`	uv = gl_Position.xy*0.5 + 0.5;
 }  
 `,
 			// fs
@@ -207,28 +193,65 @@
   precision highp float;
   uniform float time;
   uniform sampler2D canvas;
-	uniform vec4 stroke_col;
-	uniform float pressure;
-	uniform vec2 tilt;
+  uniform sampler2D canvas_back;
+  uniform sampler2D temp_tex;
 	in vec2 uv;
   out vec4 col;
   void main() {
-		col = vec4(1);
-		col.xyz = stroke_col.xyz;
-		// col.xyz = texture(canvas,uv).xyz;
+		col = texture(canvas_back,uv);
+
+		vec4 temp_tex = texture(temp_tex,uv);
+		col.xyz = mix(col.xyz, temp_tex.xyz, temp_tex.w);
+		
   }
 `,
+		)
+
+
+		//! ------------------- POST
+		const post_canvas_program = new ShaderProgram(
+			// vs
+			vs_prepend_includes +
+				`void main(){` +
+				vs_prepend +
+				`	uv = gl_Position.xy*0.5 + 0.5;
+			}  
+			`,
+			// fs
+			`#version 300 es
+			precision highp float;
+			uniform float time;
+			uniform int mouse_down;
+			uniform int frame;
+			uniform sampler2D canvas;
+			uniform sampler2D canvas_back;
+			uniform sampler2D temp_tex;
+			in vec2 uv;
+			out vec4 col;
+			void main() {
+				col = vec4(1);
+
+
+				col.xyz = texture(canvas_back,uv).xyz;
+				vec4 temp_tex = texture(temp_tex,uv);
+				// if(temp_tex.w > 0.)
+				col.xyz = mix(col.xyz, temp_tex.xyz, temp_tex.w);
+
+				
+				col = pow(col,vec4(0.454545454545));
+			}
+		`,
 		)
 		default_framebuffer.start_draw()
 		default_framebuffer.clear([0, 0, 0, 1])
 
 		const canvas_tex = new Texture([canvasRes[0], canvasRes[1]])
-		const canvas_fb = new Framebuffer([canvas_tex])
-		canvas_fb.clear([0.1, 0, 0, 1])
+		const canvas_fb = new Framebuffer([canvas_tex], true)
+		canvas_fb.clear([0, 0, 0, 0])
 
 		const temp_tex = new Texture([canvasRes[0], canvasRes[1]])
-		const temp_fb = new Framebuffer([temp_tex])
-		temp_fb.clear([0, 0, 0, 0])
+		const temp_stroke_fb = new Framebuffer([temp_tex])
+		temp_stroke_fb.clear([0, 0, 0, 0])
 
 		let frame = 0
 		
@@ -240,8 +263,11 @@
 			program.setUniformVec('stroke_col', col)
 			program.setUniformFloat('pressure', io.pressure)
 			program.setUniformVec('tilt', io.tilt)
-			program.setUniformTexture('canvas', canvas_tex, 0)
+			program.setUniformInt('mouse_down', io.mouse_down ? 1 : 0)
+			program.setUniformInt('frame', frame)
+			program.setUniformTexture('canvas', canvas_fb.textures[0], 0)
 			program.setUniformTexture('temp_tex', temp_tex, 1)
+			program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 2)
 		}
 		const draw = (t: number) => {
 			let redraw_needed = false
@@ -253,7 +279,8 @@
 
 			io.tick()
 
-			if (io.mouse_pressed) {
+			// ----- TEMP
+			if (io.mouse_down) {
 				redraw_needed = true
 				let col = [...stroke_col]
 
@@ -273,33 +300,47 @@
 					col[0] = clamp(col[0], 0, 1)
 					col[1] = clamp(col[1], 0, 1)
 					col[2] = mod(col[2], 360)
-					console.log(col[2])
 
 					col = chroma_oklch(col).gl()
 				}
 
-				temp_fb.start_draw()
-				draw_temp_stroke_program.use()
-				set_shared_uniforms(draw_temp_stroke_program, col, t);
-				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+				{
+					temp_stroke_fb.start_draw()
+					draw_temp_stroke_program.use()
+					set_shared_uniforms(draw_temp_stroke_program, col, t);
+					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+				}
 			}
+			// ----- COMPOSITE
 			if (io.mouse_just_unpressed) {
+				redraw_needed = true
 				canvas_fb.start_draw()
-				temp_fb.clear([0,0,0,0])
+				composite_temp_stroke_to_canvas_program.use()
+				set_shared_uniforms(composite_temp_stroke_to_canvas_program, [0,0,0,0], t);
+				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+				
+				temp_stroke_fb.clear([0,0,0,0])
 			}
+			redraw_needed = true
+			// ----- REDRAW
 			if (redraw_needed) {
-				default_framebuffer.start_draw()
 				default_framebuffer.clear([0, 0, 0, 1])
+				default_framebuffer.start_draw()
+				// console.log("COMPOSITED")
 
-				composite_canvas_program.use()
-				set_shared_uniforms(composite_canvas_program, [0,0,0,0], t);
+				post_canvas_program.use()
+				set_shared_uniforms(post_canvas_program, [0,0,0,0], t);
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
 				// gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 			}
+			if(gl.getError() !== 0){
+				console.log(gl.getError())
+			}
 
 			io.tick_end()
 			frame++
+			finish_frame()
 			requestAnimationFrame(draw)
 		}
 		;(() => {

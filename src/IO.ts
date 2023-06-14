@@ -3,7 +3,6 @@ export class IO {
 	mouse_down: boolean = false
 
 	mouse_down_prev = false
-	mouse_pressed = false
 	mouse_just_unpressed = false
 	mouse_just_pressed = false
 
@@ -14,10 +13,10 @@ export class IO {
 	tick() {
 		if (this.mouse_down !== this.mouse_down_prev) {
 			if (this.mouse_down) {
-				this.mouse_pressed = true
+				// this.mouse_pressed = true
 				this.mouse_just_pressed = true
 			} else {
-				this.mouse_pressed = false
+				// this.mouse_pressed = false
 				this.mouse_just_unpressed = true
 			}
 		}
