@@ -2,7 +2,12 @@ let gl: WebGL2RenderingContext
 export function init_utils() {
 	gl = window.gl
 }
-export function resizeIfNeeded(canvas: HTMLCanvasElement, default_framebuffer: Framebuffer, res: number[]) {
+export function resizeIfNeeded(
+	canvas: HTMLCanvasElement,
+	default_framebuffer: Framebuffer,
+	res: number[],
+	set_redraw_needed: (v: boolean) => void,
+) {
 	const displayWidth = canvas.clientWidth
 	const displayHeight = canvas.clientHeight
 
@@ -14,6 +19,7 @@ export function resizeIfNeeded(canvas: HTMLCanvasElement, default_framebuffer: F
 		console.log('RESIZED')
 		console.log(res)
 		console.log(canvas)
+		set_redraw_needed(true)
 	}
 
 	default_framebuffer.textures[0].res = [...res]
@@ -45,12 +51,14 @@ export class Texture {
 	}
 }
 export class Framebuffer {
+	static currently_bound: Framebuffer
 	textures: Array<Texture>
 	fb: WebGLFramebuffer
 	default: boolean = false
 	constructor(tex: Array<Texture>) {
 		this.fb = gl.createFramebuffer() as WebGLFramebuffer
 		this.textures = [...tex]
+
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb)
 
 		let i = 0
@@ -68,6 +76,8 @@ export class Framebuffer {
 		if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
 			console.error('FRAMEBUFFER INCOMPLETE')
 		}
+
+		if (this !== Framebuffer.currently_bound) gl.bindFramebuffer(gl.FRAMEBUFFER, Framebuffer.currently_bound.fb)
 	}
 	start_draw() {
 		let draw_buffs: number[] = []
@@ -83,13 +93,15 @@ export class Framebuffer {
 		}
 
 		gl.viewport(0, 0, this.textures[0].res[0], this.textures[0].res[1])
-		// console.log(this)
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb)
-		// gl.drawBuffers(draw_buffs)
+		gl.drawBuffers(draw_buffs)
+		Framebuffer.currently_bound = this
 	}
-	clear(colour: number[]) {
+	clear(colour: number[] = [0, 0, 0, 0]) {
+		if (this !== Framebuffer.currently_bound) gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb)
 		gl.clearColor(colour[0], colour[1], colour[2], colour[3])
-		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		gl.clear(gl.COLOR_BUFFER_BIT)
+		if (this !== Framebuffer.currently_bound) gl.bindFramebuffer(gl.FRAMEBUFFER, Framebuffer.currently_bound.fb)
 		// console.log(gl.getError())
 	}
 }

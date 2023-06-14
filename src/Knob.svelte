@@ -1,14 +1,25 @@
 <svelte:options accessors />
 
-<script lang="js">
+<script lang="ts">
+	import SemiModal from 'SemiModal.svelte'
+	import {onMount} from 'svelte'
+
 	export let value, min = 0, max = 1;
 	export let rotRange = 2 * Math.PI * 0.83;
 	export let pixelRange = 200;
 	export let startRotation = -Math.PI * 0.83;
   
+  export let triggerModal: undefined | ((modal: SemiModal)=>void) = undefined
+  export let modal: SemiModal | undefined = undefined
+
+  let knobElement: HTMLElement
+  // $: modalHidden = modal ? modal.hidden : false
+  
+  let modalHidden = true
+
   export let title = ""
 	
-	let startY = 0, startValue = 0;
+	let startY = 0, startValue = 0, startX = 0;
 	$: valueRange = max - min;
 	$: rotation = startRotation + (value - min) / valueRange * rotRange;
 	
@@ -17,48 +28,97 @@
 	}
 	
 	function pointerMove({ clientX, clientY }) {
-		const valueDiff = valueRange * (startY - clientY) / pixelRange;
+		let valueDiff = valueRange * (startY - clientY) / pixelRange;
+		valueDiff -= valueRange * (startX - clientX) / pixelRange;
 		value = clamp(startValue + valueDiff, min, max)
 	}
 	
-	function pointerDown({ clientX, clientY }) {
+	function pointerDown(e: PointerEvent) {
+    let { clientX, clientY } = e
 		// console.log({ clientY });
+    console.log("down")
 		startY = clientY;
+		startX = clientX;
 		startValue = value;
+
 		window.addEventListener('pointermove', pointerMove);
 		window.addEventListener('pointerup', pointerUp);
+    e.stopPropagation() 
 	}
 	
 	function pointerUp() {
+    console.log("up")
 		window.removeEventListener('pointermove', pointerMove);
 		window.removeEventListener('pointerup', pointerUp);
 	}
+  
+  let titleElement
+
+  onMount(()=>{
+    let pointerDown
+    let pointerUp = ()=>{
+      if(modal){
+        triggerModal?.(modal)
+        modalHidden = modal.hidden as boolean
+      }
+
+      titleElement.removeEventListener( "pointerdown", pointerDown)
+    }
+    pointerDown = ()=>{
+      titleElement.removeEventListener("pointerup", pointerUp)
+      console.log("asdgasdg")
+      titleElement.addEventListener("pointerup", pointerUp)
+    }
+    titleElement.addEventListener("pointerdown", pointerDown)
+  })
+
 </script>
 
-<div class='knob-container'>
-  <div class="knob" style="transform:rotate(calc({rotation} * 1rad))" on:pointerdown={pointerDown} >
-  
-    <svg width='100%' height='100%' viewBox="0 0 100 100">
-      <g fill="none" stroke="currentColor">
-        <path stroke-width="10" d="M50 40 l0 -50" />
-      </g>
-    </svg>
+
+<div class='knob-container-container'>
+  <div class='knob-container'>
+    <div class="knob" style="transform:rotate(calc({rotation} * 1rad))" on:pointerdown={pointerDown} >
+      <svg width='100%' height='100%' viewBox="0 0 100 100">
+        <g fill="none" stroke="currentColor">
+          <path stroke-width="10" d="M50 40 l0 -50" />
+        </g>
+      </svg>
+    </div>
   </div>
-  <div class="title">{title}</div>
+  <div 
+    class="title {triggerModal ? "menu-toggle" : ""}" 
+    bind:this={titleElement}
+    style='{!modalHidden && "outline: 1px solid white; outline-offset: 0.1rem;"} {modal && "cursor: pointer;"}'
+    >{title}</div>
 </div>
 
 <style>
+  *{
+    user-select: none;
+    -webkit-tap-highlight-color:transparent;
+
+  }
+  .knob-container-container{
+    aspect-ratio: 1/1;
+    max-height: 50%;
+    margin-top: 0.5rem;
+    margin-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    pointer-events: all;
+    user-select: none;
+  }
   .knob-container{
     box-sizing: border-box;
     -webkit-box-sizing: border-box;
     &:hover{
       cursor: pointer;
     }
-    margin-right: 0.5rem;
+    aspect-ratio: 1/1;
     /* width: 40px;
     height: 40px; */
-    aspect-ratio: 1/1;
-    max-height: 50%;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -74,10 +134,23 @@
     box-shadow: -.15em .15em .05em .02em rgba(0, 0, 0, 0.3);
     border-radius: 50%;
     border: 0.2rem solid white;
-  }  
-  .knob-container>.title {
-    position: absolute;
+  }
+  .knob-container-container>.title.menu-toggle{
+    background: white;
+    color: black;
+  }
+  .knob-container-container>.title {
+    
+    /* position: absolute; */
+    font-size: 0.8rem !important;
+    /* position: absolute; */
+    margin-top: 0.5rem;
+    color: white;
+    width: 100%;
+    text-align: center;
+    font-weight: bolder;
     top: 5.5rem;
+    user-select: none;
   }
 
   .knob {
