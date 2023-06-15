@@ -1,0 +1,13 @@
+#version 300 es
+precision highp float;
+uniform float time;
+uniform vec2 R;
+uniform vec2 canvasR;
+uniform vec4 stroke_col;
+uniform vec2 stroke_pos;
+uniform vec2 tilt;
+uniform vec2 brush_sz;
+uniform float pressure;
+uniform sampler2D canvas;
+uniform sampler2D canvas_back;
+uniform sampler2D temp_tex;

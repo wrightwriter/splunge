@@ -7,6 +7,7 @@
 			<ColourDisplay bind:colour={stroke_col} />
 
 			<Knob bind:value={chaos} title={"Chaos"} triggerModal={(modal)=>{openModal(modal)}} modal={chaosSemiModal} />
+			<BrushSizeWidget bind:dragging={brushSizeWidgetDragging} bind:brush_sz={brush_sz} canvas_res={canvasRes} />
 		</div>
 		<SemiModal bind:this={chaosSemiModal}>
 			<Knob bind:value={chaos_lch[0]} title={"Chaos L"} />
@@ -28,37 +29,39 @@
 	import {Texture, Framebuffer, ShaderProgram, init_utils, resizeIfNeeded, finish_frame} from './gl_utils'
 
 	import Knob from 'Knob.svelte'
+	import BrushSizeWidget from 'BrushSizeWidget.svelte'
 	import ColourDisplay from 'ColourDisplay.svelte'
 	import SemiModal from 'SemiModal.svelte'
 	import {IO} from 'IO'
 	import chroma from 'chroma-js'
 	import {Hash} from 'wmath'
 	import {clamp, mod} from '@0b5vr/experimental'
-	let canvasElement: HTMLCanvasElement
 
-	let chaosSemiModal: SemiModal
 
+	// Init
 	let hash = new Hash()
-
-	let modals: SemiModal[] = []
-
-	let stroke_col: Array<number> = [0.5, 0.4, 0.3, 1]
-
-	let chaos_lch: Array<number> = [0.3, 0.3, 0.5]
-	let chaos_speed: number = 0.3
-
-	let chaos: number = 0.3
-
 	let io = new IO()
-
-	let zoom = 1
-
 	let gl: WebGL2RenderingContext
-
-	let userRes: Array<number> = [0, 0]
-	let canvasRes: Array<number> = [512 * 2, 512 * 2]
+	let zoom = 1
+	let userAgentRes: Array<number> = [0, 0]
 	let default_framebuffer: Framebuffer
 
+	// Elements
+	let canvasElement: HTMLCanvasElement
+	let chaosSemiModal: SemiModal
+	let modals: SemiModal[] = []
+	let brushSizeWidgetDragging: boolean
+
+
+	// Drawing params
+	let stroke_col: Array<number> = [0.5, 0.4, 0.3, 1]
+	let chaos_lch: Array<number> = [0.3, 0.3, 0.5]
+	let chaos_speed: number = 0.3
+	let chaos: number = 0.3
+	let brush_sz: number[] = [0.2,0.2]
+	let canvasRes: Array<number> = [512 * 2, 512 * 2]
+
+  
 	const openModal = (modal: SemiModal) => {
 		for (let m of modals) {
 			if (m === modal) {
@@ -80,7 +83,7 @@
 			preserveDrawingBuffer: true,
 			alpha: false,
 		})
-		userRes = [canvasElement.clientWidth, canvasElement.clientWidth]
+		userAgentRes = [canvasElement.clientWidth, canvasElement.clientWidth]
 		init_utils()
 
 		default_framebuffer = Object.create(Framebuffer.prototype)
@@ -92,155 +95,54 @@
 		default_framebuffer._fb = null
 		// @ts-ignore
 		default_framebuffer._textures = [Object.create(Texture.prototype)]
-		default_framebuffer.textures[0].res = [...userRes]
+		default_framebuffer.textures[0].res = [...userAgentRes]
 
-		resizeIfNeeded(canvasElement, default_framebuffer, userRes, (e) => {})
+		resizeIfNeeded(canvasElement, default_framebuffer, userAgentRes, (e) => {})
 
 		gl.disable(gl.DEPTH_TEST)
 		// gl.enable(gl.BLEND)
 	}
 	const initOtherStuff = () => {
+		document.addEventListener('contextmenu', event => event.preventDefault());
 		modals = [chaosSemiModal]
 	}
 
-	const vs_prepend_includes = `#version 300 es
-  uniform float time;
-	uniform vec2 R;
-	uniform vec2 canvasR;
-	uniform vec2 stroke_pos;
-	out vec2 uv;
+	const vs_prepend_includes: string = require("./shaders/vs_prepend_includes.glsl")
 
-	`
+	const fs_prepend_includes: string = require("./shaders/fs_prepend_includes.glsl")
 
-	const vs_prepend = `
-  #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a))
-  vec2[] positions = vec2[4](
-    vec2(-1, -1), vec2(1, -1), vec2(-1, 1),vec2(1, 1)
-  );
-
-  gl_Position = vec4(positions[gl_VertexID],0,1);
-
-	if(canvasR.x < canvasR.y){
-		gl_Position.y /= canvasR.y/canvasR.x;
-	} else {
-		gl_Position.x /= canvasR.x/canvasR.y;
-	}
-
-	`
+	const vs_prepend: string = require("./shaders/vs_prepend.glsl")
 
 	onMount(async () => {
 		initWebGL()
 		initOtherStuff()
+
+		//! ------------------- BRUSH PREVIEW
+		const brush_preview_program = new ShaderProgram(
+			require("./shaders/brush_preview.vert")
+		,
+			require("./shaders/brush_preview.frag")
+		,
+		)
 		//! ------------------- TEMP STROKE
 		const draw_temp_stroke_program = new ShaderProgram(
-			// vs
-			vs_prepend_includes +
-				`
-			uniform float pressure;
-			uniform vec2 tilt;
-			void main(){
-			` +
-				vs_prepend +
-				`	
-				gl_Position.y *= 0.2;
-				gl_Position.xy *= 0.2 * pressure;
-				gl_Position.xy *= rot(-tilt.y);
-
-				uv = gl_Position.xy*0.5 + 0.5;
-				gl_Position.xy += stroke_pos;
-		}  
-		`,
-			// fs
-			`#version 300 es
-				precision highp float;
-				uniform float time;
-				uniform sampler2D canvas;
-				uniform vec4 stroke_col;
-				uniform float pressure;
-				uniform vec2 tilt;
-				in vec2 uv;
-				out vec4 col;
-				void main() {
-					col = vec4(1);
-					col.xyz = stroke_col.xyz;
-					
-					vec2 u = uv;
-					u = abs(u) - 0.6;
-					float rect_sdf = max(u.x,u.y);
-					float fw = abs(fwidth(rect_sdf));
-					rect_sdf += fw;
-
-					
-					col.w = smoothstep(fw,0.,rect_sdf);
-					col.xyz *= 1.;
-
-					// col.xyz = texture(canvas,uv).xyz;
-				}
-		`,
+			require("./shaders/draw_temp_stroke.vert"),
+			require("./shaders/draw_temp_stroke.frag"),
 		)
+		
 
 		//! ------------------- COMPOSITE TEMP STROKE
 		const composite_temp_stroke_to_canvas_program = new ShaderProgram(
 			// vs
-			vs_prepend_includes +
-				`void main(){` +
-				vs_prepend +
-				`	uv = gl_Position.xy*0.5 + 0.5;
-}  
-`,
+			require("./shaders/composite_temp_stroke_to_canvas.vert"),
 			// fs
-			`#version 300 es
-  precision highp float;
-  uniform float time;
-  uniform sampler2D canvas;
-  uniform sampler2D canvas_back;
-  uniform sampler2D temp_tex;
-	in vec2 uv;
-  out vec4 col;
-  void main() {
-		col = texture(canvas_back,uv);
-
-		vec4 temp_tex = texture(temp_tex,uv);
-		col.xyz = mix(col.xyz, temp_tex.xyz, temp_tex.w);
-		
-  }
-`,
+			require("./shaders/composite_temp_stroke_to_canvas.frag"),
 		)
-
 
 		//! ------------------- POST
 		const post_canvas_program = new ShaderProgram(
-			// vs
-			vs_prepend_includes +
-				`void main(){` +
-				vs_prepend +
-				`	uv = gl_Position.xy*0.5 + 0.5;
-			}  
-			`,
-			// fs
-			`#version 300 es
-			precision highp float;
-			uniform float time;
-			uniform int mouse_down;
-			uniform int frame;
-			uniform sampler2D canvas;
-			uniform sampler2D canvas_back;
-			uniform sampler2D temp_tex;
-			in vec2 uv;
-			out vec4 col;
-			void main() {
-				col = vec4(1);
-
-
-				col.xyz = texture(canvas_back,uv).xyz;
-				vec4 temp_tex = texture(temp_tex,uv);
-				// if(temp_tex.w > 0.)
-				col.xyz = mix(col.xyz, temp_tex.xyz, temp_tex.w);
-
-				
-				col = pow(col,vec4(0.454545454545));
-			}
-		`,
+			require("./shaders/post_canvas.vert"),
+			require("./shaders/post_canvas.frag"),
 		)
 		default_framebuffer.start_draw()
 		default_framebuffer.clear([0, 0, 0, 1])
@@ -257,10 +159,11 @@
 		
 		const set_shared_uniforms = (program: ShaderProgram, col: number[], t: number) => {
 			program.setUniformFloat('time', t)
-			program.setUniformVec('R', userRes)
-			program.setUniformVec('canvasR', userRes)
+			program.setUniformVec('R', userAgentRes)
+			program.setUniformVec('canvasR', canvasRes)
 			program.setUniformVec('stroke_pos', io.mouse_pos)
 			program.setUniformVec('stroke_col', col)
+			program.setUniformVec('brush_sz', brush_sz)
 			program.setUniformFloat('pressure', io.pressure)
 			program.setUniformVec('tilt', io.tilt)
 			program.setUniformInt('mouse_down', io.mouse_down ? 1 : 0)
@@ -273,7 +176,7 @@
 			let redraw_needed = false
 			if (frame === 0) redraw_needed = true
 			t = t / 1000
-			resizeIfNeeded(canvasElement, default_framebuffer, userRes, (v: boolean) => {
+			resizeIfNeeded(canvasElement, default_framebuffer, userAgentRes, (v: boolean) => {
 				redraw_needed = v
 			})
 
@@ -321,7 +224,12 @@
 				
 				temp_stroke_fb.clear([0,0,0,0])
 			}
+
 			redraw_needed = true
+
+			if(brushSizeWidgetDragging)
+				redraw_needed = true
+			
 			// ----- REDRAW
 			if (redraw_needed) {
 				default_framebuffer.clear([0, 0, 0, 1])
@@ -331,6 +239,13 @@
 				post_canvas_program.use()
 				set_shared_uniforms(post_canvas_program, [0,0,0,0], t);
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+				
+				if(brushSizeWidgetDragging){
+					brush_preview_program.use()
+					set_shared_uniforms(brush_preview_program, [0,0,0,0], t);
+					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+				}
+
 
 				// gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 			}

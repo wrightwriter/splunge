@@ -117,6 +117,20 @@ module.exports.default = {
 			{test: /\.js$/, loader: 'source-map-loader'},
 			{test: /\.css$/i, use: ['style-loader', 'css-loader']},
 			{test: /\.(png|jpe?g|gif)$/i, use: ['file-loader']},
+			{
+				test: /\.(glsl|vs|fs|vert|frag)$/,
+				exclude: /node_modules/,
+				type: 'asset/source',
+				use: [
+					'raw-loader',
+					{
+						loader: 'glslify-loader',
+						options: {
+							transform: ['glslify-import'],
+						},
+					},
+				],
+			},
 			// {
 			//   test: /\.(glsl|vs|fs|vert|frag)$/,
 			//   exclude: /node_modules/,

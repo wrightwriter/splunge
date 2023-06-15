@@ -63,6 +63,7 @@ export class IO {
 		})
 
 		window.addEventListener('pointerdown', (e) => {
+			if (e.pointerType === 'mouse' && e.button !== 0) return
 			this.mouse_down = true
 			console.log(e)
 		})

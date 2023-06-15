@@ -169,12 +169,33 @@ export class Framebuffer {
 export class ShaderProgram {
 	program: WebGLProgram
 	loadShader(type: number, source: string) {
+		source = source.replaceAll('export default "', ``)
+		source = source.replaceAll('";', ``)
+		source = source.replaceAll('"', ``)
+		source = source.replaceAll(
+			`\\n`,
+			`
+		`,
+		)
+		source = source.replaceAll(
+			/(#define .+)[\t\s]*/g,
+			`
+		$1
+		`,
+		)
+		source = source.replaceAll(
+			/	+precision highp float;/gm,
+			`precision highp float;
+			`,
+		)
+		source = source.replaceAll(`\\t`, `	`)
 		const shader = gl.createShader(type) as WebGLShader
 
 		gl.shaderSource(shader, source)
 		gl.compileShader(shader)
 		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
 			console.log(`An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`)
+			console.log(source)
 		}
 		return shader
 	}
