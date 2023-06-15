@@ -1,5 +1,7 @@
 #version 300 es
+precision highp float;
 uniform float time;
+uniform int frame;
 uniform vec2 R;
 uniform vec2 canvasR;
 uniform vec2 stroke_pos;

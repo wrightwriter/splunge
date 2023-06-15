@@ -1,19 +1,31 @@
 <main>
 	<div id="bar-container">
 		<div id="bar">
-			<Knob bind:value={stroke_col[0]} title={"R"} />
-			<Knob bind:value={stroke_col[1]} title={"G"} />
-			<Knob bind:value={stroke_col[2]} title={"B"} />
+			<Knob bind:value={stroke_col[0]} title={'R'} />
+			<Knob bind:value={stroke_col[1]} title={'G'} />
+			<Knob bind:value={stroke_col[2]} title={'B'} />
 			<ColourDisplay bind:colour={stroke_col} />
 
-			<Knob bind:value={chaos} title={"Chaos"} triggerModal={(modal)=>{openModal(modal)}} modal={chaosSemiModal} />
+			<Knob bind:this={chaosKnob} bind:value={chaos} title={'Chaos'} triggerModal={openModal} modal={chaosSemiModal} />
 			<BrushSizeWidget bind:dragging={brushSizeWidgetDragging} bind:brush_sz={brush_sz} canvas_res={canvasRes} />
+			<Knob
+				bind:this={dynamicsKnob}
+				bind:value={dynamics}
+				title={'Dynamics'}
+				triggerModal={openModal}
+				modal={dynamicsSemiModal} />
 		</div>
-		<SemiModal bind:this={chaosSemiModal}>
-			<Knob bind:value={chaos_lch[0]} title={"Chaos L"} />
-			<Knob bind:value={chaos_lch[1]} title={"Chaos C"} />
-			<Knob bind:value={chaos_lch[2]} title={"Chaos H"} />
-			<Knob bind:value={chaos_speed} title={"Chaos Speed"} />
+		<SemiModal bind:this={chaosSemiModal} knob={chaosKnob}>
+			<Knob bind:value={chaos_lch[0]} title={'Chaos L'} />
+			<Knob bind:value={chaos_lch[1]} title={'Chaos C'} />
+			<Knob bind:value={chaos_lch[2]} title={'Chaos H'} />
+			<Knob bind:value={chaos_speed} title={'Chaos Speed'} />
+		</SemiModal>
+		<SemiModal bind:this={dynamicsSemiModal} knob={dynamicsKnob}>
+			<Knob bind:value={stroke_opacity_dynamics[0]} title={'Opacity min'} />
+			<Knob bind:value={stroke_opacity_dynamics[1]} title={'Opacity max'} />
+			<Knob bind:value={rot_jitter} title={'Rot jitt'} />
+			<Knob bind:value={pos_jitter} title={'Pos jitt'} />
 		</SemiModal>
 	</div>
 	<!-- {@html `<style> #bar>*:last-of-type{margin-left:auto; padding-right: 4rem;} </style>`}  -->
@@ -35,8 +47,7 @@
 	import {IO} from 'IO'
 	import chroma from 'chroma-js'
 	import {Hash} from 'wmath'
-	import {clamp, mod} from '@0b5vr/experimental'
-
+	import {clamp, lerp, mod} from '@0b5vr/experimental'
 
 	// Init
 	let hash = new Hash()
@@ -44,35 +55,47 @@
 	let gl: WebGL2RenderingContext
 	let zoom = 1
 	let userAgentRes: Array<number> = [0, 0]
+	let canvasRes: Array<number> = [512 * 2, 512 * 2]
 	let default_framebuffer: Framebuffer
 
 	// Elements
 	let canvasElement: HTMLCanvasElement
 	let chaosSemiModal: SemiModal
+	let dynamicsSemiModal: SemiModal
 	let modals: SemiModal[] = []
 	let brushSizeWidgetDragging: boolean
-
+	let chaosKnob: Knob
+	let dynamicsKnob: Knob
 
 	// Drawing params
 	let stroke_col: Array<number> = [0.5, 0.4, 0.3, 1]
+	let stroke_opacity = 0
+	let brush_sz: number[] = [0.2, 0.2]
+
 	let chaos_lch: Array<number> = [0.3, 0.3, 0.5]
 	let chaos_speed: number = 0.3
 	let chaos: number = 0.3
-	let brush_sz: number[] = [0.2,0.2]
-	let canvasRes: Array<number> = [512 * 2, 512 * 2]
 
-  
+	let dynamics: number = 0.3
+	let stroke_opacity_dynamics: number[] = [0, 1]
+	let rot_jitter: number = 0.
+	let pos_jitter: number = 0.
+
+
 	const openModal = (modal: SemiModal) => {
 		for (let m of modals) {
 			if (m === modal) {
 				if (m.hidden) {
 					m.hidden = false
+					m.knob.modalHidden = false
 				} else {
 					m.hidden = true
+					m.knob.modalHidden = true
 				}
 			} else {
 				// m.hide()
 				m.hidden = true
+				m.knob.modalHidden = true
 			}
 		}
 	}
@@ -103,15 +126,10 @@
 		// gl.enable(gl.BLEND)
 	}
 	const initOtherStuff = () => {
-		document.addEventListener('contextmenu', event => event.preventDefault());
-		modals = [chaosSemiModal]
+		document.addEventListener('contextmenu', (event) => event.preventDefault())
+		modals = [chaosSemiModal, dynamicsSemiModal]
 	}
-
-	const vs_prepend_includes: string = require("./shaders/vs_prepend_includes.glsl")
-
-	const fs_prepend_includes: string = require("./shaders/fs_prepend_includes.glsl")
-
-	const vs_prepend: string = require("./shaders/vs_prepend.glsl")
+	
 
 	onMount(async () => {
 		initWebGL()
@@ -119,31 +137,22 @@
 
 		//! ------------------- BRUSH PREVIEW
 		const brush_preview_program = new ShaderProgram(
-			require("./shaders/brush_preview.vert")
-		,
-			require("./shaders/brush_preview.frag")
-		,
+			require('./shaders/brush_preview.vert'),
+			require('./shaders/brush_preview.frag'),
 		)
 		//! ------------------- TEMP STROKE
 		const draw_temp_stroke_program = new ShaderProgram(
-			require("./shaders/draw_temp_stroke.vert"),
-			require("./shaders/draw_temp_stroke.frag"),
+			require('./shaders/draw_temp_stroke.vert'),
+			require('./shaders/draw_temp_stroke.frag'),
 		)
-		
-
 		//! ------------------- COMPOSITE TEMP STROKE
 		const composite_temp_stroke_to_canvas_program = new ShaderProgram(
-			// vs
-			require("./shaders/composite_temp_stroke_to_canvas.vert"),
-			// fs
-			require("./shaders/composite_temp_stroke_to_canvas.frag"),
+			require('./shaders/composite_temp_stroke_to_canvas.vert'),
+			require('./shaders/composite_temp_stroke_to_canvas.frag'),
 		)
-
 		//! ------------------- POST
-		const post_canvas_program = new ShaderProgram(
-			require("./shaders/post_canvas.vert"),
-			require("./shaders/post_canvas.frag"),
-		)
+		const post_canvas_program = new ShaderProgram(require('./shaders/post_canvas.vert'), require('./shaders/post_canvas.frag'))
+
 		default_framebuffer.start_draw()
 		default_framebuffer.clear([0, 0, 0, 1])
 
@@ -156,15 +165,17 @@
 		temp_stroke_fb.clear([0, 0, 0, 0])
 
 		let frame = 0
-		
+
 		const set_shared_uniforms = (program: ShaderProgram, col: number[], t: number) => {
 			program.setUniformFloat('time', t)
+			program.setUniformInt('frame', frame)
 			program.setUniformVec('R', userAgentRes)
 			program.setUniformVec('canvasR', canvasRes)
 			program.setUniformVec('stroke_pos', io.mouse_pos)
 			program.setUniformVec('stroke_col', col)
 			program.setUniformVec('brush_sz', brush_sz)
 			program.setUniformFloat('pressure', io.pressure)
+			program.setUniformFloat('stroke_opacity', stroke_opacity)
 			program.setUniformVec('tilt', io.tilt)
 			program.setUniformInt('mouse_down', io.mouse_down ? 1 : 0)
 			program.setUniformInt('frame', frame)
@@ -198,19 +209,34 @@
 					col = chroma_gl(col).oklch()
 					// col[2] = (t*300)%300
 					col[0] += hash.valueNoiseSmooth(t * 100 * chaos_speed, 2) * chaos * chaos_lch[0]
-					col[1] += hash.valueNoiseSmooth(t * 100 * chaos_speed, 2) * chaos * chaos_lch[1]
-					col[2] += hash.valueNoiseSmooth(t * 100 * chaos_speed, 2) * 300 * chaos * chaos_lch[2]
+					col[1] += hash.valueNoiseSmooth(t * 100 * chaos_speed + 100, 2) * chaos * chaos_lch[1]
+					col[2] += hash.valueNoiseSmooth(t * 100 * chaos_speed + 200, 2) * 300 * chaos * chaos_lch[2]
 					col[0] = clamp(col[0], 0, 1)
 					col[1] = clamp(col[1], 0, 1)
 					col[2] = mod(col[2], 360)
 
 					col = chroma_oklch(col).gl()
 				}
+				{
+					stroke_opacity = lerp(stroke_opacity_dynamics[0], stroke_opacity_dynamics[1], io.pressure)
+					console.log(stroke_opacity)
+				}
 
 				{
 					temp_stroke_fb.start_draw()
 					draw_temp_stroke_program.use()
-					set_shared_uniforms(draw_temp_stroke_program, col, t);
+					draw_temp_stroke_program.setUniformVec(
+						"pos_jitter", 
+						[
+							pos_jitter * (2*hash.valueNoiseSmooth(t * 100 + 251, 2) - 1),
+							pos_jitter * (2*hash.valueNoiseSmooth(t * 100 +531, 2) - 1),
+						]
+						)
+					draw_temp_stroke_program.setUniformFloat(
+						"rot_jitter", 
+						rot_jitter * (2.*hash.valueNoiseSmooth(t * 10 +100, 2)-1.),
+						)
+					set_shared_uniforms(draw_temp_stroke_program, col, t)
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 				}
 			}
@@ -219,17 +245,16 @@
 				redraw_needed = true
 				canvas_fb.start_draw()
 				composite_temp_stroke_to_canvas_program.use()
-				set_shared_uniforms(composite_temp_stroke_to_canvas_program, [0,0,0,0], t);
+				set_shared_uniforms(composite_temp_stroke_to_canvas_program, [0, 0, 0, 0], t)
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-				
-				temp_stroke_fb.clear([0,0,0,0])
+
+				temp_stroke_fb.clear([0, 0, 0, 0])
 			}
 
 			redraw_needed = true
 
-			if(brushSizeWidgetDragging)
-				redraw_needed = true
-			
+			if (brushSizeWidgetDragging) redraw_needed = true
+
 			// ----- REDRAW
 			if (redraw_needed) {
 				default_framebuffer.clear([0, 0, 0, 1])
@@ -237,19 +262,18 @@
 				// console.log("COMPOSITED")
 
 				post_canvas_program.use()
-				set_shared_uniforms(post_canvas_program, [0,0,0,0], t);
+				set_shared_uniforms(post_canvas_program, [0, 0, 0, 0], t)
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-				
-				if(brushSizeWidgetDragging){
+
+				if (brushSizeWidgetDragging) {
 					brush_preview_program.use()
-					set_shared_uniforms(brush_preview_program, [0,0,0,0], t);
+					set_shared_uniforms(brush_preview_program, [0, 0, 0, 0], t)
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 				}
 
-
 				// gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 			}
-			if(gl.getError() !== 0){
+			if (gl.getError() !== 0) {
 				console.log(gl.getError())
 			}
 
@@ -284,7 +308,7 @@
 		height: 100%;
 		display: flex;
 		flex-direction: column;
-		#bar-container{
+		#bar-container {
 			width: 100%;
 			position: absolute;
 			display: flex;
@@ -306,11 +330,10 @@
 		canvas {
 			width: 100%;
 			height: 100%;
-			display : block;
+			display: block;
 			margin: auto;
 			padding: 0;
 			// background-color: red;
 		}
-
 	}
 </style>

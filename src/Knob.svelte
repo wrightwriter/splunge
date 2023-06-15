@@ -15,7 +15,7 @@
   let knobElement: HTMLElement
   // $: modalHidden = modal ? modal.hidden : false
   
-  let modalHidden = true
+  export let modalHidden = true
 
   export let title = ""
 	

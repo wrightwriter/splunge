@@ -177,6 +177,11 @@ export class ShaderProgram {
 			`
 		`,
 		)
+		source = source.replace(
+			/(.*)(#version 300 es)[\t\s]*/g,
+			`$2
+			`,
+		)
 		source = source.replaceAll(
 			/(#define .+)[\t\s]*/g,
 			`

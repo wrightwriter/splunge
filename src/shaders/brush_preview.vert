@@ -1,4 +1,3 @@
-
 #pragma glslify: import('./vs_prepend_includes.glsl')
 
 void main(){

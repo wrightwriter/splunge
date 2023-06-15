@@ -1,8 +1,11 @@
 <svelte:options accessors />
 
 <script lang="ts">
+	import Knob from "Knob.svelte"
+
 	// export let child
   export let hidden: boolean = true
+  export let knob: Knob
 </script>
 
 
