@@ -13,11 +13,20 @@ void main() {
   
   {
     col.xyz = srgb_to_oklch(col.xyz);
-    // col.x += valueNoise(uv*20.)*10.6;
-    // col.z = mod(col.z,1.);
+
+    vec2 nuv = uv*2120.;
+    nuv *= tex_stretch;
+    float n = (valueNoise(nuv)*2. - 1.);
+
+    col.z += 5.5*n * tex_lch_dynamics.z;
+    col.x += n * tex_lch_dynamics.x;
+    col.y += n * tex_lch_dynamics.y;
+    // col.x -= valueNoise(uv*120.)*0.6;
+
     col.x = clamp(col.x, 0., 1.);
     col.y = clamp(col.y, 0., 1.);
-    col.z = mod(col.z,1.);
+    // col.z = clamp(col.z, 0., acos(-1.)*2.);
+    col.z = mod(col.z, acos(-1.)*2.);
     col.xyz = oklch_to_srgb(col.xyz);
   }
   

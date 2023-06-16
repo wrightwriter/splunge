@@ -1,3 +1,5 @@
+import {isThisTypeNode} from 'typescript'
+
 let gl: WebGL2RenderingContext
 export function init_utils() {
 	gl = window.gl
@@ -51,15 +53,6 @@ export class Texture {
 
 		if (!gl.isTexture(this.tex)) {
 			console.error('TEXTURE INCOMPLETE')
-		}
-	}
-}
-export function finish_frame() {
-	for (let framebuffer of Framebuffer.framebuffers) {
-		if (framebuffer.needs_pong) {
-			console.log('ponged')
-			framebuffer.pong_idx = 1 - framebuffer.pong_idx
-			framebuffer.needs_pong = false
 		}
 	}
 }
@@ -236,5 +229,95 @@ export class ShaderProgram {
 		gl.activeTexture(gl.TEXTURE0 + binding)
 		gl.bindTexture(gl.TEXTURE_2D, texture.tex)
 		gl.uniform1i(gl.getUniformLocation(this.program, name), binding)
+	}
+}
+
+export function finish_frame() {
+	for (let framebuffer of Framebuffer.framebuffers) {
+		if (framebuffer.needs_pong) {
+			console.log('ponged')
+			framebuffer.pong_idx = 1 - framebuffer.pong_idx
+			framebuffer.needs_pong = false
+		}
+	}
+}
+
+export class Thing {
+	vao: WebGLVertexArrayObject
+	buffs: VertexBuffer[]
+	shader: ShaderProgram
+	prim_type: number
+
+	constructor(buffs: VertexBuffer[], prim_type: number = gl.TRIANGLES, shader: ShaderProgram) {
+		this.prim_type = prim_type
+		this.shader = shader
+		this.vao = gl.createVertexArray() as WebGLVertexArrayObject
+		this.buffs = [...buffs]
+	}
+
+	draw() {
+		this.shader.use()
+		gl.bindVertexArray(this.vao)
+		let i = 0
+		for (let buff of this.buffs) {
+			gl.enableVertexAttribArray(i)
+			buff.bindToAttrib(i)
+			i++
+		}
+
+		if (this.prim_type === gl.TRIANGLES) {
+			let draw_cnt = this.buffs[0].sz / this.buffs[0].single_vert_sz
+			gl.drawArrays(this.prim_type, 0, draw_cnt)
+		} else {
+			alert('bleep bloop errrorrr')
+		}
+	}
+}
+
+export class VertexBuffer {
+	buff: WebGLBuffer
+
+	cpu_buff: Float32Array | Int32Array | Uint32Array
+	type: number
+
+	stride: number
+	single_vert_sz: number
+	sz: number
+	max_sz: number
+
+	bindToAttrib(idx: number) {
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
+		gl.vertexAttribPointer(0, this.single_vert_sz, this.type, false, this.stride, 0)
+	}
+
+	constructor(single_vert_sz: number, type: number = gl.FLOAT, max_size: number = 10000) {
+		this.buff = gl.createBuffer() as WebGLBuffer
+		this.type = type
+
+		this.single_vert_sz = single_vert_sz
+		this.max_sz = max_size
+		this.stride = 0
+
+		if (type === gl.FLOAT) {
+			this.cpu_buff = new Float32Array(max_size)
+		} else if (type === gl.INT) {
+			this.cpu_buff = new Int32Array(max_size)
+		} else {
+			this.cpu_buff = new Uint32Array(max_size)
+		}
+		this.sz = 0
+	}
+	push_vert(vert: number[]) {
+		if (vert.length !== this.single_vert_sz) {
+			debugger
+		}
+		for (let v of vert) {
+			this.cpu_buff[this.sz++] = v
+		}
+	}
+	upload() {
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
+		const sz_in_bytes = this.sz * this.cpu_buff.BYTES_PER_ELEMENT
+		gl.bufferData(gl.ARRAY_BUFFER, this.cpu_buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
 	}
 }

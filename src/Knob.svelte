@@ -35,8 +35,6 @@
 	
 	function pointerDown(e: PointerEvent) {
     let { clientX, clientY } = e
-		// console.log({ clientY });
-    console.log("down")
 		startY = clientY;
 		startX = clientX;
 		startValue = value;
@@ -47,7 +45,6 @@
 	}
 	
 	function pointerUp() {
-    console.log("up")
 		window.removeEventListener('pointermove', pointerMove);
 		window.removeEventListener('pointerup', pointerUp);
 	}
@@ -66,7 +63,6 @@
     }
     pointerDown = ()=>{
       titleElement.removeEventListener("pointerup", pointerUp)
-      console.log("asdgasdg")
       titleElement.addEventListener("pointerup", pointerUp)
     }
     titleElement.addEventListener("pointerdown", pointerDown)

@@ -14,7 +14,7 @@
   let min = 0;
   let max = 1;
 
-  export let dragging: boolean = false;
+  let dragging: boolean = false;
 
 	let startY = 0, startValue = [0,0], startX = 0;
 

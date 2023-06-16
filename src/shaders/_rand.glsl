@@ -27,6 +27,7 @@ float hash_21_s(ivec2 _s_){
 
 
 float valueNoise( in vec2 p ){
+    p += 100.;
     ivec2 i = ivec2(floor( p ));
     vec2 f = fract( p );
 

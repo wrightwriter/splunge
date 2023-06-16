@@ -1,4 +1,55 @@
+interface keyState {
+	down: boolean
+	just_pressed: boolean
+	just_unpressed: boolean
+}
+
+type BtnCode =
+	| 'KeyA'
+	| 'KeyB'
+	| 'KeyC'
+	| 'KeyD'
+	| 'KeyE'
+	| 'KeyF'
+	| 'KeyG'
+	| 'KeyH'
+	| 'KeyI'
+	| 'KeyJ'
+	| 'KeyK'
+	| 'KeyL'
+	| 'KeyM'
+	| 'KeyN'
+	| 'KeyO'
+	| 'KeyP'
+	| 'KeyQ'
+	| 'KeyR'
+	| 'KeyS'
+	| 'KeyT'
+	| 'KeyU'
+	| 'KeyI'
+	| 'KeyV'
+	| 'KeyW'
+	| 'KeyX'
+	| 'KeyY'
+	| 'KeyZ'
+	| 'Digit1'
+	| 'Digit2'
+	| 'Digit3'
+	| 'Digit4'
+	| 'Digit5'
+	| 'Digit6'
+	| 'Digit7'
+	| 'Digit8'
+	| 'Digit9'
+	| 'Digit0'
+	| 'ControlLeft'
+	| 'AltLeft'
+	| 'ShiftLeft'
+	| 'Space'
+
 export class IO {
+	private keys = new Map<BtnCode, keyState>()
+
 	mouse_pos: Array<number> = [0, 0]
 	mouse_down: boolean = false
 
@@ -25,8 +76,31 @@ export class IO {
 		this.mouse_just_pressed = false
 		this.mouse_just_unpressed = false
 		this.mouse_down_prev = this.mouse_down
+		Object.values(this.keys).forEach((key) => {
+			key.just_unpressed = false
+			key.just_pressed = false
+		})
+	}
+	public getKey(code: BtnCode): keyState {
+		let key = this.keys[code]
+		if (key) {
+			return key
+		} else {
+			return {down: false, just_pressed: false, just_unpressed: false}
+		}
 	}
 	constructor() {
+		window.addEventListener('keydown', (event) => {
+			// if (!event.repeat) this.keys[event.code] = {down: true, just_pressed: true, just_unpressed: false}
+			this.keys[event.code] = {down: true, just_pressed: true, just_unpressed: false}
+		})
+		window.addEventListener('keyup', (event) => {
+			// console.log(event)
+			let just_unpressed = false
+			if (this.getKey(event.code as BtnCode).down) just_unpressed = true
+			this.keys[event.code] = {down: false, just_pressed: false, just_unpressed: just_unpressed}
+		})
+
 		window.addEventListener('pointermove', (e) => {
 			function getRelativeMousePosition(event, target) {
 				target = target || event.target
