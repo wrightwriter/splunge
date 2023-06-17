@@ -133,14 +133,14 @@ module.exports.default = {
 	optimization: {
 		minimize: false,
 	},
-	devServer: {
-		http2: true,
-		https: {
-			key: fs.readFileSync('./MY_FILENAME.key'),
-			cert: fs.readFileSync('./MY_FILENAME.crt'),
-			ca: fs.readFileSync('./MY_FILENAME.pem'),
-		},
-	},
+	// devServer: {
+	// 	http2: true,
+	// 	https: {
+	// 		key: fs.readFileSync('./MY_FILENAME.key'),
+	// 		cert: fs.readFileSync('./MY_FILENAME.crt'),
+	// 		ca: fs.readFileSync('./MY_FILENAME.pem'),
+	// 	},
+	// },
 }
 
 if (isProduction) {
