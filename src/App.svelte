@@ -22,23 +22,7 @@
 				modal={texDynamicsSemiModal} />
 			<BrushTypeWidget bind:selected_brush_type={selected_brush_type} />
 			<UndoRedoWidget undo={()=>{undo_pending = true}} redo={()=>{redo_pending = true}} />
-			<div id="g_id_onload"
-				data-client_id="1041542736895-524870r4n78cskbs1h9qup58359u8tvm.apps.googleusercontent.com"
-				data-context="signin"
-				data-ux_mode="popup"
-				data-login_uri="https://wrightwriter.github.io/splunge/"
-				data-auto_select="true"
-				data-itp_support="true">
-			 </div>
-			 
-			 <div class="g_id_signin"
-						data-type="standard"
-						data-shape="rectangular"
-						data-theme="filled_black"
-						data-text="signin_with"
-						data-size="large"
-						data-logo_alignment="left">
-			 </div>
+			<GalleryWidget bind:current_project={project} get_current_canvas_as_image={()=> canvas_read_tex.read_back_image()}/>
 		</div>
 		<SemiModal bind:this={chaosSemiModal} knob={chaosKnob}>
 			<Knob bind:value={chaos_lch[0]} title={'Chaos L'} />
@@ -69,7 +53,6 @@
 <svelte:head>
   <!-- <script async defer src="https://apis.google.com/js/api.js" on:load={handleGApiLoad}></script> -->
   <!-- <script async defer src="https://accounts.google.com/gsi/client" on:load={handleGLClientLoad}></script> -->
-  <script src="https://accounts.google.com/gsi/client" on:load={handleGLClientLoad}></script>
 </svelte:head>
 
 <script lang="ts">
@@ -84,6 +67,8 @@
 	import BrushSizeWidget from 'BrushSizeWidget.svelte'
 	import BrushTypeWidget from 'BrushTypeWidget.svelte'
 	import UndoRedoWidget from 'UndoRedoWidget.svelte'
+	import GalleryWidget from 'GalleryWidget.svelte'
+
 	import ColourDisplay from 'ColourDisplay.svelte'
 	import SemiModal from 'SemiModal.svelte'
 	import {IO} from 'IO'
@@ -92,155 +77,10 @@
 	import {clamp, lerp, mod} from '@0b5vr/experimental'
 	import {BrushStroke, BrushType, DrawParams, Project} from 'stuff'
 	import earcut from "earcut"
+	import {Dropbox} from "dropbox"
+	import getToken from 'getToken'
 
 
-		// Discovery doc URL for APIs used by the quickstart
-		const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-		// Authorization scopes required by the API; multiple scopes can be
-		// included, separated by spaces.
-		const SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
-		// const SCOPES =
-		// 	'https://www.googleapis.com/auth/fitness.activity.read https://www.googleapis.com/auth/fitness.activity.write https://www.googleapis.com/auth/fitness.nutrition.read https://www.googleapis.com/auth/fitness.nutrition.write'
-		const CLIENT_ID = '1041542736895-524870r4n78cskbs1h9qup58359u8tvm.apps.googleusercontent.com';
-		const API_KEY = 'AIzaSyDwtcPjQMj3JAy9d7wwjib19eywvGfdV3A';
-
-		let gapiInited = false;
-		let gisInited = false;
-		"You have created a new client application that uses libraries for user authentication or authorization that are deprecated. New clients must use the new libraries instead. See the [Migration Guide](https://developers.google.com/identity/gsi/web/guides/gis-migration) for more information."
-		let tokenClient;
-		
-		let currentUser
-
-		function setCurrentUser(isSignedIn: boolean) {
-			if (isSignedIn) {
-				const profile = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile()
-				currentUser.set({
-					email: profile.getEmail(),
-					name: profile.getName(),
-					imageUrl: profile.getImageUrl(),
-				})
-			} else {
-				currentUser.set(undefined)
-			}
-		}
-
-	window.addEventListener("google-loaded", ()=>{
-		alert("AMOG")
-	});
-
-  function handleGLClientLoad (){
-		window.gapi.load('client:auth2', async ()=>{
-			await gapi.client.init({
-				apiKey: API_KEY,
-				clientId: CLIENT_ID,
-				scope: SCOPES
-			})
-
-			setCurrentUser(gapi.auth2.getAuthInstance().isSignedIn.get())
-			gapi.auth2.getAuthInstance().isSignedIn.listen((e) => setCurrentUser(e))
-			
-			gisInited = true;
-		})
-	}
-// @ts-ignore
-		// // const currentUser = writable<User>()
-
-		// // function handelAuthIn() {
-		// // 	gapi.auth2.getAuthInstance().signIn()
-		// // }
-		// // function handleSignOut() {
-		// // 	gapi.auth2.getAuthInstance().signOut()
-		// // }
-
-    //   /**
-    //    * Callback after api.js is loaded.
-    //    */
-    //   function gapiLoaded() {
-    //     gapi.load('client', initializeGapiClient);
-    //   }
-
-    //   function gisLoaded() {
-    //     await gapi.client.init({
-    //       apiKey: API_KEY,
-    //       discoveryDocs: [DISCOVERY_DOC],
-    //     });
-    //     gapiInited = true;
-
-    //   }
-
-    //   /**
-    //    * Enables user interaction after all libraries are loaded.
-    //    */
-    //   function maybeEnableButtons() {
-    //     if (gapiInited && gisInited) {
-    //       document.getElementById('authorize_button').style.visibility = 'visible';
-    //     }
-    //   }
-
-    //   /**
-    //    *  Sign in the user upon button click.
-    //    */
-    //   function handleAuthClick() {
-    //     tokenClient.callback = async (resp) => {
-    //       if (resp.error !== undefined) {
-    //         throw (resp);
-    //       }
-    //       document.getElementById('signout_button').style.visibility = 'visible';
-    //       document.getElementById('authorize_button').innerText = 'Refresh';
-    //       await listFiles();
-    //     };
-
-    //     if (gapi.client.getToken() === null) {
-    //       // Prompt the user to select a Google Account and ask for consent to share their data
-    //       // when establishing a new session.
-    //       tokenClient.requestAccessToken({prompt: 'consent'});
-    //     } else {
-    //       // Skip display of account chooser and consent dialog for an existing session.
-    //       tokenClient.requestAccessToken({prompt: ''});
-    //     }
-    //   }
-
-      /**
-       *  Sign out the user upon button click.
-       */
-      // function handleSignoutClick() {
-      //   const token = gapi.client.getToken();
-      //   if (token !== null) {
-      //     google.accounts.oauth2.revoke(token.access_token);
-      //     gapi.client.setToken('');
-      //     document.getElementById('content').innerText = '';
-      //     document.getElementById('authorize_button').innerText = 'Authorize';
-      //     document.getElementById('signout_button').style.visibility = 'hidden';
-      //   }
-      // }
-
-      /**
-       * Print metadata for first 10 files.
-       */
-		// async function listFiles() {
-		// 	let response;
-		// 	try {
-		// 		response = await gapi.client.drive.files.list({
-		// 			'pageSize': 10,
-		// 			'fields': 'files(id, name)',
-		// 		});
-		// 	} catch (err) {
-		// 		document.getElementById('content').innerText = err.message;
-		// 		return;
-		// 	}
-		// 	const files = response.result.files;
-		// 	if (!files || files.length == 0) {
-		// 		document.getElementById('content').innerText = 'No files found.';
-		// 		return;
-		// 	}
-		// 	// Flatten to string to display
-		// 	const output = files.reduce(
-		// 			(str, file) => `${str}${file.name} (${file.id})\n`,
-		// 			'Files:\n');
-		// 	document.getElementById('content').innerText = output;
-		// }
-
-	
 	// Init
 	let hash = new Hash()
 	let io: IO
@@ -267,12 +107,12 @@
 	let stroke_opacity = 0
 	let brush_rot: number[] = [0, 0]
 	let brush_pos: number[] = [0, 0]
-	let brush_sz: number[] = [0.4, 0.05]
+	let brush_sz: number[] = [1., 0.2]
 	let selected_brush_type: BrushType = BrushType.Blobs
 
-	let chaos_lch: Array<number> = [0.3, 0.3, 0.5]
+	let chaos_lch: Array<number> = [0., 0., 1.]
 	let chaos_speed: number = 0.3
-	let chaos: number = 0.3
+	let chaos: number = 0.7
 
 	let dynamics: number = 0.3
 	let stroke_opacity_dynamics: number[] = [0, 1]
@@ -281,12 +121,19 @@
 	let pos_jitter: number = 0
 
 	let tex_dynamics: number = 0.3
-	let tex_lch_dynamics: number[] = [0, 0, 0.2]
+	let tex_lch_dynamics: number[] = [0, 0, 0.02]
 	let tex_stretch: number[] = [1, 0.2]
 	
 	let undo_pending: boolean = false
 	let redo_pending: boolean = false
 
+	let project = new Project()
+
+	let canvas_tex: Texture
+	let canvas_fb: Framebuffer
+	let canvas_read_tex: Texture
+	
+	
 	const openModal = (modal: SemiModal) => {
 		for (let m of modals) {
 			if (m === modal) {
@@ -369,8 +216,8 @@
 		default_framebuffer.start_draw()
 		default_framebuffer.clear([0, 0, 0, 1])
 
-		const canvas_tex = new Texture([canvasRes[0], canvasRes[1]])
-		const canvas_fb = new Framebuffer([canvas_tex], true)
+		canvas_tex = new Texture([canvasRes[0], canvasRes[1]])
+		canvas_fb = new Framebuffer([canvas_tex], true)
 		canvas_fb.clear([0, 0, 0, 0])
 
 		const temp_tex = new Texture([canvasRes[0], canvasRes[1]])
@@ -378,7 +225,7 @@
 		temp_stroke_fb.clear([0, 0, 0, 0])
 
 		let frame = 0
-		let canvas_read_tex = canvas_fb.textures[0]
+		canvas_read_tex = canvas_fb.textures[0]
 
 		let brush_buffer = new Thing(
 			[
@@ -403,7 +250,6 @@
 
 		let redo_history_length = 0
 
-		let project = new Project()
 		let brush_stroke = new BrushStroke(selected_brush_type, new DrawParams(tex_dynamics, tex_lch_dynamics, tex_stretch))
 
 		const set_shared_uniforms = (program: ShaderProgram, col: number[], t: number) => {

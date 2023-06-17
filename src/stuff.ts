@@ -25,6 +25,8 @@ export class DrawParams {
 }
 
 export class Project {
+	id: number = Date.now()
+	saved: boolean = false
 	brush_strokes: BrushStroke[] = []
 	constructor() {}
 	push_stroke(stroke: BrushStroke) {

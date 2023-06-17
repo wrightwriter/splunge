@@ -38,6 +38,35 @@ export class Texture {
 	clone(): Texture {
 		return new Texture(this.res)
 	}
+
+	read_back_pixel(offs: number[]) {
+		this.read_back_image(offs, [1, 1])
+	}
+	read_back_image(offs: number[] = [0, 0], read_back_res: number[] = [...this.res]): HTMLImageElement {
+		let temp_fb = gl.createFramebuffer() as WebGLFramebuffer
+		let prev_bound_fb = Framebuffer.currently_bound
+		gl.bindFramebuffer(gl.FRAMEBUFFER, temp_fb)
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.tex, 0)
+
+		const data = new Uint8Array(this.res[0] * this.res[1] * 4)
+		gl.readPixels(0, 0, this.res[0], this.res[1], gl.RGBA, gl.UNSIGNED_BYTE, data)
+		gl.deleteFramebuffer(temp_fb)
+
+		// Create a 2D canvas to store the result
+		const canvas = document.createElement('canvas')
+		canvas.width = this.res[0]
+		canvas.height = this.res[1]
+		const context = canvas.getContext('2d') as CanvasRenderingContext2D
+
+		var imageData = context.createImageData(canvas.width, canvas.height)
+		imageData.data.set(data)
+		context.putImageData(imageData, 0, 0)
+		const img = new Image()
+		img.src = canvas.toDataURL()
+
+		gl.bindFramebuffer(gl.FRAMEBUFFER, prev_bound_fb.fb)
+		return img
+	}
 	constructor(res: number[]) {
 		// @ts-ignore
 		this.tex = gl.createTexture()

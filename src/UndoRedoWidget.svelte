@@ -29,6 +29,7 @@
     -webkit-tap-highlight-color:transparent;
   }
   .knob-container{
+    cursor: pointer;
     &:hover{
       cursor: pointer;
     }
@@ -42,14 +43,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-image: conic-gradient(from 45deg,
-      var(--secondary-color) 0deg 15deg,
-      var(--tertiary-color) 60deg 60deg,
-      var(--darken-color) 120deg 240deg,
-      var(--tertiary-color) 300deg 300deg,
-      var(--secondary-color) 345deg 360deg
-    );
-    box-shadow: -.15em .15em .05em .02em rgba(0,0,0,0.3);
     border-radius: 50%;
     margin-bottom: 1.25rem;
     margin-right: 1rem;
@@ -65,8 +58,6 @@
     padding: 0;
     border-radius: 50%;
     color: var(--text-color);
-    background-color: var(--tertiary-color);
-    box-shadow: 0 0 .3em rgba(255, 255, 255, 0.3) inset;
     fill: white;
     transform-origin: 50% 50%;
   }

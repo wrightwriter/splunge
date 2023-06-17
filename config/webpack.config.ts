@@ -47,6 +47,9 @@ module.exports.default = {
 		conditionNames: ['svelte', 'browser'],
 		fallback: {
 			os: false,
+			fs: false,
+			crypto: false,
+			util: false,
 		},
 	},
 	ignoreWarnings: [/Failed to parse source map/],

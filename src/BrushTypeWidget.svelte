@@ -68,7 +68,7 @@
     max-height: 50%;
     margin-top: 0.5rem;
     margin-bottom: auto;
-    margin-right: 0.5rem;
+    margin-right: 1.5rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
