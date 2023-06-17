@@ -8,6 +8,7 @@ let Webpack = require('webpack')
 let WebpackDev = require('webpack-dev-server')
 let SvelteCheckPlugin = require('svelte-check-plugin')
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+const fs = require('fs')
 
 /**
  * Change this to `true` to run svelte-check during hot reloads. This will impact build speeds but will show more
@@ -131,6 +132,14 @@ module.exports.default = {
 	],
 	optimization: {
 		minimize: false,
+	},
+	devServer: {
+		http2: true,
+		https: {
+			key: fs.readFileSync('./MY_FILENAME.key'),
+			cert: fs.readFileSync('./MY_FILENAME.crt'),
+			ca: fs.readFileSync('./MY_FILENAME.pem'),
+		},
 	},
 }
 

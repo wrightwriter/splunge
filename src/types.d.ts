@@ -9,6 +9,11 @@ export declare global {
 	interface WebGL2RenderingContext {
 		defaultVao: WebGLVertexArrayObject
 	}
+	interface User {
+		email: string
+		name: string
+		imageUrl: string
+	}
 }
 
 // window.webAudio = window.webAudio || {};
