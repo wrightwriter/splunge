@@ -3,11 +3,13 @@ import {isThisTypeNode} from 'typescript'
 let gl: WebGL2RenderingContext
 export function init_utils() {
 	gl = window.gl
+	gl.defaultVao = gl.createVertexArray() as WebGLVertexArrayObject
+	gl.bindVertexArray(gl.defaultVao)
 }
 export function resizeIfNeeded(
 	canvas: HTMLCanvasElement,
 	default_framebuffer: Framebuffer,
-	res: number[],
+	client_res: number[],
 	set_redraw_needed: (v: boolean) => void,
 ) {
 	const displayWidth = canvas.clientWidth
@@ -16,16 +18,16 @@ export function resizeIfNeeded(
 	const needResize = canvas.width !== displayWidth || canvas.height !== displayHeight
 
 	if (needResize) {
-		res[0] = canvas.width = displayWidth
-		res[1] = canvas.height = displayHeight
+		client_res[0] = canvas.width = displayWidth
+		client_res[1] = canvas.height = displayHeight
 		console.log('RESIZED')
-		console.log(res)
+		console.log(client_res)
 		console.log(canvas)
 		set_redraw_needed(true)
 	}
 
 	// @ts-ignore
-	default_framebuffer._textures[0].res = [...res]
+	default_framebuffer._textures[0].res = [...client_res]
 
 	return needResize
 }
@@ -208,6 +210,8 @@ export class ShaderProgram {
 
 		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
 			console.log(`Unable to initialize the shader program: ${gl.getProgramInfoLog(shaderProgram)}`)
+			console.log(vs)
+			console.log(fs)
 		}
 		this.program = shaderProgram
 	}
@@ -255,8 +259,13 @@ export class Thing {
 		this.buffs = [...buffs]
 	}
 
-	draw() {
-		this.shader.use()
+	upload_all_buffs() {
+		for (let buff of this.buffs) {
+			buff.upload()
+		}
+	}
+	draw_with_external_shader(shader: ShaderProgram) {
+		shader.use()
 		gl.bindVertexArray(this.vao)
 		let i = 0
 		for (let buff of this.buffs) {
@@ -271,6 +280,11 @@ export class Thing {
 		} else {
 			alert('bleep bloop errrorrr')
 		}
+		gl.bindVertexArray(gl.defaultVao)
+	}
+
+	draw() {
+		this.draw_with_external_shader(this.shader)
 	}
 }
 
@@ -287,10 +301,10 @@ export class VertexBuffer {
 
 	bindToAttrib(idx: number) {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
-		gl.vertexAttribPointer(0, this.single_vert_sz, this.type, false, this.stride, 0)
+		gl.vertexAttribPointer(idx, this.single_vert_sz, this.type, false, this.stride, 0)
 	}
 
-	constructor(single_vert_sz: number, type: number = gl.FLOAT, max_size: number = 10000) {
+	constructor(single_vert_sz: number, type: number = gl.FLOAT, max_size: number = 1000000) {
 		this.buff = gl.createBuffer() as WebGLBuffer
 		this.type = type
 
@@ -313,6 +327,20 @@ export class VertexBuffer {
 		}
 		for (let v of vert) {
 			this.cpu_buff[this.sz++] = v
+		}
+	}
+	upload_external_buff(input_buff: number[] | Float32Array) {
+		if (input_buff instanceof Array) {
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
+			let _buff = new Float32Array(input_buff)
+			this.sz = _buff.length
+			console.log(_buff.length)
+			const sz_in_bytes = _buff.length * _buff.BYTES_PER_ELEMENT
+			gl.bufferData(gl.ARRAY_BUFFER, _buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
+		} else {
+			gl.bindBuffer(gl.ARRAY_BUFFER, input_buff)
+			const sz_in_bytes = input_buff.length * input_buff.BYTES_PER_ELEMENT
+			gl.bufferData(gl.ARRAY_BUFFER, input_buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
 		}
 	}
 	upload() {

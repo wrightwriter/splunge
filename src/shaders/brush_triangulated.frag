@@ -15,7 +15,8 @@ void main() {
   col.w = smoothstep(fw,0.,rect_sdf);
   // col.w = 1.;
   // col.xyz *= 1.;
-  col = vCol;
+  col = vec4(1);
+  // col = vCol;
   // col.xy = uv.xy;
 
   // col.xyz = texture(canvas,uv).xyz;

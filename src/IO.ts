@@ -53,6 +53,8 @@ export class IO {
 	mouse_pos: Array<number> = [0, 0]
 	mouse_down: boolean = false
 
+	pointerType: string = 'mouse'
+
 	mouse_down_prev = false
 	mouse_just_unpressed = false
 	mouse_just_pressed = false
@@ -101,6 +103,8 @@ export class IO {
 			this.keys[event.code] = {down: false, just_pressed: false, just_unpressed: just_unpressed}
 		})
 
+		// window.addEventListener('pointermove', (e) => {
+		// @ts-ignore
 		window.addEventListener('pointermove', (e) => {
 			function getRelativeMousePosition(event, target) {
 				target = target || event.target
@@ -136,12 +140,15 @@ export class IO {
 			// }
 		})
 
-		window.addEventListener('pointerdown', (e) => {
+		// @ts-ignore
+		document.querySelector('canvas').addEventListener('pointerdown', (e) => {
+			this.pointerType = e.pointerType
 			if (e.pointerType === 'mouse' && e.button !== 0) return
 			this.mouse_down = true
 			console.log(e)
 		})
-		window.addEventListener('pointerup', () => {
+		// @ts-ignore
+		document.querySelector('canvas').addEventListener('pointerup', () => {
 			this.mouse_down = false
 		})
 	}

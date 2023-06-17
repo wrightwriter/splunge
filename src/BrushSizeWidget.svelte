@@ -14,7 +14,8 @@
   let min = 0;
   let max = 1;
 
-  let dragging: boolean = false;
+  export let dragging: boolean = false;
+  export let stopped_dragging: boolean = false;
 
 	let startY = 0, startValue = [0,0], startX = 0;
 
@@ -48,6 +49,7 @@
 	
 	function pointerUp() {
     dragging = false
+    stopped_dragging = true
     console.log("up")
 		window.removeEventListener('pointermove', pointerMove);
 		window.removeEventListener('pointerup', pointerUp);
@@ -82,6 +84,10 @@
 
 
 <style>
+  *{
+    user-select: none;
+    -webkit-tap-highlight-color:transparent;
+  }
   .brush-preview {
     position: fixed;
     top: 50%;
@@ -113,6 +119,8 @@
     border-radius: 50%;
     margin-bottom: 1.25rem;
     margin-right: 1rem;
+    pointer-events: all;
+    user-select: none;
   }  
 
   .knob {

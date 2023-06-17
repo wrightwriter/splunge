@@ -6,6 +6,9 @@ export declare global {
 		altitudeAngle: number
 		azimuthAngle: number
 	}
+	interface WebGL2RenderingContext {
+		defaultVao: WebGLVertexArrayObject
+	}
 }
 
 // window.webAudio = window.webAudio || {};

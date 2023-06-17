@@ -41,7 +41,7 @@
       cursor: pointer;
     }
     margin-right: 0.5rem;
-    aspect-ratio: 4/1;
+    aspect-ratio: 2/1;
     max-height: 50%;
     height: 100%;
     display: flex;

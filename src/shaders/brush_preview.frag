@@ -12,6 +12,7 @@ void main() {
   rect_sdf += fw;
   
   col.w = smoothstep(fw,0.,rect_sdf);
+  col.w = 1.;
   col.xyz *= 1.;
 
   // col.xyz = texture(canvas,uv).xyz;

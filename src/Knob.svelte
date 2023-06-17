@@ -92,7 +92,6 @@
   *{
     user-select: none;
     -webkit-tap-highlight-color:transparent;
-
   }
   .knob-container-container{
     aspect-ratio: 1/1;

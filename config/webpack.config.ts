@@ -1,12 +1,13 @@
-const path = require('path')
-const webpack = require('webpack')
-const HtmlWebpackPlugin = require('html-webpack-plugin')
-const CompressionPlugin = require('compression-webpack-plugin')
+let path = require('path')
+let webpack = require('webpack')
+let HtmlWebpackPlugin = require('html-webpack-plugin')
+let CompressionPlugin = require('compression-webpack-plugin')
 
-const SveltePreprocess = require('svelte-preprocess')
-const Webpack = require('webpack')
-const WebpackDev = require('webpack-dev-server')
-const SvelteCheckPlugin = require('svelte-check-plugin')
+let SveltePreprocess = require('svelte-preprocess')
+let Webpack = require('webpack')
+let WebpackDev = require('webpack-dev-server')
+let SvelteCheckPlugin = require('svelte-check-plugin')
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 
 /**
  * Change this to `true` to run svelte-check during hot reloads. This will impact build speeds but will show more
@@ -21,19 +22,17 @@ const svelteCheckInDevelopment = false
 const svelteCheckInProduction = true
 
 const mode = process.env.NODE_ENV ?? 'development'
-// const isProduction = mode === 'production';
-const isProduction = false
+const isProduction = mode === 'production'
+// const isProduction = false
 const isDevelopment = !isProduction
 
 // export default {
 module.exports = {}
 module.exports.default = {
 	entry: './src/index.ts',
-	//entry: "./src/tests.ts",
 	output: {
 		path: path.resolve(__dirname, '../dist'),
 		filename: 'bundle.js',
-		// clean: true,
 	},
 	devtool: 'inline-source-map',
 	resolve: {
@@ -58,10 +57,6 @@ module.exports.default = {
 		],
 		rules: [
 			{
-				test: /\.svg$/,
-				loader: 'svg-inline-loader',
-			},
-			{
 				test: /\.svelte$/,
 				use: {
 					loader: 'svelte-loader',
@@ -81,33 +76,18 @@ module.exports.default = {
 						onwarn: (warning, handler) => {
 							const {code, frame} = warning
 							if (code === 'css-unused-selector' || code === 'unused-export-let') return
-							// alert("amog")
-							// console.log("AMOOOOOOOOOOOOG")
 							// console.log(code)
 							// console.log(warning)
 							// console.log(handler)
-
 							handler(warning)
 						},
-
-						// hotOptions: {
-						// 	// List of options and defaults: https://www.npmjs.com/package/svelte-loader-hot#usage
-						// 	noPreserveState: false,
-						// 	optimistic: true,
-						// },
-						// preprocess: SveltePreprocess({
-						// 	scss: true,
-						// 	sass: true,
-						// 	// postcss: {
-						// 	// 	plugins: [
-						// 	// 		// Autoprefixer
-						// 	// 	]
-						// 	// }
-						// })
 					},
 				},
 			},
-
+			{
+				test: /\.svg$/,
+				loader: 'svg-inline-loader',
+			},
 			// Required to prevent errors from Svelte on Webpack 5+, omit on Webpack 4
 			// See: https://github.com/sveltejs/svelte-loader#usage
 			{
@@ -134,11 +114,6 @@ module.exports.default = {
 					},
 				],
 			},
-			// {
-			//   test: /\.(glsl|vs|fs|vert|frag)$/,
-			//   exclude: /node_modules/,
-			//   use: ["raw-loader"],
-			// },
 			{
 				test: /\.(woff|woff2|eot|ttf|otf)$/,
 				loader: 'file-loader',
@@ -152,11 +127,15 @@ module.exports.default = {
 			inject: 'body',
 			publicPath: './',
 			minify: false,
-			// minify: true,
 		}),
-		// new CompressionPlugin()
 	],
 	optimization: {
 		minimize: false,
 	},
+}
+
+if (isProduction) {
+	module.exports.default.plugins.push(new BundleAnalyzerPlugin())
+	module.exports.default.plugins.push(new CompressionPlugin())
+	module.exports.default.optimization.minimize = true
 }

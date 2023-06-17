@@ -1,6 +1,7 @@
 export enum BrushType {
 	Blobs,
 	Long,
+	Tri,
 }
 
 export function assert(v: boolean) {
@@ -35,6 +36,7 @@ export class BrushStroke {
 	draw_params: DrawParams
 	positions: number[] = []
 	rotations: number[] = []
+	sizes: number[] = []
 	opacities: number[] = []
 	colours: number[] = []
 
@@ -43,17 +45,20 @@ export class BrushStroke {
 		this.draw_params = draw_params
 		this.brush_type = brush_type
 	}
-	push_stroke(position: number[], rotation: number[], opacity: number, colour: number[]) {
+	push_stroke(position: number[], rotation: number[], size: number[], opacity: number, colour: number[]) {
 		// assert(position.length === 2)
 		// assert(rotation.length === 2)
 		// assert(colour.length === 3)
 		const curr_idx = this.idx
 		this.positions.length += 2
 		this.rotations.length += 2
+		this.sizes.length += 2
 		this.opacities.length += 1
 		this.colours.length += 3
 		this.positions[curr_idx * 2] = position[0]
 		this.positions[curr_idx * 2 + 1] = position[1]
+		this.sizes[curr_idx * 2] = size[0]
+		this.sizes[curr_idx * 2 + 1] = size[1]
 		this.rotations[curr_idx * 2] = rotation[0]
 		this.rotations[curr_idx * 2 + 1] = rotation[1]
 		this.opacities[curr_idx] = opacity

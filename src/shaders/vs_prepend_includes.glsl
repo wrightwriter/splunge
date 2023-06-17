@@ -1,5 +1,6 @@
 #version 300 es
 precision highp float;
+precision highp int;
 uniform float time;
 uniform int frame;
 uniform vec2 R;

@@ -6,3 +6,5 @@ yarn.lock
 package-lock.json
 pnpm-lock.yaml
 .VSCodeCounter/
+stats.json
+report.json
