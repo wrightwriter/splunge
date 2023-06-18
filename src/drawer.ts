@@ -9,6 +9,8 @@ export class Drawer {
 	set_shared_uniforms: Function
 	canvas_tex: Texture
 	default_framebuffer: Framebuffer
+	zoom: number = 0
+	panning: number[] = [0, 0]
 	t: number = 0
 
 	constructor(
@@ -57,12 +59,16 @@ export class Drawer {
 	}
 
 	fill_buff_for_long_brush(brush_stroke: BrushStroke, brush_buffer: Thing) {
-		let draw_blobs_stroke_program = this.draw_blobs_stroke_program
-		let set_shared_uniforms = this.set_shared_uniforms
 		brush_buffer.buffs[0].sz = 0
 		brush_buffer.buffs[1].sz = 0
 		const iters = brush_stroke.positions.length / 2 - 1
-		const aspect_correction = Utils.screen_NDC_to_canvas_NDC([1, 1], this.default_framebuffer.textures[0], this.canvas_tex)
+		const aspect_correction = Utils.screen_NDC_to_canvas_NDC(
+			[1, 1],
+			this.default_framebuffer.textures[0],
+			this.canvas_tex,
+			1,
+			[0, 0],
+		)
 		for (let i = 0; i < iters; i++) {
 			// #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a))
 			const get_circ_pos_from_ang = (a: number) => {
@@ -122,8 +128,10 @@ export class Drawer {
 		}
 	}
 
-	draw_any_stroke(stroke: BrushStroke, t: number, brush_buffer: Thing) {
+	draw_any_stroke(stroke: BrushStroke, t: number, brush_buffer: Thing, zoom: number, panning: number[]) {
 		this.t = t
+		this.zoom = zoom
+		this.panning = [...panning]
 		if (stroke.brush_type === BrushType.Blobs) {
 			for (let i = 0; i < stroke.positions.length / 2; i++) {
 				let pos = [stroke.positions[i * 2], stroke.positions[i * 2 + 1]]
@@ -143,6 +151,7 @@ export class Drawer {
 			}
 		} else if (stroke.brush_type === BrushType.Long) {
 			this.fill_buff_for_long_brush(stroke, brush_buffer)
+			brush_buffer.shader.use()
 			this.set_shared_uniforms(brush_buffer.shader, [0, 0, 0, 0], t)
 			brush_buffer.upload_all_buffs()
 			brush_buffer.draw()
@@ -164,9 +173,10 @@ export class Drawer {
 			triangles.forEach((v, i, a) => {
 				a[i] = v / 1000 - 0.5
 			})
+			this.brush_triangulated_program.use()
 			brush_buffer.buffs[0].upload_external_buff(triangles)
 			brush_buffer.buffs[1].upload_external_buff(triangles)
-			this.set_shared_uniforms(brush_buffer.shader, [0, 0, 0, 0], t)
+			this.set_shared_uniforms(this.brush_triangulated_program, [0, 0, 0, 0], t)
 			brush_buffer.draw_with_external_shader(this.brush_triangulated_program)
 
 			// brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])

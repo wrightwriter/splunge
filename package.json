@@ -58,6 +58,7 @@
     "chroma-js": "^2.4.2",
     "dropbox": "^10.34.0",
     "earcut": "^2.2.4",
+    "spectorjs": "^0.9.29",
     "spectral.js": "^2.0.2",
     "tess2": "^1.0.0",
     "triangle-wasm": "^1.0.0"

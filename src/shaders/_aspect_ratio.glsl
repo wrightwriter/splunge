@@ -1,10 +1,5 @@
 
 vec2 css_contain(vec2 u, vec2 input_res, vec2 tex_res){
-	// vec2 input_res = canvasR;
-	// vec2 tex_res = R;
-	// vec2 input_res = canvasR;
-	// vec2 tex_res = R;
-	
 	float input_ratio = (input_res.x/input_res.y);
 	float tex_ratio = (tex_res.x/tex_res.y);
 	float ratio = input_ratio / tex_ratio;

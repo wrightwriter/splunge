@@ -8,7 +8,6 @@
 			gallery_open = !gallery_open
       canvas_image = get_current_canvas_as_image()
       canvas_image_src = canvas_image.src
-      // console.log(canvas_image_elem)
       console.log(canvas_image.src)
 		}}> 
 		{@html solveIcon}
@@ -17,7 +16,7 @@
 		<div id="gallery-container-outer">
 			<div id="gallery-container">
 				<div id="top-bar">
-					<div>Project</div>
+					<div id="project-title">Project</div>
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<div
 						id="back-button"
@@ -27,7 +26,17 @@
 						{@html forbidIcon}
 					</div>
 				</div>
-        <img src="{canvas_image_src}" id="canvas-preview-img" alt="" />
+				<div id="current-project">
+					<img src="{canvas_image_src}" id="canvas-preview-img" alt="" />
+					<div id="project-options">
+						<div id="project-save-button">
+							<div id="project-save-button-title">
+								Save 
+							</div>
+							{@html captureIcon}
+						</div>
+					</div>
+				</div>
 				<div id="gallery-elements">
 					{#each gallery_elements as element, i}
 						<div id="element">
@@ -45,6 +54,8 @@
 	import solveIcon from '/../public/solve.svg'
 	// @ts-ignore
 	import forbidIcon from '/../public/forbid.svg'
+	// @ts-ignore
+	import captureIcon from '/../public/capture.svg'
 	import getToken from 'getToken'
 	import {Dropbox} from 'dropbox'
 	import type {Project} from 'stuff'
@@ -149,14 +160,13 @@
   
 </script>
 
-<style>
+<style lang="scss">
 	* {
 		user-select: none;
 		-webkit-tap-highlight-color: transparent;
 	}
   #canvas-preview-img{
-    max-width: 12rem;
-    width: 12rem;
+    /* max-width: 12rem; */
     height: 12rem;
     /* max-width: 5rem; */
     /* aspect-ratio:unset; */
@@ -172,31 +182,61 @@
 		top: 0;
 		z-index: 100;
 		background: black;
-	}
-	#gallery-container {
-		margin-top: 1rem;
-		overflow: scroll;
-		height: 100%;
-		max-width: 40rem;
-		width: 100%;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-	}
-	#back-button > :global(svg) {
-		fill: white;
-		width: 3rem;
-		aspect-ratio: 1/1;
-		cursor: pointer;
-	}
-	#top-bar {
-		width: 100%;
-		font-size: 2rem;
-		display: flex;
-		justify-content: space-around;
-	}
-	#gallery-elements {
-		display: flex;
+		#gallery-container {
+			margin-top: 1rem;
+			overflow: scroll;
+			height: 100%;
+			max-width: 40rem;
+			width: 100%;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			#top-bar {
+				#project-title{
+					margin-left: 0.5rem;
+				}
+				width: 100%;
+				font-size: 2rem;
+				display: flex;
+				justify-content: space-between;
+			}
+			#back-button > :global(svg) {
+				fill: white;
+				width: 3rem;
+				aspect-ratio: 1/1;
+				cursor: pointer;
+			}
+			#gallery-elements {
+				display: flex;
+			}
+			#current-project{
+				display: flex;
+				justify-content: space-between;
+				width: 100%;
+				#project-options * {
+					font-size: 1.3rem;
+				}
+				#project-options {
+					display: flex;
+					flex-direction: column;
+					justify-content: space-between;
+				}
+				#project-save-button-title{
+					margin: auto;
+					margin-right: 0.5rem;
+				}
+				#project-save-button {
+					margin-right: 0.5rem;
+					cursor: pointer;
+					display: flex;
+					flex-direction: row;
+					height: 2rem;
+				}
+				#project-save-button :global(svg){
+					fill: white;
+				}
+			}
+		}
 	}
 	.knob-container {
 		box-sizing: border-box;
@@ -216,13 +256,16 @@
 	}
 
 	.knob {
+    &:active{
+      filter: invert(1);
+      background: black;
+    }
 		cursor: pointer;
 		display: block;
 		aspect-ratio: 1/1;
 		height: 100%;
 		/* height: 80%; */
 		padding: 0;
-		border-radius: 50%;
 		color: var(--text-color);
 		transform-origin: 50% 50%;
 	}

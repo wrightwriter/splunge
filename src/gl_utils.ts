@@ -1,4 +1,5 @@
 import {isThisTypeNode} from 'typescript'
+import {pow} from 'wmath'
 
 let gl: WebGL2RenderingContext
 export function init_utils() {
@@ -59,7 +60,11 @@ export class Texture {
 		// @ts-ignore
 		return Array.from(data)
 	}
-	read_back_image(offs: number[] = [0, 0], read_back_res: number[] = [...this.res]): HTMLImageElement {
+	read_back_image(
+		gamma_correct: boolean = false,
+		offs: number[] = [0, 0],
+		read_back_res: number[] = [...this.res],
+	): HTMLImageElement {
 		let data = this.read_back_array(offs, read_back_res)
 
 		let i = 0
@@ -69,6 +74,9 @@ export class Texture {
 				data[idx] = 255
 				i = -1
 			} else {
+				if (gamma_correct) {
+					data[idx] = 255 * pow(data[idx] / 255, 0.4545454545)
+				}
 				// data[idx] *= 240
 			}
 			idx++
@@ -245,8 +253,8 @@ export class ShaderProgram {
 		gl.shaderSource(shader, source)
 		gl.compileShader(shader)
 		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-			console.log(`An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`)
-			console.log(source)
+			console.error(`An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`)
+			console.error(source)
 		}
 		return shader
 	}
@@ -260,9 +268,9 @@ export class ShaderProgram {
 		gl.linkProgram(shaderProgram)
 
 		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-			console.log(`Unable to initialize the shader program: ${gl.getProgramInfoLog(shaderProgram)}`)
-			console.log(vs)
-			console.log(fs)
+			console.error(`Unable to initialize the shader program: ${gl.getProgramInfoLog(shaderProgram)}`)
+			console.error(vs)
+			console.error(fs)
 		}
 		this.program = shaderProgram
 	}

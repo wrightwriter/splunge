@@ -51,6 +51,8 @@ export class IO {
 	private keys = new Map<BtnCode, keyState>()
 
 	mouse_pos: Array<number> = [0, 0]
+	delta_mouse_pos: Array<number> = [0, 0]
+	mouse_pos_prev: Array<number> = [0, 0]
 	mouse_down: boolean = false
 
 	pointerType: string = 'mouse'
@@ -60,11 +62,20 @@ export class IO {
 	mouse_just_pressed = false
 	mouse_just_moved = false
 
+	mmb_just_unpressed = false
+	mmb_just_pressed = false
+	mmb_down = false
+
+	mouse_wheel: number = 0
+
 	pressure: number = 0.0
 
 	tilt: number[] = [0, 0]
 
 	tick() {
+		this.delta_mouse_pos[0] = this.mouse_pos[0] - this.mouse_pos_prev[0]
+		this.delta_mouse_pos[1] = this.mouse_pos[1] - this.mouse_pos_prev[1]
+		this.mouse_pos_prev = [...this.mouse_pos]
 		if (this.mouse_down !== this.mouse_down_prev) {
 			if (this.mouse_down) {
 				// this.mouse_pressed = true
@@ -80,6 +91,9 @@ export class IO {
 		this.mouse_just_unpressed = false
 		this.mouse_just_moved = false
 		this.mouse_down_prev = this.mouse_down
+		this.mmb_just_unpressed = false
+		this.mmb_just_pressed = false
+		this.mouse_wheel = 0
 		Object.values(this.keys).forEach((key) => {
 			key.just_unpressed = false
 			key.just_pressed = false
@@ -96,11 +110,28 @@ export class IO {
 	constructor() {
 		window.addEventListener('keydown', (event) => {
 			this.keys[event.code] = {down: true, just_pressed: true, just_unpressed: false}
+			if (event.code === 'AltLeft') event.preventDefault()
 		})
 		window.addEventListener('keyup', (event) => {
 			let just_unpressed = false
 			if (this.getKey(event.code as BtnCode).down) just_unpressed = true
 			this.keys[event.code] = {down: false, just_pressed: false, just_unpressed: just_unpressed}
+		})
+		window.addEventListener('wheel', (e) => {
+			this.mouse_wheel = e.deltaY < 0 ? 1 : e.deltaY > 0 ? -1 : 0
+		})
+		window.addEventListener('mouseup', (e) => {
+			if (e.button === 1) {
+				this.mmb_down = false
+				this.mmb_just_unpressed = true
+			}
+		})
+		window.addEventListener('mousedown', (e) => {
+			if (e.button === 1) {
+				this.mmb_down = true
+				this.mmb_just_pressed = true
+				e.preventDefault()
+			}
 		})
 
 		// window.addEventListener('pointermove', (e) => {

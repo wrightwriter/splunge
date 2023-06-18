@@ -13,9 +13,13 @@ void main(){
   // gl_Position.xy *= 0.5;
   // gl_Position.xy *= pressure;
   // gl_Position.xy *= rot(-tilt.y + rot_jitter );
-  gl_Position.xy *= rot(-tilt.y );
   gl_Position.xy *= ndc_aspect_correct(brush_sz*0.5, canvasR);
-
+  gl_Position.xy *= rot(-tilt.y );
   gl_Position.xy += stroke_pos;
+
+  // gl_Position.xy += panning;
+  // gl_Position.xy -= zoom*panning/ndc_aspect_correct(vec2(1), canvasR);
+  // gl_Position.xy /= zoom;
+  // gl_Position.xy -= panning / css_contain(vec2(1), canvasR, R);
   // gl_Position.xy += pos_jitter;
 }  

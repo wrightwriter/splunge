@@ -3,6 +3,8 @@ precision highp float;
 precision highp int;
 uniform float time;
 uniform int frame;
+uniform float zoom;
+uniform vec2 panning;
 uniform vec2 R;
 uniform vec2 canvasR;
 uniform vec4 stroke_col;

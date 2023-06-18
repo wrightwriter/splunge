@@ -13,5 +13,5 @@
   "[xml]": {
     "editor.defaultFormatter": "mikeburgh.xml-format"
   },
-  "svg.preview.background": "dark-transparent",
+  "svg.preview.background": "transparent",
 }

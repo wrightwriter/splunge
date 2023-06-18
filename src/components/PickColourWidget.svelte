@@ -83,7 +83,7 @@
 		height: 100%;
 		/* height: 80%; */
 		padding: 0;
-		border-radius: 50%;
+		/* border-radius: 50%; */
 		color: var(--text-color);
 		fill: white;
 		transform-origin: 50% 50%;

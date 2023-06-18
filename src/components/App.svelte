@@ -32,28 +32,14 @@
 				redo={() => {
 					redo_pending = true
 				}} />
-			<GalleryWidget bind:current_project={project} get_current_canvas_as_image={() => canvas_read_tex.read_back_image()} />
+			<GalleryWidget
+				bind:current_project={project}
+				get_current_canvas_as_image={() => {
+					let img = canvas_read_tex.read_back_image(true)
+					return img
+				}} />
 			<PickColourWidget
-				pick_from_canvas={
-					() => {
-						let coord = Utils.texture_NDC_to_texture_pixel_coords(
-							Utils.screen_NDC_to_canvas_NDC(io.mouse_pos, default_framebuffer.textures[0], canvas_read_tex),
-							canvas_read_tex,
-						)
-						let c = canvas_read_tex.read_back_pixel(coord)
-						console.log(c)
-
-						picked_col = [...c]
-						picked_col[0] = c[0] / 255
-						picked_col[1] = c[1] / 255
-						picked_col[2] = c[2] / 255
-						picked_col[0] = pow(picked_col[0], 0.45454545454545)
-						picked_col[1] = pow(picked_col[1], 0.45454545454545)
-						picked_col[2] = pow(picked_col[2], 0.45454545454545)
-						picked_col.pop()
-						return c
-					}
-				}
+				pick_from_canvas={() => pick_from_canvas()}
 				bind:picking={picking}
 				bind:just_finished_pick={just_finished_pick} />
 		</div>
@@ -113,13 +99,14 @@
 	import earcut from 'earcut'
 	import {Dropbox} from 'dropbox'
 	import getToken from 'getToken'
-	import { Drawer } from 'draw'
+	import {Drawer} from 'drawer'
 
 	// Init
 	let hash = new Hash()
 	let io: IO
 	let gl: WebGL2RenderingContext
 	let zoom = 1
+	let panning: number[] = [0,0]
 	let userAgentRes: Array<number> = [0, 0]
 	let canvasRes: Array<number> = [512 * 2, 512 * 4]
 	let default_framebuffer: Framebuffer
@@ -159,7 +146,6 @@
 	let tex_lch_dynamics: number[] = [0, 0, 0.02]
 	let tex_stretch: number[] = [1, 0.2]
 
-	
 	let undo_pending: boolean = false
 	let redo_pending: boolean = false
 	let picking: boolean
@@ -171,8 +157,30 @@
 	let canvas_tex: Texture
 	let canvas_fb: Framebuffer
 	let canvas_read_tex: Texture
-	
+
 	let drawer: Drawer
+	
+	
+	const pick_from_canvas=() => {
+		let coord = Utils.texture_NDC_to_texture_pixel_coords(
+			Utils.screen_NDC_to_canvas_NDC(
+				io.mouse_pos, default_framebuffer.textures[0], canvas_read_tex, zoom, panning
+			),
+			canvas_read_tex,
+		)
+		let c = canvas_read_tex.read_back_pixel(coord)
+		console.log(c)
+
+		picked_col = [...c]
+		picked_col[0] = c[0] / 255
+		picked_col[1] = c[1] / 255
+		picked_col[2] = c[2] / 255
+		picked_col[0] = pow(picked_col[0], 0.45454545454545)
+		picked_col[1] = pow(picked_col[1], 0.45454545454545)
+		picked_col[2] = pow(picked_col[2], 0.45454545454545)
+		picked_col.pop()
+		return c
+	}
 
 	const openModal = (modal: SemiModal) => {
 		for (let m of modals) {
@@ -191,6 +199,14 @@
 			}
 		}
 	}
+	let glEnums
+	let enumStringToValue
+	const glEnumToString = (value):string => {
+		// checkInit();
+		var name = glEnums[value];
+		return (name !== undefined) ? ("gl." + name) :
+				("/*UNKNOWN WebGL ENUM*/ 0x" + value.toString(16) + "");
+	}
 
 	const initWebGL = () => {
 		//@ts-ignore
@@ -198,6 +214,14 @@
 			preserveDrawingBuffer: true,
 			alpha: false,
 		})
+    glEnums = { };
+		enumStringToValue = { };
+		for (var propertyName in gl) {
+			if (typeof gl[propertyName] == 'number') {
+				glEnums[gl[propertyName]] = propertyName;
+				enumStringToValue[propertyName] = gl[propertyName];
+			}
+		}
 		userAgentRes = [canvasElement.clientWidth, canvasElement.clientWidth]
 		init_utils()
 
@@ -229,10 +253,7 @@
 		initOtherStuff()
 
 		//! ------------------- SHADERS
-		const brush_preview_program = new ShaderProgram(
-			require('shaders/brush_preview.vert'),
-			require('shaders/brush_preview.frag'),
-		)
+		const brush_preview_program = new ShaderProgram(require('shaders/brush_preview.vert'), require('shaders/brush_preview.frag'))
 		const picker_program = new ShaderProgram(require('shaders/picker.vert'), require('shaders/picker.frag'))
 		const draw_blobs_stroke_program = new ShaderProgram(
 			require('shaders/draw_blobs_stroke.vert'),
@@ -276,7 +297,6 @@
 			gl.TRIANGLES,
 			new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag')),
 		)
-		
 
 		let t: number = 0
 		let redraw_needed = false
@@ -287,8 +307,10 @@
 
 		const set_shared_uniforms = (program: ShaderProgram, col: number[], t: number) => {
 			program.setUniformFloat('time', t)
+			program.setUniformFloat('zoom', zoom)
 			program.setUniformInt('frame', frame)
 			program.setUniformVec('R', default_framebuffer.textures[0].res)
+			program.setUniformVec('panning', panning)
 			program.setUniformVec('canvasR', canvas_read_tex.res)
 			program.setUniformVec('stroke_pos', brush_pos_ndc_canvas)
 			program.setUniformVec('stroke_pos_screen', brush_pos_ndc_screen)
@@ -298,7 +320,6 @@
 			program.setUniformVec('tilt', brush_rot)
 			program.setUniformFloat('pressure', io.pressure)
 			program.setUniformInt('mouse_down', io.mouse_down ? 1 : 0)
-			program.setUniformInt('frame', frame)
 			program.setUniformTexture('canvas', canvas_fb.textures[0], 0)
 			program.setUniformTexture('temp_tex', temp_tex, 1)
 			program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 2)
@@ -311,7 +332,7 @@
 			set_shared_uniforms,
 			gl,
 			canvas_tex,
-			default_framebuffer
+			default_framebuffer,
 		)
 
 		const composite_stroke = () => {
@@ -322,7 +343,6 @@
 
 			temp_stroke_fb.clear([0, 0, 0, 0])
 		}
-
 
 		const redraw_whole_project = () => {
 			console.log('REDRAW EVERYTHING')
@@ -337,7 +357,7 @@
 			for (let stroke of project.brush_strokes) {
 				if (k >= project.brush_strokes.length - redo_history_length) break
 				temp_stroke_fb.start_draw()
-				drawer.draw_any_stroke(stroke, t, brush_buffer_b)
+				drawer.draw_any_stroke(stroke, t, brush_buffer_b, zoom, [0,0])
 				composite_stroke()
 				canvas_read_tex = canvas_fb.textures[0]
 				canvas_fb.pong_idx = 1 - canvas_fb.pong_idx
@@ -351,13 +371,50 @@
 
 		const draw = (_t: number) => {
 			redraw_needed = false
-			if (frame === 0 || picking || just_finished_pick) redraw_needed = true
 			t = _t / 1000
 			resizeIfNeeded(canvasElement, default_framebuffer, userAgentRes, (v: boolean) => {
 				redraw_needed = v
 			})
 
 			io.tick()
+			if(io.getKey("AltLeft").down){
+				if(io.getKey("AltLeft").just_pressed){
+					picking = true
+				}
+				pick_from_canvas()
+			} else if (io.getKey('AltLeft').just_unpressed){
+				just_finished_pick = true
+				picking = false
+			}
+
+			if (frame === 0 || picking || just_finished_pick || io.mouse_wheel || io.mmb_down) {
+				redraw_needed = true
+				if(just_finished_pick){
+					let coords = Utils.screen_NDC_to_canvas_NDC(
+						io.mouse_pos, default_framebuffer.textures[0], canvas_read_tex, zoom, panning
+					)
+					if(coords[0] > 0 && coords[0] < 1 && coords[1] > 0 && coords[1] < 1){
+						stroke_col = [...picked_col]
+						stroke_col = Utils.gamma_correct(stroke_col,true)
+						stroke_col[3] = 1
+						just_finished_pick = false
+					}
+				}
+				if(io.mmb_down){
+					panning[0] += io.delta_mouse_pos[0] / zoom
+					panning[1] += io.delta_mouse_pos[1] / zoom
+					// console.log(panning)
+				}
+				if (io.mouse_wheel) {
+					if (io.mouse_wheel > 0) {
+						zoom *= 2
+					} else {
+						zoom /= 2
+					}
+				}
+			}
+			
+
 
 			let l_ctrl_down = io.getKey('ControlLeft').down
 			let l_shift_down = io.getKey('ShiftLeft').down
@@ -373,9 +430,7 @@
 			}
 
 			// ----- TEMP
-			if (
-				(io.mouse_just_pressed || (io.mouse_down && io.mouse_just_moved) )
-				 && io.pointerType !== 'touch' ) {
+			if ((io.mouse_just_pressed || (io.mouse_down && io.mouse_just_moved)) && io.pointerType !== 'touch') {
 				redraw_needed = true
 				if (io.mouse_just_pressed && !(redo_pending || undo_pending)) {
 					brush_stroke = new BrushStroke(selected_brush_type, new DrawParams(tex_dynamics, tex_lch_dynamics, tex_stretch))
@@ -394,6 +449,8 @@
 					brush_pos_ndc_screen,
 					default_framebuffer.textures[0],
 					canvas_read_tex,
+					zoom,
+					panning
 				)
 				brush_pos_ndc_canvas[0] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 251, 2) - 1)
 				brush_pos_ndc_canvas[1] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 1251, 2) - 1)
@@ -437,7 +494,7 @@
 
 				temp_stroke_fb.start_draw()
 
-				drawer.draw_any_stroke(brush_stroke, t, brush_buffer)
+				drawer.draw_any_stroke(brush_stroke, t, brush_buffer, zoom, panning)
 			}
 			// ----- COMPOSITE
 			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
@@ -477,8 +534,10 @@
 					// console.log("DRAW PICKER")
 				}
 			}
-			if (gl.getError() !== 0) {
-				console.log(gl.getError())
+			let err = gl.getError() 
+			if (err!== 0) {
+				console.log(err)
+				console.log(glEnumToString(err))
 			}
 			brushSizeWidgetStoppedDragging = false
 			redo_pending = false

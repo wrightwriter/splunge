@@ -15,6 +15,7 @@ void main() {
   float rect_sdf = max(u.x,u.y);
   // float fw = abs(fwidth(rect_sdf));
   // rect_sdf += fw;
+  rect_sdf = -1.;
   if(rect_sdf >0.)
     col.xyz = vec3(0);
 
