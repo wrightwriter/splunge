@@ -1,7 +1,7 @@
 <svelte:options accessors />
 
 <script lang="ts">
-	import SemiModal from 'SemiModal.svelte'
+	import SemiModal from './SemiModal.svelte'
 	import {onMount} from 'svelte'
 
 	export let value, min = 0, max = 1;

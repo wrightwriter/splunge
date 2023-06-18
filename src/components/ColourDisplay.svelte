@@ -42,7 +42,7 @@
     }
     margin-right: 0.5rem;
     aspect-ratio: 2/1;
-    max-height: 50%;
+    max-height: 75%;
     height: 100%;
     display: flex;
     background-color: var(--color);

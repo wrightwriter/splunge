@@ -20,9 +20,9 @@ export function resizeIfNeeded(
 	if (needResize) {
 		client_res[0] = canvas.width = displayWidth
 		client_res[1] = canvas.height = displayHeight
-		console.log('RESIZED')
-		console.log(client_res)
-		console.log(canvas)
+		// console.log('RESIZED')
+		// console.log(client_res)
+		// console.log(canvas)
 		set_redraw_needed(true)
 	}
 
@@ -39,18 +39,41 @@ export class Texture {
 		return new Texture(this.res)
 	}
 
-	read_back_pixel(offs: number[]) {
-		this.read_back_image(offs, [1, 1])
-	}
-	read_back_image(offs: number[] = [0, 0], read_back_res: number[] = [...this.res]): HTMLImageElement {
+	read_back_array(offs: number[] = [0, 0], read_back_res: number[] = [...this.res]): Uint8Array {
 		let temp_fb = gl.createFramebuffer() as WebGLFramebuffer
 		let prev_bound_fb = Framebuffer.currently_bound
 		gl.bindFramebuffer(gl.FRAMEBUFFER, temp_fb)
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.tex, 0)
 
-		const data = new Uint8Array(this.res[0] * this.res[1] * 4)
-		gl.readPixels(0, 0, this.res[0], this.res[1], gl.RGBA, gl.UNSIGNED_BYTE, data)
+		// const data = new Uint8Array(this.res[0] * this.res[1] * 4)
+		const data = new Uint8Array(read_back_res[0] * read_back_res[1] * 4)
+		gl.readPixels(offs[0], offs[1], read_back_res[0], read_back_res[1], gl.RGBA, gl.UNSIGNED_BYTE, data)
+		// console.log(data)
 		gl.deleteFramebuffer(temp_fb)
+		gl.bindFramebuffer(gl.FRAMEBUFFER, prev_bound_fb.fb)
+		return data
+	}
+	read_back_pixel(offs: number[]): Array<number> {
+		let data = this.read_back_array(offs, [1, 1])
+		data[3] = 255
+		// @ts-ignore
+		return Array.from(data)
+	}
+	read_back_image(offs: number[] = [0, 0], read_back_res: number[] = [...this.res]): HTMLImageElement {
+		let data = this.read_back_array(offs, read_back_res)
+
+		let i = 0
+		let idx = 0
+		for (let pixel of data) {
+			if (i === 3) {
+				data[idx] = 255
+				i = -1
+			} else {
+				// data[idx] *= 240
+			}
+			idx++
+			i++
+		}
 
 		// Create a 2D canvas to store the result
 		const canvas = document.createElement('canvas')
@@ -64,7 +87,6 @@ export class Texture {
 		const img = new Image()
 		img.src = canvas.toDataURL()
 
-		gl.bindFramebuffer(gl.FRAMEBUFFER, prev_bound_fb.fb)
 		return img
 	}
 	constructor(res: number[]) {
@@ -80,7 +102,7 @@ export class Texture {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
-		console.log(gl.isTexture(this.tex))
+		// console.log(gl.isTexture(this.tex))
 
 		if (!gl.isTexture(this.tex)) {
 			console.error('TEXTURE INCOMPLETE')
@@ -268,7 +290,7 @@ export class ShaderProgram {
 export function finish_frame() {
 	for (let framebuffer of Framebuffer.framebuffers) {
 		if (framebuffer.needs_pong) {
-			console.log('ponged')
+			// console.log('ponged')
 			framebuffer.pong_idx = 1 - framebuffer.pong_idx
 			framebuffer.needs_pong = false
 		}
@@ -361,11 +383,19 @@ export class VertexBuffer {
 	upload_external_buff(input_buff: number[] | Float32Array) {
 		if (input_buff instanceof Array) {
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
-			let _buff = new Float32Array(input_buff)
+			let _buff = Float32Array.from(input_buff)
 			this.sz = _buff.length
+			// const sz_in_bytes = _buff.length * _buff.BYTES_PER_ELEMENT
+			const sz_in_bytes = _buff.byteLength / 2
+
+			console.log('BEGIN BUFF PRINT')
+			console.log(_buff)
+			console.log('len')
 			console.log(_buff.length)
-			const sz_in_bytes = _buff.length * _buff.BYTES_PER_ELEMENT
-			gl.bufferData(gl.ARRAY_BUFFER, _buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
+			console.log('sz byes')
+			console.log(sz_in_bytes)
+			// if (_buff.length > 0) gl.bufferData(gl.ARRAY_BUFFER, _buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
+			if (_buff.length > 0) gl.bufferData(gl.ARRAY_BUFFER, _buff, gl.DYNAMIC_DRAW, 0)
 		} else {
 			gl.bindBuffer(gl.ARRAY_BUFFER, input_buff)
 			const sz_in_bytes = input_buff.length * input_buff.BYTES_PER_ELEMENT

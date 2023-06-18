@@ -58,6 +58,7 @@ export class IO {
 	mouse_down_prev = false
 	mouse_just_unpressed = false
 	mouse_just_pressed = false
+	mouse_just_moved = false
 
 	pressure: number = 0.0
 
@@ -77,6 +78,7 @@ export class IO {
 	tick_end() {
 		this.mouse_just_pressed = false
 		this.mouse_just_unpressed = false
+		this.mouse_just_moved = false
 		this.mouse_down_prev = this.mouse_down
 		Object.values(this.keys).forEach((key) => {
 			key.just_unpressed = false
@@ -93,11 +95,9 @@ export class IO {
 	}
 	constructor() {
 		window.addEventListener('keydown', (event) => {
-			// if (!event.repeat) this.keys[event.code] = {down: true, just_pressed: true, just_unpressed: false}
 			this.keys[event.code] = {down: true, just_pressed: true, just_unpressed: false}
 		})
 		window.addEventListener('keyup', (event) => {
-			// console.log(event)
 			let just_unpressed = false
 			if (this.getKey(event.code as BtnCode).down) just_unpressed = true
 			this.keys[event.code] = {down: false, just_pressed: false, just_unpressed: just_unpressed}
@@ -134,6 +134,7 @@ export class IO {
 
 			this.mouse_pos = [x, y]
 			this.pressure = e.pointerType === 'mouse' ? 1 : e.pressure ?? this.pressure
+			this.mouse_just_moved = true
 
 			this.tilt[0] = e.pointerType === 'mouse' ? 0 : e.altitudeAngle ?? this.tilt[0]
 			this.tilt[1] = e.pointerType === 'mouse' ? 0 : e.azimuthAngle ?? this.tilt[1]

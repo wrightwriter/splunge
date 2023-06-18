@@ -1,3 +1,5 @@
+import {Texture} from 'gl_utils'
+
 export enum BrushType {
 	Blobs,
 	Long,
@@ -8,10 +10,30 @@ export function assert(v: boolean) {
 	if (!v) debugger
 }
 
-// export class BrushState{
-//   pos: number[]
-//   constructor(pos)
-// }
+export class Utils {
+	static screen_NDC_to_canvas_NDC(u: number[], user_tex: Texture, canvas_tex: Texture): number[] {
+		let user_res = user_tex.res
+		let canvas_res = canvas_tex.res
+
+		u = [...u]
+
+		let input_ratio = user_res[0] / user_res[1]
+		let tex_ratio = canvas_res[0] / canvas_res[1]
+		let ratio = input_ratio / tex_ratio
+
+		if (ratio > 1) {
+			// u[0] -= (1 - 1 / ratio) * 0.5
+			u[0] *= ratio
+		} else {
+			// u[1] -= (1 - ratio) * 0.5
+			u[1] /= ratio
+		}
+		return u
+	}
+	static texture_NDC_to_texture_pixel_coords(u: number[], tex: Texture): number[] {
+		return [(u[0] * 0.5 + 0.5) * tex.res[0], (u[1] * 0.5 + 0.5) * tex.res[1]]
+	}
+}
 
 export class DrawParams {
 	tex_dynamics: number = 0.3

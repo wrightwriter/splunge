@@ -8,3 +8,5 @@ pnpm-lock.yaml
 stats.json
 report.json
 start.bat
+getToken.ts
+dist/

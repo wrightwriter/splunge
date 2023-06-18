@@ -1,4 +1,5 @@
-#pragma glslify: import('./vs_prepend_includes.glsl')
+#pragma glslify: import('./_top_includes.glsl')
+out vec2 uv;
 
 layout(location = 0) in vec4 pos;
 layout(location = 1) in vec4 col;

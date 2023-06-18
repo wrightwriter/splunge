@@ -16,4 +16,7 @@ export declare global {
 	}
 }
 
-// window.webAudio = window.webAudio || {};
+declare module '*.svg' {
+	const content: string
+	export default content
+}

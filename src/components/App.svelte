@@ -7,7 +7,11 @@
 			<ColourDisplay bind:colour={stroke_col} />
 
 			<Knob bind:this={chaosKnob} bind:value={chaos} title={'Chaos'} triggerModal={openModal} modal={chaosSemiModal} />
-			<BrushSizeWidget bind:brush_sz={brush_sz} canvas_res={canvasRes} bind:dragging={brushSizeWidgetDragging} bind:stopped_dragging={brushSizeWidgetStoppedDragging} />
+			<BrushSizeWidget
+				bind:brush_sz={brush_sz}
+				canvas_res={canvasRes}
+				bind:dragging={brushSizeWidgetDragging}
+				bind:stopped_dragging={brushSizeWidgetStoppedDragging} />
 			<Knob
 				bind:this={dynamicsKnob}
 				bind:value={dynamics}
@@ -21,8 +25,37 @@
 				triggerModal={openModal}
 				modal={texDynamicsSemiModal} />
 			<BrushTypeWidget bind:selected_brush_type={selected_brush_type} />
-			<UndoRedoWidget undo={()=>{undo_pending = true}} redo={()=>{redo_pending = true}} />
-			<GalleryWidget bind:current_project={project} get_current_canvas_as_image={()=> canvas_read_tex.read_back_image()}/>
+			<UndoRedoWidget
+				undo={() => {
+					undo_pending = true
+				}}
+				redo={() => {
+					redo_pending = true
+				}} />
+			<GalleryWidget bind:current_project={project} get_current_canvas_as_image={() => canvas_read_tex.read_back_image()} />
+			<PickColourWidget
+				pick_from_canvas={
+					() => {
+						let coord = Utils.texture_NDC_to_texture_pixel_coords(
+							Utils.screen_NDC_to_canvas_NDC(io.mouse_pos, default_framebuffer.textures[0], canvas_read_tex),
+							canvas_read_tex,
+						)
+						let c = canvas_read_tex.read_back_pixel(coord)
+						console.log(c)
+
+						picked_col = [...c]
+						picked_col[0] = c[0] / 255
+						picked_col[1] = c[1] / 255
+						picked_col[2] = c[2] / 255
+						picked_col[0] = pow(picked_col[0], 0.45454545454545)
+						picked_col[1] = pow(picked_col[1], 0.45454545454545)
+						picked_col[2] = pow(picked_col[2], 0.45454545454545)
+						picked_col.pop()
+						return c
+					}
+				}
+				bind:picking={picking}
+				bind:just_finished_pick={just_finished_pick} />
 		</div>
 		<SemiModal bind:this={chaosSemiModal} knob={chaosKnob}>
 			<Knob bind:value={chaos_lch[0]} title={'Chaos L'} />
@@ -51,8 +84,8 @@
 </main>
 
 <svelte:head>
-  <!-- <script async defer src="https://apis.google.com/js/api.js" on:load={handleGApiLoad}></script> -->
-  <!-- <script async defer src="https://accounts.google.com/gsi/client" on:load={handleGLClientLoad}></script> -->
+	<!-- <script async defer src="https://apis.google.com/js/api.js" on:load={handleGApiLoad}></script> -->
+	<!-- <script async defer src="https://accounts.google.com/gsi/client" on:load={handleGLClientLoad}></script> -->
 </svelte:head>
 
 <script lang="ts">
@@ -61,25 +94,26 @@
 	import {onDestroy} from 'svelte'
 	import {get, writable} from 'svelte/store'
 
-	import {Texture, Framebuffer, ShaderProgram, init_utils, resizeIfNeeded, finish_frame, Thing, VertexBuffer} from './gl_utils'
+	import {Texture, Framebuffer, ShaderProgram, init_utils, resizeIfNeeded, finish_frame, Thing, VertexBuffer} from 'gl_utils'
 
-	import Knob from 'Knob.svelte'
-	import BrushSizeWidget from 'BrushSizeWidget.svelte'
-	import BrushTypeWidget from 'BrushTypeWidget.svelte'
-	import UndoRedoWidget from 'UndoRedoWidget.svelte'
-	import GalleryWidget from 'GalleryWidget.svelte'
+	import Knob from './Knob.svelte'
+	import BrushSizeWidget from './BrushSizeWidget.svelte'
+	import BrushTypeWidget from './BrushTypeWidget.svelte'
+	import UndoRedoWidget from './UndoRedoWidget.svelte'
+	import GalleryWidget from './GalleryWidget.svelte'
+	import PickColourWidget from './PickColourWidget.svelte'
 
-	import ColourDisplay from 'ColourDisplay.svelte'
-	import SemiModal from 'SemiModal.svelte'
+	import ColourDisplay from './ColourDisplay.svelte'
+	import SemiModal from './SemiModal.svelte'
 	import {IO} from 'IO'
 	import chroma from 'chroma-js'
-	import {Hash, cos, sin, tau} from 'wmath'
+	import {Hash, cos, floor, pow, sin, tau, tri} from 'wmath'
 	import {clamp, lerp, mod} from '@0b5vr/experimental'
-	import {BrushStroke, BrushType, DrawParams, Project} from 'stuff'
-	import earcut from "earcut"
-	import {Dropbox} from "dropbox"
+	import {BrushStroke, BrushType, DrawParams, Project, Utils} from 'stuff'
+	import earcut from 'earcut'
+	import {Dropbox} from 'dropbox'
 	import getToken from 'getToken'
-
+	import { Drawer } from 'draw'
 
 	// Init
 	let hash = new Hash()
@@ -87,7 +121,7 @@
 	let gl: WebGL2RenderingContext
 	let zoom = 1
 	let userAgentRes: Array<number> = [0, 0]
-	let canvasRes: Array<number> = [512 * 2, 512 * 2]
+	let canvasRes: Array<number> = [512 * 2, 512 * 4]
 	let default_framebuffer: Framebuffer
 
 	// Elements
@@ -106,11 +140,12 @@
 	let stroke_col: Array<number> = [0.5, 0.4, 0.3, 1]
 	let stroke_opacity = 0
 	let brush_rot: number[] = [0, 0]
-	let brush_pos: number[] = [0, 0]
-	let brush_sz: number[] = [1., 0.2]
+	let brush_pos_ndc_screen: number[] = [0, 0]
+	let brush_pos_ndc_canvas: number[] = [0, 0]
+	let brush_sz: number[] = [1, 0.2]
 	let selected_brush_type: BrushType = BrushType.Blobs
 
-	let chaos_lch: Array<number> = [0., 0., 1.]
+	let chaos_lch: Array<number> = [0, 0, 1]
 	let chaos_speed: number = 0.3
 	let chaos: number = 0.7
 
@@ -123,9 +158,13 @@
 	let tex_dynamics: number = 0.3
 	let tex_lch_dynamics: number[] = [0, 0, 0.02]
 	let tex_stretch: number[] = [1, 0.2]
+
 	
 	let undo_pending: boolean = false
 	let redo_pending: boolean = false
+	let picking: boolean
+	let just_finished_pick: boolean
+	let picked_col: number[] = [0, 0, 0]
 
 	let project = new Project()
 
@@ -133,7 +172,8 @@
 	let canvas_fb: Framebuffer
 	let canvas_read_tex: Texture
 	
-	
+	let drawer: Drawer
+
 	const openModal = (modal: SemiModal) => {
 		for (let m of modals) {
 			if (m === modal) {
@@ -187,37 +227,35 @@
 	onMount(async () => {
 		initWebGL()
 		initOtherStuff()
-		
-
-		{
-
-		}
 
 		//! ------------------- SHADERS
 		const brush_preview_program = new ShaderProgram(
-			require('./shaders/brush_preview.vert'),
-			require('./shaders/brush_preview.frag'),
+			require('shaders/brush_preview.vert'),
+			require('shaders/brush_preview.frag'),
 		)
-		const draw_temp_stroke_program = new ShaderProgram(
-			require('./shaders/draw_temp_stroke.vert'),
-			require('./shaders/draw_temp_stroke.frag'),
+		const picker_program = new ShaderProgram(require('shaders/picker.vert'), require('shaders/picker.frag'))
+		const draw_blobs_stroke_program = new ShaderProgram(
+			require('shaders/draw_blobs_stroke.vert'),
+			require('shaders/draw_blobs_stroke.frag'),
 		)
-		const composite_temp_stroke_to_canvas_program = new ShaderProgram(
-			require('./shaders/composite_temp_stroke_to_canvas.vert'),
-			require('./shaders/composite_temp_stroke_to_canvas.frag'),
+		const composite_stroke_to_canvas_program = new ShaderProgram(
+			require('shaders/composite_temp_stroke_to_canvas.vert'),
+			require('shaders/composite_temp_stroke_to_canvas.frag'),
 		)
 		const brush_triangulated_program = new ShaderProgram(
-			require('./shaders/brush_triangulated.vert'),
-			require('./shaders/brush_triangulated.frag'),
+			require('shaders/brush_triangulated.vert'),
+			require('shaders/brush_triangulated.frag'),
 		)
 		//! ------------------- POST
-		const post_canvas_program = new ShaderProgram(require('./shaders/post_canvas.vert'), require('./shaders/post_canvas.frag'))
+		const post_canvas_program = new ShaderProgram(require('shaders/post_canvas.vert'), require('shaders/post_canvas.frag'))
 
 		default_framebuffer.start_draw()
 		default_framebuffer.clear([0, 0, 0, 1])
 
 		canvas_tex = new Texture([canvasRes[0], canvasRes[1]])
 		canvas_fb = new Framebuffer([canvas_tex], true)
+		canvas_fb.clear([0, 0, 0, 0])
+		canvas_fb.pong_idx = 1 - canvas_fb.pong_idx
 		canvas_fb.clear([0, 0, 0, 0])
 
 		const temp_tex = new Texture([canvasRes[0], canvasRes[1]])
@@ -228,22 +266,17 @@
 		canvas_read_tex = canvas_fb.textures[0]
 
 		let brush_buffer = new Thing(
-			[
-				new VertexBuffer(4, gl.FLOAT),
-				new VertexBuffer(4, gl.FLOAT),
-			],
+			[new VertexBuffer(4, gl.FLOAT), new VertexBuffer(4, gl.FLOAT)],
 			gl.TRIANGLES,
-			new ShaderProgram(require('./shaders/brush_long.vert'), require('./shaders/brush_long.frag')),
+			new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag')),
 		)
 
 		let brush_buffer_b = new Thing(
-			[
-				new VertexBuffer(4, gl.FLOAT),
-				new VertexBuffer(4, gl.FLOAT),
-			],
+			[new VertexBuffer(4, gl.FLOAT), new VertexBuffer(4, gl.FLOAT)],
 			gl.TRIANGLES,
-			new ShaderProgram(require('./shaders/brush_long.vert'), require('./shaders/brush_long.frag')),
+			new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag')),
 		)
+		
 
 		let t: number = 0
 		let redraw_needed = false
@@ -255,9 +288,10 @@
 		const set_shared_uniforms = (program: ShaderProgram, col: number[], t: number) => {
 			program.setUniformFloat('time', t)
 			program.setUniformInt('frame', frame)
-			program.setUniformVec('R', userAgentRes)
-			program.setUniformVec('canvasR', canvasRes)
-			program.setUniformVec('stroke_pos', brush_pos)
+			program.setUniformVec('R', default_framebuffer.textures[0].res)
+			program.setUniformVec('canvasR', canvas_read_tex.res)
+			program.setUniformVec('stroke_pos', brush_pos_ndc_canvas)
+			program.setUniformVec('stroke_pos_screen', brush_pos_ndc_screen)
 			program.setUniformVec('stroke_col', col)
 			program.setUniformVec('brush_sz', brush_sz)
 			program.setUniformFloat('stroke_opacity', stroke_opacity)
@@ -271,146 +305,27 @@
 			program.setUniformTexture('canvas_read', canvas_read_tex, 3)
 		}
 
-		const draw_blobs_stroke = (
-			_col: number[],
-			_opacity: number,
-			_pos: number[],
-			_rot: number[],
-			_sz: number[],
-			_tex_lch_dynamics: number[],
-			_tex_stretch: number[],
-		) => {
-			draw_temp_stroke_program.use()
-			set_shared_uniforms(draw_temp_stroke_program, _col, t)
-
-			draw_temp_stroke_program.setUniformVec('stroke_pos', _pos)
-			draw_temp_stroke_program.setUniformVec('stroke_col', _col)
-			// draw_temp_stroke_program.setUniformVec('brush_sz', brush_sz)
-			draw_temp_stroke_program.setUniformVec('brush_sz', _sz)
-			draw_temp_stroke_program.setUniformFloat('stroke_opacity', _opacity)
-			draw_temp_stroke_program.setUniformVec('tilt', _rot)
-			draw_temp_stroke_program.setUniformVec('tex_lch_dynamics', [
-				_tex_lch_dynamics[0],
-				_tex_lch_dynamics[1],
-				_tex_lch_dynamics[2],
-			])
-			draw_temp_stroke_program.setUniformVec('tex_stretch', [_tex_stretch[0], _tex_stretch[1]])
-			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-		}
+		drawer = new Drawer(
+			draw_blobs_stroke_program,
+			brush_triangulated_program,
+			set_shared_uniforms,
+			gl,
+			canvas_tex,
+			default_framebuffer
+		)
 
 		const composite_stroke = () => {
 			canvas_fb.start_draw()
-			composite_temp_stroke_to_canvas_program.use()
-			set_shared_uniforms(composite_temp_stroke_to_canvas_program, [0, 0, 0, 0], t)
+			composite_stroke_to_canvas_program.use()
+			set_shared_uniforms(composite_stroke_to_canvas_program, [0, 0, 0, 0], t)
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
 			temp_stroke_fb.clear([0, 0, 0, 0])
 		}
-		const fill_buff_for_long_brush = (
-			brush_stroke: BrushStroke,
-			brush_buffer: Thing
-			)=> {
-			brush_buffer.buffs[0].sz = 0
-			brush_buffer.buffs[1].sz = 0
-			const iters = brush_stroke.positions.length / 2 - 1
-			for (let i = 0; i < iters; i++){
-				// #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a))
-				const get_circ_pos_from_ang = (a: number) => {
-					const c = cos(-a)
-					const s = sin(-a)
-					return [c, s]
-				}
-				const add_ang_to_pos = (
-					pos: number[], ang_offs: number[], positive: boolean, amt: number
-				): number[] => {
-					if (positive) {
-						pos[0] += ang_offs[0] * amt
-						pos[1] += ang_offs[1] * amt
-					} else {
-						pos[0] -= ang_offs[0] * amt
-						pos[1] -= ang_offs[1] * amt
-					}
-					return pos
-				}
-				// brush_stroke.
-				let curr_sz =  brush_stroke.sizes[i*2];
-				let next_sz =  brush_stroke.sizes[i*2 + 2];
 
-				let curr_ang = get_circ_pos_from_ang(brush_stroke.rotations[i * 2 + 1])
-				let next_ang = get_circ_pos_from_ang(brush_stroke.rotations[i * 2 + 3])
-
-				let curr_pos = [brush_stroke.positions[i * 2], brush_stroke.positions[i * 2 + 1]]
-				let next_pos = [brush_stroke.positions[i * 2 + 2], brush_stroke.positions[i * 2 + 3]]
-
-				let curr_pos_left = add_ang_to_pos([...curr_pos], curr_ang, true, curr_sz)
-				let curr_pos_right = add_ang_to_pos([...curr_pos], curr_ang, false, curr_sz)
-
-				let next_pos_left = add_ang_to_pos([...next_pos], next_ang, true, next_sz)
-				let next_pos_right = add_ang_to_pos([...next_pos], next_ang, false, next_sz)
-
-				let curr_col = [brush_stroke.colours[i * 3], brush_stroke.colours[i * 3 + 1], brush_stroke.colours[i * 3 + 2]]
-				let curr_opacity = brush_stroke.opacities[i]
-
-				let next_col = [brush_stroke.colours[i * 3 + 3], brush_stroke.colours[i * 3 + 4], brush_stroke.colours[i * 3 + 5]]
-				let next_opacity = brush_stroke.opacities[i + 1]
-
-				const curr_v = i/iters
-				const next_v = (i + 1)/iters
-
-				brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])
-				brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-				brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
-				brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-				brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
-				brush_buffer.buffs[1].push_vert([...next_col, next_opacity])
-
-				brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
-				brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-				brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
-				brush_buffer.buffs[1].push_vert([...next_col, next_opacity])
-				brush_buffer.buffs[0].push_vert([...next_pos_right, 1, next_v])
-				brush_buffer.buffs[1].push_vert([...next_col, next_opacity])
-			}
-
-		}
-		
-		const draw_any_stroke = (stroke: BrushStroke)=>{
-			if(stroke.brush_type === BrushType.Blobs){
-				for (let i = 0; i < stroke.positions.length / 2; i++) {
-					let pos = [stroke.positions[i * 2], stroke.positions[i * 2 + 1]]
-					let sz = [stroke.sizes[i * 2], stroke.sizes[i * 2 + 1]]
-					let col = [stroke.colours[i * 3], stroke.colours[i * 3 + 1], stroke.colours[i * 3 + 2]]
-					let opacity = stroke.opacities[i]
-					let rot = [stroke.rotations[i * 2], stroke.rotations[i * 2 + 1]]
-					draw_blobs_stroke(
-						[...col, 1],
-						 opacity, 
-						 pos, 
-						 rot, 
-						 sz,
-						 stroke.draw_params.tex_lch_dynamics, 
-						 stroke.draw_params.tex_stretch
-					 )
-				}
-			} else if (stroke.brush_type === BrushType.Long){
-				fill_buff_for_long_brush( stroke, brush_buffer_b)
-				set_shared_uniforms(brush_buffer.shader, [0, 0, 0, 0], t)
-				brush_buffer_b.upload_all_buffs()
-				brush_buffer_b.draw()
-			} else if (stroke.brush_type === BrushType.Tri){
-				let triangles = earcut(stroke.positions)
-				brush_buffer_b.buffs[0].upload_external_buff(triangles)
-				brush_buffer_b.buffs[1].upload_external_buff(triangles)
-				set_shared_uniforms(brush_buffer.shader, [0, 0, 0, 0], t)
-				brush_buffer_b.draw_with_external_shader(brush_triangulated_program)
-
-				// brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])
-				// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-			}
-		}
 
 		const redraw_whole_project = () => {
-			console.log('undo or redo')
+			console.log('REDRAW EVERYTHING')
 			canvas_fb.clear()
 			canvas_fb.pong_idx = 1 - canvas_fb.pong_idx
 			canvas_fb.clear()
@@ -422,7 +337,7 @@
 			for (let stroke of project.brush_strokes) {
 				if (k >= project.brush_strokes.length - redo_history_length) break
 				temp_stroke_fb.start_draw()
-				draw_any_stroke(stroke)
+				drawer.draw_any_stroke(stroke, t, brush_buffer_b)
 				composite_stroke()
 				canvas_read_tex = canvas_fb.textures[0]
 				canvas_fb.pong_idx = 1 - canvas_fb.pong_idx
@@ -436,7 +351,7 @@
 
 		const draw = (_t: number) => {
 			redraw_needed = false
-			if (frame === 0) redraw_needed = true
+			if (frame === 0 || picking || just_finished_pick) redraw_needed = true
 			t = _t / 1000
 			resizeIfNeeded(canvasElement, default_framebuffer, userAgentRes, (v: boolean) => {
 				redraw_needed = v
@@ -447,32 +362,41 @@
 			let l_ctrl_down = io.getKey('ControlLeft').down
 			let l_shift_down = io.getKey('ShiftLeft').down
 			let z_just_pressed = io.getKey('KeyZ').just_pressed
-			if ( redo_pending || (l_shift_down && l_ctrl_down && z_just_pressed)) {
-				console.log("REDOO")
+			if (redo_pending || (l_shift_down && l_ctrl_down && z_just_pressed)) {
 				redo_history_length -= 1
 				if (redo_history_length >= 0) redraw_whole_project()
 				else redo_history_length = 0
 			} else if (undo_pending || (l_ctrl_down && z_just_pressed)) {
-				console.log("UNDOOO")
 				redo_history_length += 1
-				redraw_whole_project()
+				if (redo_history_length <= project.brush_strokes.length) redraw_whole_project()
+				else redo_history_length -= 1
 			}
 
 			// ----- TEMP
-			if (io.mouse_down && io.pointerType !== "touch") {
+			if (
+				(io.mouse_just_pressed || (io.mouse_down && io.mouse_just_moved) )
+				 && io.pointerType !== 'touch' ) {
 				redraw_needed = true
 				if (io.mouse_just_pressed && !(redo_pending || undo_pending)) {
 					brush_stroke = new BrushStroke(selected_brush_type, new DrawParams(tex_dynamics, tex_lch_dynamics, tex_stretch))
 					for (let i = 0; i < redo_history_length; i++) {
 						project.brush_strokes.pop()
 					}
-					redo_history_length = 0 
+					redo_history_length = 0
 					console.log(brush_stroke)
-					console.log("SET REDO HISTORY TO 0")
+					console.log('SET REDO HISTORY TO 0')
 				}
 
 				brush_rot = [...io.tilt]
-				brush_pos = [...io.mouse_pos]
+
+				brush_pos_ndc_screen = [...io.mouse_pos]
+				brush_pos_ndc_canvas = Utils.screen_NDC_to_canvas_NDC(
+					brush_pos_ndc_screen,
+					default_framebuffer.textures[0],
+					canvas_read_tex,
+				)
+				brush_pos_ndc_canvas[0] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 251, 2) - 1)
+				brush_pos_ndc_canvas[1] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 1251, 2) - 1)
 
 				let col = [...stroke_col]
 
@@ -499,26 +423,24 @@
 					stroke_opacity = lerp(stroke_opacity_dynamics[0], stroke_opacity_dynamics[1], io.pressure)
 				}
 
-				brush_pos[0] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 251, 2) - 1)
-				brush_pos[1] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 1251, 2) - 1)
-
 				brush_rot[1] += rot_jitter * (2 * hash.valueNoiseSmooth(t * 10 + 100, 2) - 1)
 
 				let sz = [...brush_sz]
 
 				let size_pressure_weight = lerp(stroke_size_dynamics[0], stroke_size_dynamics[1], io.pressure)
-				let size_tilt_weight = lerp(0.4, 1, io.tilt[0]/tau)
+				let size_tilt_weight = lerp(0.4, 1, io.tilt[0] / tau)
 				// TODO: sz dynamics
-				sz[0] *= size_pressure_weight*size_tilt_weight
-				sz[1] *= size_pressure_weight*size_tilt_weight
+				sz[0] *= size_pressure_weight * size_tilt_weight
+				sz[1] *= size_pressure_weight * size_tilt_weight
 
-				brush_stroke.push_stroke(brush_pos, brush_rot, sz, stroke_opacity, col)
+				brush_stroke.push_stroke(brush_pos_ndc_canvas, brush_rot, sz, stroke_opacity, col)
 
 				temp_stroke_fb.start_draw()
-				draw_any_stroke(brush_stroke)
+
+				drawer.draw_any_stroke(brush_stroke, t, brush_buffer)
 			}
 			// ----- COMPOSITE
-			if (io.mouse_just_unpressed && io.pointerType !== "touch" && !(undo_pending || redo_pending)) {
+			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
 				console.log(brush_stroke)
 				project.push_stroke(brush_stroke)
 				redraw_needed = true
@@ -544,6 +466,16 @@
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 				}
 
+				if (picking) {
+					picker_program.use()
+					set_shared_uniforms(picker_program, [0, 0, 0, 0], t)
+					// console.log("picked COL")
+					// console.log(picked_col)
+					picker_program.setUniformVec('picked_col', picked_col)
+					picker_program.setUniformVec('stroke_pos', io.mouse_pos)
+					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+					// console.log("DRAW PICKER")
+				}
 			}
 			if (gl.getError() !== 0) {
 				console.log(gl.getError())
@@ -560,9 +492,6 @@
 			draw(0)
 		})()
 	})
-
-	$: {
-	}
 
 	onDestroy(() => {})
 </script>

@@ -42,14 +42,14 @@
 
 <script lang="ts">
 	// @ts-ignore
-	import solveIcon from '../public/solve.svg'
+	import solveIcon from '/../public/solve.svg'
 	// @ts-ignore
-	import forbidIcon from '../public/forbid.svg'
+	import forbidIcon from '/../public/forbid.svg'
 	import getToken from 'getToken'
 	import {Dropbox} from 'dropbox'
 	import type {Project} from 'stuff'
 
-	let gallery_open = true
+	let gallery_open = false
 
   let canvas_image: HTMLImageElement | undefined = undefined
   let canvas_image_src: string = ""
@@ -155,7 +155,9 @@
 		-webkit-tap-highlight-color: transparent;
 	}
   #canvas-preview-img{
-    max-width: 5rem;
+    max-width: 12rem;
+    width: 12rem;
+    height: 12rem;
     /* max-width: 5rem; */
     /* aspect-ratio:unset; */
   }

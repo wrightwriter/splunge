@@ -2,9 +2,10 @@
 
 <script lang="ts">
   // @ts-ignore
-  import undoIcon from "../public/undo.svg"
+  import undoIcon from "/../public/undo.svg"
   // @ts-ignore
-  import redoIcon from "../public/redo.svg"
+  import redoIcon from "/../public/redo.svg" 
+  
   
   export let redo: ()=>void
   export let undo: ()=>void

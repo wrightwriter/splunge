@@ -42,12 +42,13 @@
       "node",
       "webpack",
       "webpack-dev-server",
+      "./src/types.d.ts"
 		],
     // "ts-node": {
     //   "compilerOptions": {
     //     "module": "commonjs"
     //   }
     // }
-  }
-  // "include": ["./vendor/*", "./typings/*", "./assets/*", "./src/**/*"]
+  },
+  "include": ["./vendor/*", "./typings/*", "./assets/*", "./src/**/*", "./src/*", "**/*.ts"]
 }

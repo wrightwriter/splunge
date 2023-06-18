@@ -37,6 +37,7 @@ module.exports.default = {
 	},
 	devtool: 'inline-source-map',
 	resolve: {
+		roots: [path.resolve('./src')],
 		extensions: ['.js', '.ts', '.svelte'],
 		modules: [path.resolve('./src'), path.resolve('./node_modules')],
 		alias: {

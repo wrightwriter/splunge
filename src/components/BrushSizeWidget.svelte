@@ -2,9 +2,9 @@
 
 <script lang="ts">
   // @ts-ignore
-  import pausedIcon from "../public/pause.svg"
+  import pausedIcon from "/../public/pause.svg"
   // @ts-ignore
-  import playingIcon from "../public/play.svg"
+  import playingIcon from "/../public/play.svg"
   
   export let brush_sz: number[] = [0.2,0.2]
   export let canvas_res: number[] 

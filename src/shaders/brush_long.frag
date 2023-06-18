@@ -1,4 +1,4 @@
-#pragma glslify: import('./fs_prepend_includes.glsl')
+#pragma glslify: import('./_top_includes.glsl')
 in vec2 uv;
 in vec4 vCol;
 out vec4 col;
