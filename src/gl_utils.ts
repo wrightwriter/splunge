@@ -331,6 +331,21 @@ export function finish_frame() {
 	}
 }
 
+interface BuffBinding {
+	buff: VertexBuffer
+	params?: AttribPointerParams
+}
+interface AttribPointerParams {
+	vert_sz?: number
+	stride?: number
+	type?: number
+	offset?: number
+}
+interface DrawParams {
+	prim_type?: number
+	draw_cnt?: number
+}
+
 export class Thing {
 	vao: WebGLVertexArrayObject
 	buffs: VertexBuffer[]
@@ -342,6 +357,26 @@ export class Thing {
 		this.shader = shader
 		this.vao = gl.createVertexArray() as WebGLVertexArrayObject
 		this.buffs = [...buffs]
+	}
+	static draw_external_buffs_and_shader(buffs: BuffBinding[], shader: ShaderProgram, params: DrawParams) {
+		shader.use()
+		gl.bindVertexArray(gl.defaultVao)
+		let i = 0
+		for (let buff of buffs) {
+			gl.enableVertexAttribArray(i)
+			buff.buff.bindToAttrib(i, buff.params ?? undefined)
+			i++
+		}
+		params.prim_type = params.prim_type ?? gl.TRIANGLES
+		params.draw_cnt = params.draw_cnt ?? buffs[0].buff.sz / buffs[0].buff.single_vert_sz
+
+		if (params.prim_type === gl.TRIANGLES) {
+			gl.drawArrays(gl.TRIANGLES, 0, params.draw_cnt)
+			console.log('DREW')
+			console.log(params.draw_cnt)
+		} else {
+			alert('bleep bloop errrorrr')
+		}
 	}
 
 	upload_all_buffs() {
@@ -384,9 +419,21 @@ export class VertexBuffer {
 	sz: number
 	max_sz: number
 
-	bindToAttrib(idx: number) {
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
-		gl.vertexAttribPointer(idx, this.single_vert_sz, this.type, false, this.stride, 0)
+	bindToAttrib(idx: number, params: AttribPointerParams | undefined = undefined) {
+		if (params) {
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
+			gl.vertexAttribPointer(
+				idx,
+				params.stride ?? this.single_vert_sz,
+				params.type ?? this.type,
+				false,
+				params.stride ?? this.stride,
+				params.offset ?? 0,
+			)
+		} else {
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
+			gl.vertexAttribPointer(idx, this.single_vert_sz, this.type, false, this.stride, 0)
+		}
 	}
 
 	constructor(single_vert_sz: number, type: number = gl.FLOAT, max_size: number = 1000000) {
@@ -414,20 +461,20 @@ export class VertexBuffer {
 			this.cpu_buff[this.sz++] = v
 		}
 	}
-	upload_external_buff(input_buff: number[] | Float32Array) {
+	upload_external_array(input_buff: number[] | Float32Array) {
 		if (input_buff instanceof Array) {
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
 			let _buff = Float32Array.from(input_buff)
 			this.sz = _buff.length
 			// const sz_in_bytes = _buff.length * _buff.BYTES_PER_ELEMENT
-			const sz_in_bytes = _buff.byteLength / 2
+			const sz_in_bytes = _buff.byteLength
 
-			console.log('BEGIN BUFF PRINT')
-			console.log(_buff)
-			console.log('len')
-			console.log(_buff.length)
-			console.log('sz byes')
-			console.log(sz_in_bytes)
+			// console.log('BEGIN BUFF PRINT')
+			// console.log(_buff)
+			// console.log('len')
+			// console.log(_buff.length)
+			// console.log('sz byes')
+			// console.log(sz_in_bytes)
 			// if (_buff.length > 0) gl.bufferData(gl.ARRAY_BUFFER, _buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
 			if (_buff.length > 0) gl.bufferData(gl.ARRAY_BUFFER, _buff, gl.DYNAMIC_DRAW, 0)
 		} else {

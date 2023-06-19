@@ -2,7 +2,7 @@ import {Dropbox, DropboxAuth} from 'dropbox'
 
 export class DropboxAuther {
 	CLIENT_ID: string = 'jxpyhv2cqozub0c'
-	REDIRECT_URI: string = 'https://localhost:8080/'
+	REDIRECT_URI: string = 'http://localhost:8080/'
 	// @ts-ignore
 	dbx: Dropbox
 	dbxAuth: DropboxAuth

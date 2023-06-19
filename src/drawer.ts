@@ -1,6 +1,7 @@
 import {Framebuffer, ShaderProgram, Texture, Thing} from 'gl_utils'
 import {BrushStroke, BrushType, Utils} from 'stuff'
 import {cos, floor, sin} from 'wmath'
+import earcut from 'earcut'
 
 let gl: WebGL2RenderingContext
 export class Drawer {
@@ -158,26 +159,36 @@ export class Drawer {
 		} else if (stroke.brush_type === BrushType.Tri) {
 			const Tess2 = require('tess2')
 			let positions = [...stroke.positions]
+			console.log(stroke)
 			positions.forEach((v, i, a) => {
-				a[i] = (v + 1) * 1000
+				a[i] = (v * 0.5 + 0.5) * 1000
 				a[i] = floor(a[i])
 			})
-			// let triangles = earcut(stroke.positions)
-			let triangles = Tess2.tesselate({
-				contours: [positions],
-				windingRule: Tess2.WINDING_ODD,
-				elementType: Tess2.POLYGONS,
-				polySize: 3,
-				vertexSize: 2,
-			}).elements
+			let triangles = earcut(positions)
+			// let triangles = Tess2.tesselate({
+			// 	contours: [positions],
+			// 	windingRule: Tess2.WINDING_ODD,
+			// 	elementType: Tess2.POLYGONS,
+			// 	polySize: 3,
+			// 	vertexSize: 2,
+			// }).elements
 			triangles.forEach((v, i, a) => {
-				a[i] = v / 1000 - 0.5
+				a[i] = (a[i] / 1000 - 0.5) / 0.5 + 0.5
+				// a[i] = (v / 10000) * 5 * 10
 			})
+			console.log(triangles)
 			this.brush_triangulated_program.use()
-			brush_buffer.buffs[0].upload_external_buff(triangles)
-			brush_buffer.buffs[1].upload_external_buff(triangles)
+			brush_buffer.buffs[0].upload_external_array(triangles)
+			// brush_buffer.buffs[1].upload_external_buff(triangles)
 			this.set_shared_uniforms(this.brush_triangulated_program, [0, 0, 0, 0], t)
-			brush_buffer.draw_with_external_shader(this.brush_triangulated_program)
+			// brush_buffer.draw_with_external_shader(this.brush_triangulated_program)
+			Thing.draw_external_buffs_and_shader(
+				[{buff: brush_buffer.buffs[0], params: {vert_sz: 2}}],
+				this.brush_triangulated_program,
+				{
+					draw_cnt: triangles.length / 3 / 2,
+				},
+			)
 
 			// brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])
 			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])

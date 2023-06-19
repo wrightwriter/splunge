@@ -134,7 +134,7 @@
 		}).replace(',','')
 	}
 
-	let gallery_open = true
+	let gallery_open = false
 
 	let canvas_image: HTMLImageElement | undefined = undefined
 	let canvas_image_blob: Blob | undefined = undefined
