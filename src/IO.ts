@@ -107,6 +107,7 @@ export class IO {
 			return {down: false, just_pressed: false, just_unpressed: false}
 		}
 	}
+
 	constructor() {
 		window.addEventListener('keydown', (event) => {
 			this.keys[event.code] = {down: true, just_pressed: true, just_unpressed: false}
@@ -131,6 +132,13 @@ export class IO {
 				this.mmb_down = true
 				this.mmb_just_pressed = true
 				e.preventDefault()
+			}
+		})
+		window.addEventListener('focus', () => {
+			let l_alt = this.getKey('AltLeft')
+			if (l_alt.down) {
+				l_alt.just_unpressed = true
+				l_alt.down = false
 			}
 		})
 
@@ -180,7 +188,7 @@ export class IO {
 			console.log(e)
 		})
 		// @ts-ignore
-		document.querySelector('canvas').addEventListener('pointerup', () => {
+		window.addEventListener('pointerup', () => {
 			this.mouse_down = false
 		})
 	}

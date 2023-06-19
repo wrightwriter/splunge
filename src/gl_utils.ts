@@ -60,11 +60,11 @@ export class Texture {
 		// @ts-ignore
 		return Array.from(data)
 	}
-	read_back_image(
+	async read_back_image(
 		gamma_correct: boolean = false,
 		offs: number[] = [0, 0],
 		read_back_res: number[] = [...this.res],
-	): HTMLImageElement {
+	): Promise<[HTMLImageElement, Blob]> {
 		let data = this.read_back_array(offs, read_back_res)
 
 		let i = 0
@@ -89,13 +89,39 @@ export class Texture {
 		canvas.height = this.res[1]
 		const context = canvas.getContext('2d') as CanvasRenderingContext2D
 
-		var imageData = context.createImageData(canvas.width, canvas.height)
+		let blob: Blob
+
+		const getCanvasBlob = (canvas: HTMLCanvasElement): Promise<Blob> => {
+			return new Promise(function (resolve, reject) {
+				canvas.toBlob(function (blob) {
+					// @ts-ignore
+					resolve(blob)
+				}, 'image/png')
+			})
+		}
+
+		blob = await getCanvasBlob(canvas)
+		console.log('BLORGUBS')
+		console.log(blob)
+
+		// canvas.toBlob((b) => {
+		// 	blob = b as Blob
+		// 	console.log('BLOB A')
+		// 	console.log(blob)
+		// }, 'image/png')
+
+		// console.log('BLOB B')
+		// console.log(blob)
+
+		const imageData = context.createImageData(canvas.width, canvas.height)
 		imageData.data.set(data)
 		context.putImageData(imageData, 0, 0)
 		const img = new Image()
 		img.src = canvas.toDataURL()
 
-		return img
+		canvas.remove()
+		// @ts-ignore
+		return [img, blob]
 	}
 	constructor(res: number[]) {
 		// @ts-ignore

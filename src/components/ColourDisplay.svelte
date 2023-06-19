@@ -2,19 +2,26 @@
 
 <script lang="ts">
 	export let colour: Array<number>;
+	export let just_finished_pick: boolean
 	
 	// $: valueRange = max - min;
 	// $: rotation = startRotation + (value - min) / valueRange * rotRange;
   let container
 
 
+  const re_render_colour = (colour)=>{
+    if(container){
+      container.style.setProperty('--color', `rgba(${
+      255 * Math.pow(colour[0], 0.45454545454545454545)}, ${
+      255 * Math.pow(colour[1], 0.45454545454545454545)}, ${
+      255 * Math.pow(colour[2], 0.45454545454545454545)}, ${
+      255 * Math.pow(colour[3], 0.45454545454545454545)})`)
+    }
+  }
   
 	// $: col = `rgba(${colour[0]}, ${colour[1]}, ${colour[2]}, ${colour[3]})`;
-	$: document.documentElement.style.setProperty('--color', `rgba(${
-    255 * Math.pow(colour[0], 0.45454545454545454545)}, ${
-    255 * Math.pow(colour[1], 0.45454545454545454545)}, ${
-    255 * Math.pow(colour[2], 0.45454545454545454545)}, ${
-    255 * Math.pow(colour[3], 0.45454545454545454545)})`);;
+	$: re_render_colour(colour);
+	$: if(just_finished_pick) re_render_colour(colour);
 	// $: col = `rgba(#{rgba.join(', ')});`;
   
   // $: {

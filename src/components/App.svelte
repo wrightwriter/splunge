@@ -4,7 +4,7 @@
 			<Knob bind:value={stroke_col[0]} title={'R'} />
 			<Knob bind:value={stroke_col[1]} title={'G'} />
 			<Knob bind:value={stroke_col[2]} title={'B'} />
-			<ColourDisplay bind:colour={stroke_col} />
+			<ColourDisplay bind:colour={stroke_col} bind:just_finished_pick={just_finished_pick} />
 
 			<Knob bind:this={chaosKnob} bind:value={chaos} title={'Chaos'} triggerModal={openModal} modal={chaosSemiModal} />
 			<BrushSizeWidget
@@ -34,10 +34,17 @@
 				}} />
 			<GalleryWidget
 				bind:current_project={project}
-				get_current_canvas_as_image={() => {
-					let img = canvas_read_tex.read_back_image(true)
-					return img
-				}} />
+				get_current_canvas_as_image={async () => {
+					let [img, blob] = await canvas_read_tex.read_back_image(true)
+					return [img, blob]
+				}} 
+				new_project={()=>{ 
+					new_project_pending = true 
+				}}
+				load_project={(project)=>{ 
+					project_pending_load = project
+				}}
+				/>
 			<PickColourWidget
 				pick_from_canvas={() => pick_from_canvas()}
 				bind:picking={picking}
@@ -93,7 +100,7 @@
 	import SemiModal from './SemiModal.svelte'
 	import {IO} from 'IO'
 	import chroma from 'chroma-js'
-	import {Hash, cos, floor, pow, sin, tau, tri} from 'wmath'
+	import {Hash, abs, cos, floor, pow, sin, tau, tri, mix} from 'wmath'
 	import {clamp, lerp, mod} from '@0b5vr/experimental'
 	import {BrushStroke, BrushType, DrawParams, Project, Utils} from 'stuff'
 	import earcut from 'earcut'
@@ -106,7 +113,8 @@
 	let io: IO
 	let gl: WebGL2RenderingContext
 	let zoom = 1
-	let panning: number[] = [0,0]
+	let desired_zoom = 1
+	let panning: number[] = [0, 0]
 	let userAgentRes: Array<number> = [0, 0]
 	let canvasRes: Array<number> = [512 * 2, 512 * 4]
 	let default_framebuffer: Framebuffer
@@ -146,6 +154,7 @@
 	let tex_lch_dynamics: number[] = [0, 0, 0.02]
 	let tex_stretch: number[] = [1, 0.2]
 
+	let new_project_pending: boolean = false
 	let undo_pending: boolean = false
 	let redo_pending: boolean = false
 	let picking: boolean
@@ -153,19 +162,17 @@
 	let picked_col: number[] = [0, 0, 0]
 
 	let project = new Project()
+	let project_pending_load: Project
 
 	let canvas_tex: Texture
 	let canvas_fb: Framebuffer
 	let canvas_read_tex: Texture
 
 	let drawer: Drawer
-	
-	
-	const pick_from_canvas=() => {
+
+	const pick_from_canvas = () => {
 		let coord = Utils.texture_NDC_to_texture_pixel_coords(
-			Utils.screen_NDC_to_canvas_NDC(
-				io.mouse_pos, default_framebuffer.textures[0], canvas_read_tex, zoom, panning
-			),
+			Utils.screen_NDC_to_canvas_NDC(io.mouse_pos, default_framebuffer.textures[0], canvas_read_tex, zoom, panning),
 			canvas_read_tex,
 		)
 		let c = canvas_read_tex.read_back_pixel(coord)
@@ -201,11 +208,10 @@
 	}
 	let glEnums
 	let enumStringToValue
-	const glEnumToString = (value):string => {
+	const glEnumToString = (value): string => {
 		// checkInit();
-		var name = glEnums[value];
-		return (name !== undefined) ? ("gl." + name) :
-				("/*UNKNOWN WebGL ENUM*/ 0x" + value.toString(16) + "");
+		var name = glEnums[value]
+		return name !== undefined ? 'gl.' + name : '/*UNKNOWN WebGL ENUM*/ 0x' + value.toString(16) + ''
 	}
 
 	const initWebGL = () => {
@@ -214,12 +220,12 @@
 			preserveDrawingBuffer: true,
 			alpha: false,
 		})
-    glEnums = { };
-		enumStringToValue = { };
+		glEnums = {}
+		enumStringToValue = {}
 		for (var propertyName in gl) {
 			if (typeof gl[propertyName] == 'number') {
-				glEnums[gl[propertyName]] = propertyName;
-				enumStringToValue[propertyName] = gl[propertyName];
+				glEnums[gl[propertyName]] = propertyName
+				enumStringToValue[propertyName] = gl[propertyName]
 			}
 		}
 		userAgentRes = [canvasElement.clientWidth, canvasElement.clientWidth]
@@ -299,6 +305,7 @@
 		)
 
 		let t: number = 0
+		let delta_t: number = 0
 		let redraw_needed = false
 
 		let redo_history_length = 0
@@ -357,7 +364,7 @@
 			for (let stroke of project.brush_strokes) {
 				if (k >= project.brush_strokes.length - redo_history_length) break
 				temp_stroke_fb.start_draw()
-				drawer.draw_any_stroke(stroke, t, brush_buffer_b, zoom, [0,0])
+				drawer.draw_any_stroke(stroke, t, brush_buffer_b, zoom, [0, 0])
 				composite_stroke()
 				canvas_read_tex = canvas_fb.textures[0]
 				canvas_fb.pong_idx = 1 - canvas_fb.pong_idx
@@ -368,53 +375,90 @@
 
 			redraw_needed = true
 		}
+		
+		let load_project = (new_project: Project) =>{
+			project = new Project()
+			redo_history_length = 0
+			for (let key of Object.keys(new_project as Object)) {
+				// @ts-ignore
+				project[key] = new_project[key]
+			}
+			redraw_whole_project()
+		}
+		let local_storage_proj = localStorage.getItem('project')
+		// local_storage_proj = null
+
+		if (local_storage_proj) {
+			local_storage_proj = JSON.parse(local_storage_proj)
+			// @ts-ignore
+			load_project(local_storage_proj)
+		}
 
 		const draw = (_t: number) => {
 			redraw_needed = false
-			t = _t / 1000
+			const new_t = _t / 1000
+			delta_t = new_t - t
+			t = new_t
 			resizeIfNeeded(canvasElement, default_framebuffer, userAgentRes, (v: boolean) => {
 				redraw_needed = v
 			})
-
 			io.tick()
-			if(io.getKey("AltLeft").down){
-				if(io.getKey("AltLeft").just_pressed){
+			
+			if(new_project_pending){
+				load_project(new Project())
+				new_project_pending = false
+			}
+			if(project_pending_load){
+				load_project(project_pending_load)
+				// @ts-ignore
+				project_pending_load = undefined
+			}
+
+			if (io.getKey('AltLeft').down) {
+				if (io.getKey('AltLeft').just_pressed) {
 					picking = true
 				}
 				pick_from_canvas()
-			} else if (io.getKey('AltLeft').just_unpressed){
+			} else if (io.getKey('AltLeft').just_unpressed) {
 				just_finished_pick = true
 				picking = false
 			}
-
+			if(abs(desired_zoom - zoom) > 0.00000001 ){
+				redraw_needed = true
+				zoom = mix(zoom,desired_zoom,delta_t*20)
+			}
 			if (frame === 0 || picking || just_finished_pick || io.mouse_wheel || io.mmb_down) {
 				redraw_needed = true
-				if(just_finished_pick){
+				if (just_finished_pick) {
 					let coords = Utils.screen_NDC_to_canvas_NDC(
-						io.mouse_pos, default_framebuffer.textures[0], canvas_read_tex, zoom, panning
+						io.mouse_pos,
+						default_framebuffer.textures[0],
+						canvas_read_tex,
+						zoom,
+						panning,
 					)
-					if(coords[0] > 0 && coords[0] < 1 && coords[1] > 0 && coords[1] < 1){
+					if (coords[0] > 0 && coords[0] < 1 && coords[1] > 0 && coords[1] < 1) {
 						stroke_col = [...picked_col]
-						stroke_col = Utils.gamma_correct(stroke_col,true)
+						stroke_col = Utils.gamma_correct(stroke_col, true)
 						stroke_col[3] = 1
+						stroke_col = [...stroke_col]
 						just_finished_pick = false
 					}
 				}
-				if(io.mmb_down){
+				if (io.mmb_down) {
 					panning[0] += io.delta_mouse_pos[0] / zoom
 					panning[1] += io.delta_mouse_pos[1] / zoom
 					// console.log(panning)
 				}
 				if (io.mouse_wheel) {
 					if (io.mouse_wheel > 0) {
-						zoom *= 2
+						// zoom *= 2
+						desired_zoom *= 1.5
 					} else {
-						zoom /= 2
+						desired_zoom /= 1.5
 					}
 				}
 			}
-			
-
 
 			let l_ctrl_down = io.getKey('ControlLeft').down
 			let l_shift_down = io.getKey('ShiftLeft').down
@@ -450,7 +494,7 @@
 					default_framebuffer.textures[0],
 					canvas_read_tex,
 					zoom,
-					panning
+					panning,
 				)
 				brush_pos_ndc_canvas[0] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 251, 2) - 1)
 				brush_pos_ndc_canvas[1] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 1251, 2) - 1)
@@ -500,6 +544,7 @@
 			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
 				console.log(brush_stroke)
 				project.push_stroke(brush_stroke)
+				localStorage.setItem('project', JSON.stringify(project))
 				redraw_needed = true
 
 				composite_stroke()
@@ -534,8 +579,8 @@
 					// console.log("DRAW PICKER")
 				}
 			}
-			let err = gl.getError() 
-			if (err!== 0) {
+			let err = gl.getError()
+			if (err !== 0) {
 				console.log(err)
 				console.log(glEnumToString(err))
 			}

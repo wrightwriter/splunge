@@ -14,6 +14,9 @@ export const halfPi: number = Math.PI / 2
 export function max(a: number, b: number): number {
 	return Math.max(a, b)
 }
+export function mix(a: number, b: number, f: number): number {
+	return a * (1.0 - f) + b * f
+}
 
 export class Hash {
 	seed = 0
@@ -236,6 +239,7 @@ class Ease {
 	//   else return 1 + 0.5 * Math.pow(2, -10 * s) * Math.sin(k)
 	// },
 }
+
 export class WMath {
 	static macos(x: number) {
 		return Math.acos(x)

@@ -1,15 +1,20 @@
 <svelte:options accessors />
 
 <div class="knob-container">
+	<button on:click={async()=>await log_into_dropbox()} class:hide={authed} >
+		LOG INTO DB
+	</button>
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<div
 		class="knob"
-		on:click={() => {
+		on:click={async () => {
 			gallery_open = !gallery_open
-      canvas_image = get_current_canvas_as_image()
-      canvas_image_src = canvas_image.src
-      console.log(canvas_image.src)
-		}}> 
+			let [_canvas_image, blob] = await get_current_canvas_as_image()
+			canvas_image = _canvas_image
+			canvas_image_src = canvas_image.src
+			canvas_image_blob = blob
+			console.log(canvas_image.src)
+		}}>
 		{@html solveIcon}
 	</div>
 	{#if gallery_open}
@@ -27,20 +32,63 @@
 					</div>
 				</div>
 				<div id="current-project">
-					<img src="{canvas_image_src}" id="canvas-preview-img" alt="" />
+					<img src={canvas_image_src} id="canvas-preview-img" alt="" />
 					<div id="project-options">
-						<div id="project-save-button">
-							<div id="project-save-button-title">
-								Save 
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
+						<div id="project-save-button" on:click={save_to_dropbox}>
+							<div id="project-save-button-title">Save to dropbox</div>
+							<div class="icon" style="transform: translate(0px,0.2rem);">
+								{@html captureIcon}
 							</div>
-							{@html captureIcon}
 						</div>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
+						<div id="project-save-button" on:click={download_image}>
+							<div id="project-save-button-title">Download</div>
+							<div class="icon" style="transform: scale(1.34);">
+								{@html downloadIcon}
+							</div>
+						</div>
+						<div id="project-save-button" class="date">
+							<div id="project-save-button-title">{format_time(current_project.id)}</div>
+							<div class="icon">
+								{@html timeIcon}
+							</div>
+						</div>
+
+					</div>
+				</div>
+				<div id="options-bar">
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<div id="button" on:click={() => { 
+						new_project()
+						gallery_open = false
+					}}>
+						<div>
+							New file
+						</div>
+						{@html launchIcon}
 					</div>
 				</div>
 				<div id="gallery-elements">
 					{#each gallery_elements as element, i}
-						<div id="element">
-							{element.name}
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
+						<div id="element" on:click={async ()=>{
+							let proj = await dbx.filesDownload({
+								path: '/' + element.name + '.json'
+							});
+							// @ts-ignore
+							let binary = await proj.result.fileBlob.text()
+							let binary_json = JSON.parse(binary)
+							load_project(binary_json)
+							gallery_open = false
+						}} 
+						style={ Number(element.name) === current_project.id ? "border: 0.1rem solid white;" : ""}
+						>
+							<!-- {element.name} -->
+							<div id="element-name">
+								{format_time(element.name)}
+							</div>
+							<img draggable="false" src={element.image_src} id="canvas-preview-img" alt="" />
 						</div>
 					{/each}
 				</div>
@@ -53,111 +101,133 @@
 	// @ts-ignore
 	import solveIcon from '/../public/solve.svg'
 	// @ts-ignore
+	import launchIcon from '/../public/launch.svg'
+	// @ts-ignore
 	import forbidIcon from '/../public/forbid.svg'
 	// @ts-ignore
 	import captureIcon from '/../public/capture.svg'
+	// @ts-ignore
+	import downloadIcon from '/../public/download.svg'
+	// @ts-ignore
+	import timeIcon from '/../public/time.svg'
 	import getToken from 'getToken'
-	import {Dropbox} from 'dropbox'
+	import {Dropbox, DropboxAuth} from 'dropbox'
 	import type {Project} from 'stuff'
+	import { onMount } from 'svelte'
+	import { type files } from "dropbox"
+	import { DropboxAuther } from 'dropbox_auth'
+	import { element } from 'svelte/internal'
 
-	let gallery_open = false
-
-  let canvas_image: HTMLImageElement | undefined = undefined
-  let canvas_image_src: string = ""
-  
 	export let current_project: Project
-	export let get_current_canvas_as_image: () => HTMLImageElement
+	export let get_current_canvas_as_image: () => Promise<[HTMLImageElement, Blob]>
+	export let new_project: () => void
+	export let load_project: (project: Project) => void
+
+	const format_time = (t: number | string): string =>{
+		return new Date(Number(t)).toLocaleString('en-GB', {
+			hourCycle: 'h23',
+			day: "2-digit",
+			month: "2-digit",
+			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit"
+		}).replace(',','')
+	}
+
+	let gallery_open = true
+
+	let canvas_image: HTMLImageElement | undefined = undefined
+	let canvas_image_blob: Blob | undefined = undefined
+	let canvas_image_src: string = ''
+
 
 	class Element {
 		name: string
-		constructor(name: string) {
+		image_src: string
+		constructor(name: string, image_src: string) {
 			this.name = name
+			this.image_src = image_src
 		}
 	}
+	
+	let dbx: Dropbox
+	const dbx_auther = new DropboxAuther()
 
+	let authed = false
 	let gallery_elements: Element[] = []
 
-	var CLIENT_ID = 'jxpyhv2cqozub0c'
-	// Parses the url and gets the access token if it is in the urls hash
-	function getAccessTokenFromUrl() {
-		//  return utils.parseQueryString(window.location.hash).access_token;
+	const log_into_dropbox = async ()=> {
+		await dbx_auther.doAuth()
 	}
 
-	// If the user was just redirected from authenticating, the urls hash will
-	// contain the access token.
-	function isAuthenticated() {
-		const token = getToken
-		// return !!getAccessTokenFromUrl();
-		return token
+	const download_image = async ()=>{
+		const link = document.createElement('a');
+		link.href = (canvas_image as HTMLImageElement).src
+		link.download = current_project.id + '.png';
+		link.click();
 	}
-
-	// Render a list of items to #files
-	// function renderItems(items) {
-	//   var filesContainer = document.getElementById('files');
-	//   items.forEach(function(item) {
-	//     var li = document.createElement('li');
-	//     li.innerHTML = item.name;
-	//     filesContainer.appendChild(li);
-	//   });
-	// }
-
-	// This example keeps both the authenticate and non-authenticated setions
-	// in the DOM and uses this function to show/hide the correct section.
-	// function showPageSection(elementId) {
-	//   document.getElementById(elementId).style.display = 'block';
-	// }
-  let dbx = new Dropbox({accessToken: isAuthenticated()})
-
-  const refetch_canvases = ()=>{
-		dbx
-			.filesListFolder({path: ''})
-			.then(function (response) {
-				console.log(response)
-				gallery_elements = []
-				for (let element of response.result.entries) {
-					gallery_elements.push(new Element(element.name))
+	const refetch_canvases = async () => {
+		let response = await dbx.filesListFolder({path: ''})
+		console.log(response)
+		gallery_elements = []
+		for (let element of response.result.entries) {
+			if(element.name.endsWith(".json")){
+				let proj_name = element.name.slice(0,-5)
+				let image = await dbx.filesDownload({
+					path: '/' + proj_name + '.png'
+				})
+				// @ts-ignore
+				let binary: Blob = image.result.fileBlob
+				const blobToDataURL = (blob: Blob): Promise<string> => {
+					return new Promise<string>((resolve, reject) => {
+						const reader = new FileReader();
+						reader.onload = _e => resolve(reader.result as string);
+						reader.onerror = _e => reject(reader.error);
+						reader.onabort = _e => reject(new Error("Read aborted"));
+						reader.readAsDataURL(blob);
+					});
 				}
-			})
-			.catch(function (error) {
-				console.error(error.error || error)
-			})
-
-  }
-
-	if (isAuthenticated()) {
-    refetch_canvases()
-		dbx
-			.filesUpload({
-				path: '/amog.js',
-				contents: 'asdgmo:125125',
-			})
-			.then((r) => {
-				console.log(r)
-			})
-		// showPageSection('authed-section');
-
-		// Create an instance of Dropbox with the access token and use it to
-		// fetch and render the files in the users root directory.
-		// var dbx = new Dropbox.Dropbox({ accessToken: getAccessTokenFromUrl() });
-		// dbx.filesListFolder({path: ''})
-		//   .then(function(response) {
-		//     renderItems(response.result.entries);
-		//   })
-		//   .catch(function(error) {
-		//     console.error(error.error || error);
-		//   });
-	} else {
-		// showPageSection('pre-auth-section');
-
-		// Set the login anchors href using dbx.getAuthenticationUrl()
-		let dbx = new Dropbox({clientId: CLIENT_ID})
-
-		// var authUrl = dbx.auth.getAuthenticationUrl('http://localhost:8080/auth')
-		//   .then((authUrl) => {
-		//     document.getElementById('authlink').href = authUrl;
-		//   })
+				// console.log(
+				// 		await blobToDataURL(binary)
+				// )
+				// gallery_elements.push(new Element(
+				// 	proj_name,
+				// 	await blobToDataURL(binary)
+				// ))
+				gallery_elements = [... gallery_elements, new Element(
+					proj_name,
+					await blobToDataURL(binary)
+				)]
+			}
+		}
 	}
-  
+	const save_to_dropbox = async ()=>{
+		let r = await dbx.filesUpload({
+			path: '/' + current_project.id + '.json',
+			contents: JSON.stringify(current_project),
+			// @ts-ignore
+			mode: "overwrite"
+		})
+		r = await dbx.filesUpload({
+			path: '/' + current_project.id + '.png',
+			contents: await (await fetch(((canvas_image as HTMLImageElement).src))).blob(),
+			// @ts-ignore
+			mode: "overwrite"
+		})
+		await refetch_canvases()
+	}
+
+
+	onMount(async () => {
+		await dbx_auther.try_init_dropbox()
+		authed = dbx_auther.authed
+		dbx = dbx_auther.dbx
+		if(authed){
+			refetch_canvases()
+		}
+	})
+
+
 </script>
 
 <style lang="scss">
@@ -165,12 +235,24 @@
 		user-select: none;
 		-webkit-tap-highlight-color: transparent;
 	}
-  #canvas-preview-img{
-    /* max-width: 12rem; */
-    height: 12rem;
-    /* max-width: 5rem; */
-    /* aspect-ratio:unset; */
-  }
+	#canvas-preview-img {
+		/* max-width: 12rem; */
+		height: 12rem;
+		/* max-width: 5rem; */
+		/* aspect-ratio:unset; */
+	}
+	.hide{
+		display: none;
+	}
+	:global(#gallery-container::-webkit-scrollbar){
+		background: black;
+	}
+	:global(#gallery-container::-webkit-scrollbar-track){
+		background: grey;
+	}
+	:global(#gallery-container::-webkit-scrollbar-thumb){
+		background: white; 
+	}
 	#gallery-container-outer {
 		position: fixed;
 		display: flex;
@@ -183,8 +265,12 @@
 		z-index: 100;
 		background: black;
 		#gallery-container {
+			// scrollbar-color: #6969dd #e0e0e0;
+			// scrollbar-width: thin;
+			overflow-y: overlay;
+			scrollbar-gutter: stable both-edges;
 			margin-top: 1rem;
-			overflow: scroll;
+			// overflow: scroll;
 			height: 100%;
 			max-width: 40rem;
 			width: 100%;
@@ -192,48 +278,118 @@
 			flex-direction: column;
 			align-items: center;
 			#top-bar {
-				#project-title{
+				#project-title {
 					margin-left: 0.5rem;
 				}
+				margin-bottom: 1rem;
+				width: 100%;
+				font-size: 2rem;
+				display: flex;
+				justify-content: space-between;
+			}
+			#options-bar {
+				* {
+					font-size: 0.95rem;
+					:global(svg){
+						fill: white;
+					}
+				}
+				#button{
+					display: flex;
+					cursor: pointer;
+					padding: 0rem 0.2rem;
+					&:active{
+						filter: invert(1);
+						background: black;
+					}
+				}
+				margin-bottom: 1rem;
 				width: 100%;
 				font-size: 2rem;
 				display: flex;
 				justify-content: space-between;
 			}
 			#back-button > :global(svg) {
+				&:active{
+					filter: invert(1);
+					background: black;
+				}
+				transform: scale(1.5) translate(0.2rem, 0px);
 				fill: white;
 				width: 3rem;
 				aspect-ratio: 1/1;
 				cursor: pointer;
 			}
 			#gallery-elements {
-				display: flex;
+				width: 100%;
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 10px;
+				grid-auto-rows: minmax(100px, auto);
+				#element{
+					cursor: pointer;
+					// pointer-events: none;
+					user-select: none;
+					#element-name{
+						margin-bottom: 0.5rem;
+					}
+					&:active{
+						background: white;
+						*{
+							color: black;
+						}
+					}
+				}
 			}
-			#current-project{
+			#current-project {
 				display: flex;
 				justify-content: space-between;
 				width: 100%;
-				#project-options * {
-					font-size: 1.3rem;
-				}
+				margin-bottom: 1rem;
+
 				#project-options {
 					display: flex;
 					flex-direction: column;
 					justify-content: space-between;
-				}
-				#project-save-button-title{
-					margin: auto;
-					margin-right: 0.5rem;
-				}
-				#project-save-button {
-					margin-right: 0.5rem;
-					cursor: pointer;
-					display: flex;
-					flex-direction: row;
-					height: 2rem;
-				}
-				#project-save-button :global(svg){
-					fill: white;
+					* {
+						font-size: 1.3rem;
+					}
+
+					#project-save-button-title {
+						// margin: auto;
+						margin-right: 0.5rem;
+					}
+					#project-save-button {
+						&:active{
+							filter: invert(1);
+							background: black;
+						}
+						.icon {
+							width: 2rem;
+						}
+						margin-right: 1.5rem;
+						cursor: pointer;
+						justify-content: flex-end;
+						display: flex;
+						flex-direction: row;
+						align-items: center;
+						height: 2rem;
+						max-width: 30rem;
+						width: 100%;
+						* {
+							font-size: 1.0rem;
+						}
+						// &.date{
+						// 	* {
+						// 		font-size: 0.6rem;
+						// 	}
+						// }
+					}
+					#project-save-button :global(svg) {
+						// margin-right: 0rem;
+						aspect-ratio: 1/1;
+						fill: white;
+					}
 				}
 			}
 		}
@@ -256,10 +412,10 @@
 	}
 
 	.knob {
-    &:active{
-      filter: invert(1);
-      background: black;
-    }
+		&:active {
+			filter: invert(1);
+			background: black;
+		}
 		cursor: pointer;
 		display: block;
 		aspect-ratio: 1/1;
@@ -276,3 +432,33 @@
 		height: 100%;
 	}
 </style>
+
+
+		<!-- const dataURLToBlob = async (dataURL) => {
+			let BASE64_MARKER = ';base64,';
+
+			if (dataURL.indexOf(BASE64_MARKER) == -1) {
+					let parts = dataURL.split(',');
+					let contentType = parts[0].split(':')[1];
+					let raw = decodeURIComponent(parts[1]);
+
+					return new Blob([raw], {type: contentType});
+			}
+
+			let parts = dataURL.split(BASE64_MARKER);
+			let contentType = parts[0].split(':')[1];
+			let raw = window.atob(parts[1]);
+			let rawLength = raw.length;
+
+			let uInt8Array = new Uint8Array(rawLength);
+
+			for (let i = 0; i < rawLength; ++i) {
+					uInt8Array[i] = raw.charCodeAt(i);
+			}
+			// TODO: REPLACE WITH THIS??
+			const blob = await (await fetch(dataURL)).blob(); 
+			return blob
+			// add connect-src data: to your Content-Security-Policy
+
+			return new Blob([uInt8Array], {type: contentType});
+		} -->

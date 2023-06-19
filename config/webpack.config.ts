@@ -133,6 +133,9 @@ module.exports.default = {
 			publicPath: './',
 			minify: false,
 		}),
+		new webpack.DefinePlugin({
+			'process.env.NODE_ENV': isDevelopment ? JSON.stringify('development') : JSON.stringify('production'), // Set your desired environment here
+		}),
 	],
 	optimization: {
 		minimize: false,
