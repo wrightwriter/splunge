@@ -1,7 +1,7 @@
 <svelte:options accessors />
 
 <script lang="ts">
-	import { BrushType } from 'stuff'
+	import { BrushType } from 'brush_stroke'
 	import {onMount} from 'svelte'
 
   export let selected_brush_type: BrushType;

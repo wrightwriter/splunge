@@ -59,9 +59,13 @@
 				</div>
 				<div id="options-bar">
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<div id="button" on:click={() => { 
-						new_project()
-						gallery_open = false
+					<div id="button" on:click={async () => { 
+						let safe = await is_safe_to_switch_to_new_project()
+						safe = safe ? safe : confirm('Are you sure you want to create another project? This one is not saved.')
+						if(safe){
+							new_project()
+							gallery_open = false
+						}
 					}}>
 						<div>
 							New file
@@ -73,14 +77,18 @@
 					{#each gallery_elements as element, i}
 						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<div id="element" on:click={async ()=>{
-							let proj = await dbx.filesDownload({
-								path: '/' + element.name + '.json'
-							});
-							// @ts-ignore
-							let binary = await proj.result.fileBlob.text()
-							let binary_json = JSON.parse(binary)
-							load_project(binary_json)
-							gallery_open = false
+							let safe = await is_safe_to_switch_to_new_project()
+							safe = safe ? safe : confirm('Are you sure you want to switch to another project? This one is not saved.')
+							if(safe){
+								let proj = await dbx.filesDownload({
+									path: '/' + element.name + '.json'
+								});
+								// @ts-ignore
+								let binary = await proj.result.fileBlob.text()
+								let binary_json = JSON.parse(binary)
+								load_project(binary_json)
+								gallery_open = false
+							}
 						}} 
 						style={ Number(element.name) === current_project.id ? "border: 0.1rem solid white;" : ""}
 						>
@@ -117,11 +125,13 @@
 	import { type files } from "dropbox"
 	import { DropboxAuther } from 'dropbox_auth'
 	import { element } from 'svelte/internal'
+	import {floating_modal_message} from 'store'
 
 	export let current_project: Project
 	export let get_current_canvas_as_image: () => Promise<[HTMLImageElement, Blob]>
 	export let new_project: () => void
 	export let load_project: (project: Project) => void
+	export let project_has_been_modified: boolean
 
 	const format_time = (t: number | string): string =>{
 		return new Date(Number(t)).toLocaleString('en-GB', {
@@ -158,6 +168,29 @@
 
 	const log_into_dropbox = async ()=> {
 		await dbx_auther.doAuth()
+	}
+	
+	export const is_safe_to_switch_to_new_project = async (): Promise<boolean> =>{
+		let project_is_saved_to_dropbox = false
+
+		if(!dbx_auther.authed){
+			project_is_saved_to_dropbox = true
+		} else {
+			let response = await dbx.filesListFolder({path: ''})
+			for (let element of response.result.entries) {
+				let proj_name = Number(element.name.slice(0,-5))
+				if(proj_name === current_project.id){
+					project_is_saved_to_dropbox = true
+					break
+				}
+			}
+		}
+
+		if(project_has_been_modified || !project_is_saved_to_dropbox){
+			return false
+		} else {
+			return true
+		}
 	}
 
 	const download_image = async ()=>{
@@ -202,6 +235,7 @@
 		}
 	}
 	const save_to_dropbox = async ()=>{
+		floating_modal_message.set("Starting upload to dropbox.")
 		let r = await dbx.filesUpload({
 			path: '/' + current_project.id + '.json',
 			contents: JSON.stringify(current_project),
@@ -214,6 +248,8 @@
 			// @ts-ignore
 			mode: "overwrite"
 		})
+		floating_modal_message.set("Upload to dropbox succesful.")
+		project_has_been_modified = false
 		await refetch_canvases()
 	}
 

@@ -9,6 +9,7 @@ let WebpackDev = require('webpack-dev-server')
 let SvelteCheckPlugin = require('svelte-check-plugin')
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 const fs = require('fs')
+const WatchExternalFilesPlugin = require('webpack-watch-files-plugin')
 
 /**
  * Change this to `true` to run svelte-check during hot reloads. This will impact build speeds but will show more
@@ -51,6 +52,7 @@ module.exports.default = {
 			fs: false,
 			crypto: false,
 			util: false,
+			http: false,
 		},
 	},
 	ignoreWarnings: [/Failed to parse source map/],
@@ -148,6 +150,15 @@ module.exports.default = {
 	// 		ca: fs.readFileSync('./MY_FILENAME.pem'),
 	// 	},
 	// },
+}
+if (isDevelopment) {
+	// console.log('AMOGUS')
+	// console.log(WatchExternalFilesPlugin)
+	module.exports.default.plugins.push(
+		new WatchExternalFilesPlugin.default({
+			files: ['./src/**/*.glsl', '!./src/*.test.glsl'],
+		}),
+	)
 }
 
 if (isProduction) {

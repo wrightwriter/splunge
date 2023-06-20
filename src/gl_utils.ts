@@ -1,7 +1,41 @@
+import {validateHeaderValue} from 'http'
 import {isThisTypeNode} from 'typescript'
 import {pow} from 'wmath'
 
 let gl: WebGL2RenderingContext
+
+export function init_gl_error_handling() {
+	gl.glEnums = {}
+	gl.enumStringToValue = {}
+	for (let propertyName in gl) {
+		if (typeof gl[propertyName] === 'number') {
+			gl.glEnums[gl[propertyName]] = propertyName
+			gl.enumStringToValue[propertyName] = gl[propertyName]
+		}
+	}
+}
+
+export function gl_enum_to_string(value): string {
+	// checkInit();
+	const name = window.gl.glEnums[value]
+	return name !== undefined ? 'gl.' + name : '/*UNKNOWN WebGL ENUM*/ 0x' + value.toString(16) + ''
+}
+export function print_on_gl_error() {
+	let err = window.gl.getError()
+	if (err !== 0) {
+		console.error(err)
+		console.error(gl_enum_to_string(err))
+	}
+}
+export function pause_on_gl_error() {
+	let err = window.gl.getError()
+	if (err !== 0) {
+		console.error(err)
+		console.error(gl_enum_to_string(err))
+		debugger
+	}
+}
+
 export function init_utils() {
 	gl = window.gl
 	gl.defaultVao = gl.createVertexArray() as WebGLVertexArrayObject
@@ -361,6 +395,8 @@ export class Thing {
 	static draw_external_buffs_and_shader(buffs: BuffBinding[], shader: ShaderProgram, params: DrawParams) {
 		shader.use()
 		gl.bindVertexArray(gl.defaultVao)
+		gl.disableVertexAttribArray(0)
+		gl.disableVertexAttribArray(1)
 		let i = 0
 		for (let buff of buffs) {
 			gl.enableVertexAttribArray(i)
@@ -424,7 +460,7 @@ export class VertexBuffer {
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
 			gl.vertexAttribPointer(
 				idx,
-				params.stride ?? this.single_vert_sz,
+				params.vert_sz ?? this.single_vert_sz,
 				params.type ?? this.type,
 				false,
 				params.stride ?? this.stride,
@@ -438,6 +474,7 @@ export class VertexBuffer {
 
 	constructor(single_vert_sz: number, type: number = gl.FLOAT, max_size: number = 1000000) {
 		this.buff = gl.createBuffer() as WebGLBuffer
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
 		this.type = type
 
 		this.single_vert_sz = single_vert_sz
@@ -451,6 +488,9 @@ export class VertexBuffer {
 		} else {
 			this.cpu_buff = new Uint32Array(max_size)
 		}
+
+		// gl.bufferData(gl.ARRAY_BUFFER, this.cpu_buff, gl.DYNAMIC_DRAW)
+		gl.bufferData(gl.ARRAY_BUFFER, this.cpu_buff.length * this.cpu_buff.BYTES_PER_ELEMENT, gl.DYNAMIC_DRAW)
 		this.sz = 0
 	}
 	push_vert(vert: number[]) {
@@ -476,16 +516,32 @@ export class VertexBuffer {
 			// console.log('sz byes')
 			// console.log(sz_in_bytes)
 			// if (_buff.length > 0) gl.bufferData(gl.ARRAY_BUFFER, _buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
-			if (_buff.length > 0) gl.bufferData(gl.ARRAY_BUFFER, _buff, gl.DYNAMIC_DRAW, 0)
+			// if (_buff.length > 0) gl.bufferData(gl.ARRAY_BUFFER, _buff, gl.DYNAMIC_DRAW, 0)
+			// if (_buff.length > 0) gl.bufferData(gl.ARRAY_BUFFER, _buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
+			// gl.bufferData(gl.ARRAY_BUFFER, _buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
+			gl.bufferSubData(gl.ARRAY_BUFFER, 0, _buff, 0, sz_in_bytes)
+			pause_on_gl_error()
 		} else {
-			gl.bindBuffer(gl.ARRAY_BUFFER, input_buff)
-			const sz_in_bytes = input_buff.length * input_buff.BYTES_PER_ELEMENT
-			gl.bufferData(gl.ARRAY_BUFFER, input_buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
+			// const sz_in_bytes = input_buff.length * input_buff.BYTES_PER_ELEMENT
+			const sz_in_bytes = input_buff.byteLength
+			// gl.bufferData(gl.ARRAY_BUFFER, input_buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
+			// gl.bufferSubData(gl.ARRAY_BUFFER, 0, input_buff, 0, sz_in_bytes)
+			// gl.bufferData(gl.ARRAY_BUFFER, sz_in_bytes, gl.DYNAMIC_DRAW)
+			// gl.bufferSubData(gl.ARRAY_BUFFER, 0, input_buff, 0, sz_in_bytes)
+			gl.bufferSubData(gl.ARRAY_BUFFER, 0, input_buff)
+
+			// gl.bufferSubData(gl.ARRAY_BUFFER,0, input_buff.buffer, gl.DYNAMIC_DRAW)
+			// @ts-ignore
+			// gl.bufferSubData(gl.ARRAY_BUFFER, input_buff.buffer, gl.DYNAMIC_DRAW)
+			pause_on_gl_error()
 		}
 	}
 	upload() {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.buff)
 		const sz_in_bytes = this.sz * this.cpu_buff.BYTES_PER_ELEMENT
-		gl.bufferData(gl.ARRAY_BUFFER, this.cpu_buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
+		// gl.bufferData(gl.ARRAY_BUFFER, this.cpu_buff, gl.DYNAMIC_DRAW, 0, sz_in_bytes)
+		gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.cpu_buff, 0, sz_in_bytes)
+		pause_on_gl_error()
 	}
 }

@@ -1,7 +1,74 @@
 import {Framebuffer, ShaderProgram, Texture, Thing} from 'gl_utils'
-import {BrushStroke, BrushType, Utils} from 'stuff'
+import {Utils} from 'stuff'
+import {BrushStroke, BrushType} from 'brush_stroke'
 import {cos, floor, sin} from 'wmath'
 import earcut from 'earcut'
+import libtess from 'libtess'
+const tessy = (function initTesselator() {
+	// function called for each vertex of tesselator output
+	function vertexCallback(data, polyVertArray) {
+		// console.log(data[0], data[1]);
+		polyVertArray[polyVertArray.length] = data[0]
+		polyVertArray[polyVertArray.length] = data[1]
+	}
+	function begincallback(type) {
+		if (type !== libtess.primitiveType.GL_TRIANGLES) {
+			console.log('expected TRIANGLES but got type: ' + type)
+		}
+	}
+	function errorcallback(errno) {
+		console.log('error callback')
+		console.log('error number: ' + errno)
+	}
+	// callback for when segments intersect and must be split
+	function combinecallback(coords, data, weight) {
+		// console.log('combine callback');
+		return [coords[0], coords[1], coords[2]]
+	}
+	function edgeCallback(flag) {
+		// don't really care about the flag, but need no-strip/no-fan behavior
+		// console.log('edge flag: ' + flag);
+	}
+
+	const tessy = new libtess.GluTesselator()
+	// tessy.gluTessProperty(libtess.gluEnum.GLU_TESS_WINDING_RULE, libtess.windingRule.GLU_TESS_WINDING_POSITIVE);
+	tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_VERTEX_DATA, vertexCallback)
+	tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_BEGIN, begincallback)
+	tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_ERROR, errorcallback)
+	tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_COMBINE, combinecallback)
+	tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_EDGE_FLAG, edgeCallback)
+
+	return tessy
+})()
+
+function triangulate(contours) {
+	// libtess will take 3d verts and flatten to a plane for tesselation
+	// since only doing 2d tesselation here, provide z=1 normal to skip
+	// iterating over verts only to get the same answer.
+	// comment out to test normal-generation code
+	tessy.gluTessNormal(0, 0, 1)
+
+	const triangleVerts = []
+	tessy.gluTessBeginPolygon(triangleVerts)
+
+	for (let i = 0; i < contours.length; i++) {
+		tessy.gluTessBeginContour()
+		let contour = contours[i]
+		for (let j = 0; j < contour.length; j += 2) {
+			const coords = [contour[j], contour[j + 1], 0]
+			tessy.gluTessVertex(coords, coords)
+		}
+		tessy.gluTessEndContour()
+	}
+
+	// finish polygon (and time triangulation process)
+	// const startTime = window.nowish()
+	tessy.gluTessEndPolygon()
+	// const endTime = window.nowish()
+	// console.log('tesselation time: ' + (endTime - startTime).toFixed(2) + 'ms')
+
+	return triangleVerts
+}
 
 let gl: WebGL2RenderingContext
 export class Drawer {
@@ -130,6 +197,7 @@ export class Drawer {
 	}
 
 	draw_any_stroke(stroke: BrushStroke, t: number, brush_buffer: Thing, zoom: number, panning: number[]) {
+		console.log('START DRAWING')
 		this.t = t
 		this.zoom = zoom
 		this.panning = [...panning]
@@ -150,6 +218,7 @@ export class Drawer {
 					stroke.draw_params.tex_stretch,
 				)
 			}
+			// console.log(stroke.positions)
 		} else if (stroke.brush_type === BrushType.Long) {
 			this.fill_buff_for_long_brush(stroke, brush_buffer)
 			brush_buffer.shader.use()
@@ -157,41 +226,111 @@ export class Drawer {
 			brush_buffer.upload_all_buffs()
 			brush_buffer.draw()
 		} else if (stroke.brush_type === BrushType.Tri) {
-			const Tess2 = require('tess2')
 			let positions = [...stroke.positions]
-			console.log(stroke)
-			positions.forEach((v, i, a) => {
-				a[i] = (v * 0.5 + 0.5) * 1000
-				a[i] = floor(a[i])
-			})
-			let triangles = earcut(positions)
-			// let triangles = Tess2.tesselate({
-			// 	contours: [positions],
-			// 	windingRule: Tess2.WINDING_ODD,
-			// 	elementType: Tess2.POLYGONS,
-			// 	polySize: 3,
-			// 	vertexSize: 2,
-			// }).elements
-			triangles.forEach((v, i, a) => {
-				a[i] = (a[i] / 1000 - 0.5) / 0.5 + 0.5
-				// a[i] = (v / 10000) * 5 * 10
-			})
-			console.log(triangles)
+			// console.log(stroke)
+			let new_triangles = new Float32Array(positions.length * 3)
+			let new_cols = new Float32Array((positions.length / 2) * 3 * 4)
+			// new_cols.forEach((v, i, a) => {
+			// 	a[i] = 1
+			// })
+			for (let i = 0; i < positions.length / 2 - 1; i++) {
+				new_triangles[i * 3 * 2] = positions[0]
+				new_triangles[i * 3 * 2 + 1] = positions[0 + 1]
+				new_cols[i * 3 * 4] = stroke.colours[0]
+				new_cols[i * 3 * 4 + 1] = stroke.colours[1]
+				new_cols[i * 3 * 4 + 2] = stroke.colours[2]
+				new_cols[i * 3 * 4 + 3] = stroke.opacities[0]
+				new_triangles[i * 3 * 2 + 2] = positions[i * 2]
+				new_triangles[i * 3 * 2 + 3] = positions[i * 2 + 1]
+				new_cols[i * 3 * 4 + 4] = stroke.colours[i * 3]
+				new_cols[i * 3 * 4 + 5] = stroke.colours[i * 3 + 1]
+				new_cols[i * 3 * 4 + 6] = stroke.colours[i * 3 + 2]
+				new_cols[i * 3 * 4 + 7] = stroke.opacities[i]
+				new_triangles[i * 3 * 2 + 4] = positions[i * 2 + 2]
+				new_triangles[i * 3 * 2 + 5] = positions[i * 2 + 3]
+				new_cols[i * 3 * 4 + 8] = stroke.colours[i * 3 + 3]
+				new_cols[i * 3 * 4 + 9] = stroke.colours[i * 3 + 4]
+				new_cols[i * 3 * 4 + 10] = stroke.colours[i * 3 + 5]
+				new_cols[i * 3 * 4 + 11] = stroke.opacities[i + 1]
+			}
 			this.brush_triangulated_program.use()
-			brush_buffer.buffs[0].upload_external_array(triangles)
-			// brush_buffer.buffs[1].upload_external_buff(triangles)
+			brush_buffer.buffs[0].upload_external_array(new_triangles)
+			brush_buffer.buffs[1].upload_external_array(new_cols)
+
 			this.set_shared_uniforms(this.brush_triangulated_program, [0, 0, 0, 0], t)
 			// brush_buffer.draw_with_external_shader(this.brush_triangulated_program)
+			// if (triangles.length > 50) debugger
 			Thing.draw_external_buffs_and_shader(
-				[{buff: brush_buffer.buffs[0], params: {vert_sz: 2}}],
+				[
+					{buff: brush_buffer.buffs[0], params: {vert_sz: 2}},
+					{buff: brush_buffer.buffs[1], params: {vert_sz: 4}},
+				],
 				this.brush_triangulated_program,
 				{
-					draw_cnt: triangles.length / 3 / 2,
+					// draw_cnt: brush_buffer.buffs[0].sz / 2,
+					draw_cnt: new_triangles.length / 2,
+					// draw_cnt: this.bu,
 				},
 			)
-
-			// brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])
-			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+		} else {
+			// const Tess2 = require('tess2')
+			// let positions = [...stroke.positions]
+			// // console.log(stroke)
+			// positions.forEach((v, i, a) => {
+			// 	a[i] = (v * 0.5 + 0.5) * 1000
+			// 	a[i] = floor(a[i])
+			// })
+			// // {
+			// // let triangles = earcut(positions)
+			// // const new_triangles = new Float32Array(triangles.length * 2)
+			// // triangles.forEach((v: number, i: number, a: number) => {
+			// // new_triangles[i * 2] = stroke.positions[v * 2]
+			// // new_triangles[i * 2 + 1] = stroke.positions[v * 2 + 1]
+			// // })
+			// // }
+			// // {
+			// // const triangles = Tess2.tesselate({
+			// // 	contours: [positions],
+			// // 	windingRule: Tess2.WINDING_NONZERO,
+			// // 	elementType: Tess2.POLYGONS,
+			// // 	polySize: 3,
+			// // 	vertexSize: 2,
+			// // })
+			// // const new_triangles = new Float32Array(triangles.elements.length * 2)
+			// // triangles.elements.forEach((v: number, i: number, a: number) => {
+			// // 	new_triangles[i * 2] = (triangles.vertices[v * 2] / 1000 - 0.5) / 0.5
+			// // 	new_triangles[i * 2 + 1] = (triangles.vertices[v * 2 + 1] / 1000 - 0.5) / 0.5
+			// // 	// a[i] = (a[i] / 1000 - 0.5) / 0.5
+			// // 	// a[i] = (v / 10000) * 5 * 10
+			// // })
+			// // }
+			// // {
+			// const triangles: number[] = triangulate([positions])
+			// const new_triangles = new Float32Array(triangles.length)
+			// // @ts-ignore
+			// // triangles.forEach((v: number, i: number, a: number) => {
+			// 	// new_triangles[i] = (v / 1000 - 0.5) / 0.5
+			// 	// new_triangles[i * 2] = stroke.positions[v * 2]
+			// 	// new_triangles[i * 2 + 1] = stroke.positions[v * 2 + 1]
+			// // })
+			// // }
+			// // console.log(triangles)
+			// this.brush_triangulated_program.use()
+			// brush_buffer.buffs[0].upload_external_array(new_triangles)
+			// // brush_buffer.buffs[1].upload_external_buff(triangles)
+			// this.set_shared_uniforms(this.brush_triangulated_program, [0, 0, 0, 0], t)
+			// // brush_buffer.draw_with_external_shader(this.brush_triangulated_program)
+			// // if (triangles.length > 50) debugger
+			// Thing.draw_external_buffs_and_shader(
+			// 	[{buff: brush_buffer.buffs[0], params: {vert_sz: 2}}],
+			// 	this.brush_triangulated_program,
+			// 	{
+			// 		// draw_cnt: triangles.length / 3,
+			// 		draw_cnt: new_triangles.length / 3 / 2,
+			// 	},
+			// )
+			// // brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])
+			// // brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
 		}
 	}
 }

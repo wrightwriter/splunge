@@ -8,6 +8,8 @@ export declare global {
 	}
 	interface WebGL2RenderingContext {
 		defaultVao: WebGLVertexArrayObject
+		glEnums: Object
+		enumStringToValue: Object
 	}
 	interface User {
 		email: string

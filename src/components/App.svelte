@@ -28,6 +28,7 @@
 			<UndoRedoWidget
 				undo={() => {
 					undo_pending = true
+					floating_modal_message.set("undo")
 				}}
 				redo={() => {
 					redo_pending = true
@@ -44,7 +45,10 @@
 				load_project={(project)=>{ 
 					project_pending_load = project
 				}}
+				bind:project_has_been_modified={project_has_been_modified}
+				bind:is_safe_to_switch_to_new_project={is_safe_to_switch_to_new_project}
 				/>
+			<FloatingModal />
 			<PickColourWidget
 				pick_from_canvas={() => pick_from_canvas()}
 				bind:picking={picking}
@@ -86,14 +90,16 @@
 	import {onMount} from 'svelte'
 	import {onDestroy} from 'svelte'
 	import {get, writable} from 'svelte/store'
+	import {floating_modal_message} from 'store'
 
-	import {Texture, Framebuffer, ShaderProgram, init_utils, resizeIfNeeded, finish_frame, Thing, VertexBuffer} from 'gl_utils'
+	import {Texture, Framebuffer, ShaderProgram, init_utils, resizeIfNeeded, finish_frame, Thing, VertexBuffer, print_on_gl_error, init_gl_error_handling} from 'gl_utils'
 
 	import Knob from './Knob.svelte'
 	import BrushSizeWidget from './BrushSizeWidget.svelte'
 	import BrushTypeWidget from './BrushTypeWidget.svelte'
 	import UndoRedoWidget from './UndoRedoWidget.svelte'
 	import GalleryWidget from './GalleryWidget.svelte'
+	import FloatingModal from './FloatingModal.svelte'
 	import PickColourWidget from './PickColourWidget.svelte'
 
 	import ColourDisplay from './ColourDisplay.svelte'
@@ -102,7 +108,8 @@
 	import chroma from 'chroma-js'
 	import {Hash, abs, cos, floor, pow, sin, tau, tri, mix} from 'wmath'
 	import {clamp, lerp, mod} from '@0b5vr/experimental'
-	import {BrushStroke, BrushType, DrawParams, Project, Utils} from 'stuff'
+	import {Project, Utils} from 'stuff'
+	import {BrushStroke, BrushType, DrawParams} from 'brush_stroke'
 	import earcut from 'earcut'
 	import {Dropbox} from 'dropbox'
 	import getToken from 'getToken'
@@ -163,6 +170,8 @@
 
 	let project = new Project()
 	let project_pending_load: Project
+	let project_has_been_modified = false
+	let is_safe_to_switch_to_new_project
 
 	let canvas_tex: Texture
 	let canvas_fb: Framebuffer
@@ -176,7 +185,7 @@
 			canvas_read_tex,
 		)
 		let c = canvas_read_tex.read_back_pixel(coord)
-		console.log(c)
+		// console.log(c)
 
 		picked_col = [...c]
 		picked_col[0] = c[0] / 255
@@ -206,30 +215,16 @@
 			}
 		}
 	}
-	let glEnums
-	let enumStringToValue
-	const glEnumToString = (value): string => {
-		// checkInit();
-		var name = glEnums[value]
-		return name !== undefined ? 'gl.' + name : '/*UNKNOWN WebGL ENUM*/ 0x' + value.toString(16) + ''
-	}
 
-	const initWebGL = () => {
+	const init_web_gl = () => {
 		//@ts-ignore
 		window.gl = gl = canvasElement.getContext('webgl2', {
 			preserveDrawingBuffer: true,
 			alpha: false,
 		})
-		glEnums = {}
-		enumStringToValue = {}
-		for (var propertyName in gl) {
-			if (typeof gl[propertyName] == 'number') {
-				glEnums[gl[propertyName]] = propertyName
-				enumStringToValue[propertyName] = gl[propertyName]
-			}
-		}
-		userAgentRes = [canvasElement.clientWidth, canvasElement.clientWidth]
 		init_utils()
+		init_gl_error_handling()
+		userAgentRes = [canvasElement.clientWidth, canvasElement.clientWidth]
 
 		default_framebuffer = Object.create(Framebuffer.prototype)
 		default_framebuffer.default = true
@@ -248,15 +243,30 @@
 		gl.disable(gl.DEPTH_TEST)
 		// gl.enable(gl.BLEND)
 	}
-	const initOtherStuff = () => {
+	const init_other_stuff = () => {
 		io = new IO()
 		document.addEventListener('contextmenu', (event) => event.preventDefault())
+		// @ts-ignore
+		window.history.pushState(null, null, window.location.href);
+		window.addEventListener('popstate', ()=> {
+			// @ts-ignore
+			window.history.pushState(null, null, window.location.href);
+		});
+		// window.onbeforeunload = async ()=> {
+		// 	const is_safe = await is_safe_to_switch_to_new_project()
+		// 	console.log(is_safe)
+		// 	// if(!){
+		// 		return 'Do you want to leave this page?';
+		// 	// } else {
+		// 	return "amog"
+		// 	// }
+		// }
 		modals = [chaosSemiModal, dynamicsSemiModal, texDynamicsSemiModal]
 	}
 
 	onMount(async () => {
-		initWebGL()
-		initOtherStuff()
+		init_web_gl()
+		init_other_stuff()
 
 		//! ------------------- SHADERS
 		const brush_preview_program = new ShaderProgram(require('shaders/brush_preview.vert'), require('shaders/brush_preview.frag'))
@@ -378,6 +388,7 @@
 		
 		let load_project = (new_project: Project) =>{
 			project = new Project()
+			project_has_been_modified = false
 			redo_history_length = 0
 			for (let key of Object.keys(new_project as Object)) {
 				// @ts-ignore
@@ -453,9 +464,9 @@
 				if (io.mouse_wheel) {
 					if (io.mouse_wheel > 0) {
 						// zoom *= 2
-						desired_zoom *= 1.5
+						desired_zoom *= 1.2
 					} else {
-						desired_zoom /= 1.5
+						desired_zoom /= 1.2
 					}
 				}
 			}
@@ -475,6 +486,7 @@
 
 			// ----- TEMP
 			if ((io.mouse_just_pressed || (io.mouse_down && io.mouse_just_moved)) && io.pointerType !== 'touch') {
+				project_has_been_modified = true
 				redraw_needed = true
 				if (io.mouse_just_pressed && !(redo_pending || undo_pending)) {
 					brush_stroke = new BrushStroke(selected_brush_type, new DrawParams(tex_dynamics, tex_lch_dynamics, tex_stretch))
@@ -579,11 +591,7 @@
 					// console.log("DRAW PICKER")
 				}
 			}
-			let err = gl.getError()
-			if (err !== 0) {
-				console.log(err)
-				console.log(glEnumToString(err))
-			}
+			print_on_gl_error()
 			brushSizeWidgetStoppedDragging = false
 			redo_pending = false
 			undo_pending = false
