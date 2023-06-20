@@ -1,4 +1,4 @@
-import {Framebuffer, ShaderProgram, Texture, Thing} from 'gl_utils'
+import {Framebuffer, ShaderProgram, Texture, Thing, UBO} from 'gl_utils'
 import {Utils} from 'stuff'
 import {BrushStroke, BrushType} from 'brush_stroke'
 import {cos, floor, sin} from 'wmath'
@@ -123,6 +123,67 @@ export class Drawer {
 			_tex_lch_dynamics[2],
 		])
 		draw_blobs_stroke_program.setUniformVec('tex_stretch', [_tex_stretch[0], _tex_stretch[1]])
+
+		const push_with_offs = (vals: number[], offs: number) => {
+			vals.forEach((v, i) => {
+				window.ubo.buff.cpu_buff[offs + i] = v
+			})
+		}
+
+		push_with_offs(_col, 0)
+		push_with_offs(_pos, 8)
+		push_with_offs(_sz, 14)
+		push_with_offs(_rot, 16)
+		push_with_offs([_opacity], 21)
+
+		window.ubo.buff.upload()
+		// push_with_offs(_rot, 17)
+		// 		ubo.buff.push_vert([
+		// // vec4 stroke_col;
+		// // vec2 panning;
+		// // vec2 canvasR;
+		// // vec2 stroke_pos;
+		// // vec2 stroke_pos_screen;
+		// // vec2 R;
+		// // vec2 brush_sz;
+		// // vec2 tilt;
+		// // float time;
+		// // float zoom;
+		// // float frame;
+		// // float stroke_opacity;
+		// // float pressure;
+		// 			... col,
+		// 			... panning,
+		// 			...canvas_read_tex.res,
+		// 			...brush_pos_ndc_canvas,
+		// 			... brush_pos_ndc_screen,
+		// 			... default_framebuffer.textures[0].res,
+		// 			... brush_sz,
+		// 			... brush_rot,
+		// 			t,
+		// 			zoom,
+		// 			frame,
+		// 			stroke_opacity,
+		// 			io.pressure,
+		// 			// io.mouse_down ? 1 : 0,
+		// 		])
+
+		// window.ubo.buff.upload_external_array([
+		// 	... col,
+		// 	... panning,
+		// 	...canvas_read_tex.res,
+		// 	...brush_pos_ndc_canvas,
+		// 	... brush_pos_ndc_screen,
+		// 	... default_framebuffer.textures[0].res,
+		// 	... brush_sz,
+		// 	... brush_rot,
+		// 	t,
+		// 	zoom,
+		// 	frame,
+		// 	stroke_opacity,
+		// 	io.pressure,
+		// 	// io.mouse_down ? 1 : 0,
+		// ])
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 	}
 
