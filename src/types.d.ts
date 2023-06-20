@@ -1,6 +1,9 @@
+import {UBO} from 'gl_utils'
+
 export declare global {
 	interface Window {
 		gl: WebGL2RenderingContext
+		ubo: UBO
 	}
 	interface PointerEvent {
 		altitudeAngle: number
@@ -10,6 +13,7 @@ export declare global {
 		defaultVao: WebGLVertexArrayObject
 		glEnums: Object
 		enumStringToValue: Object
+		debugEnabled: boolean
 	}
 	interface User {
 		email: string

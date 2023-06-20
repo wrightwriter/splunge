@@ -92,7 +92,7 @@
 	import {get, writable} from 'svelte/store'
 	import {floating_modal_message} from 'store'
 
-	import {Texture, Framebuffer, ShaderProgram, init_utils, resizeIfNeeded, finish_frame, Thing, VertexBuffer, print_on_gl_error, init_gl_error_handling} from 'gl_utils'
+	import {Texture, Framebuffer, ShaderProgram, init_utils, resizeIfNeeded, finish_frame, Thing, VertexBuffer, print_on_gl_error, init_gl_error_handling, UBO} from 'gl_utils'
 
 	import Knob from './Knob.svelte'
 	import BrushSizeWidget from './BrushSizeWidget.svelte'
@@ -223,7 +223,11 @@
 			alpha: false,
 		})
 		init_utils()
+
+		gl.debugEnabled = process.env.NODE_ENV === 'development'
+		// gl.debugEnabled = false
 		init_gl_error_handling()
+
 		userAgentRes = [canvasElement.clientWidth, canvasElement.clientWidth]
 
 		default_framebuffer = Object.create(Framebuffer.prototype)
@@ -313,6 +317,9 @@
 			gl.TRIANGLES,
 			new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag')),
 		)
+		
+		let ubo = new UBO()
+		window.ubo = ubo
 
 		let t: number = 0
 		let delta_t: number = 0
@@ -323,20 +330,58 @@
 		let brush_stroke = new BrushStroke(selected_brush_type, new DrawParams(tex_dynamics, tex_lch_dynamics, tex_stretch))
 
 		const set_shared_uniforms = (program: ShaderProgram, col: number[], t: number) => {
-			program.setUniformFloat('time', t)
-			program.setUniformFloat('zoom', zoom)
-			program.setUniformInt('frame', frame)
-			program.setUniformVec('R', default_framebuffer.textures[0].res)
-			program.setUniformVec('panning', panning)
-			program.setUniformVec('canvasR', canvas_read_tex.res)
-			program.setUniformVec('stroke_pos', brush_pos_ndc_canvas)
-			program.setUniformVec('stroke_pos_screen', brush_pos_ndc_screen)
-			program.setUniformVec('stroke_col', col)
-			program.setUniformVec('brush_sz', brush_sz)
-			program.setUniformFloat('stroke_opacity', stroke_opacity)
-			program.setUniformVec('tilt', brush_rot)
-			program.setUniformFloat('pressure', io.pressure)
-			program.setUniformInt('mouse_down', io.mouse_down ? 1 : 0)
+			ubo.buff.sz = 0
+			ubo.buff.push_vert([
+  // vec4 stroke_col;
+  // vec2 panning;
+  // vec2 canvasR;
+  // vec2 stroke_pos;
+  // vec2 stroke_pos_screen;
+  // vec2 R;
+  // vec2 brush_sz;
+  // vec2 tilt;
+  // float time;
+  // float zoom;
+  // float frame;
+  // float stroke_opacity;
+  // float pressure;
+				... col, 
+				... panning, 
+				...canvas_read_tex.res, 
+				...brush_pos_ndc_canvas,
+				... brush_pos_ndc_screen, 
+				... default_framebuffer.textures[0].res,
+				... brush_sz, 
+				... brush_rot, 
+				t, 
+				zoom, 
+				frame, 
+				stroke_opacity,
+				io.pressure, 
+				// io.mouse_down ? 1 : 0, 
+			])
+			
+			ubo.buff.upload()
+			
+			// arr.forEach((v,i,a)=>{
+			// 	ubo.buff.push_vert
+			// })
+
+			// ubo.buff.upload_external_array()
+			// program.setUniformFloat('time', t)
+			// program.setUniformFloat('zoom', zoom)
+			// program.setUniformFloat('frame', frame)
+			// program.setUniformVec('R', default_framebuffer.textures[0].res)
+			// program.setUniformVec('panning', panning)
+			// program.setUniformVec('canvasR', canvas_read_tex.res)
+			// program.setUniformVec('stroke_pos', brush_pos_ndc_canvas)
+			// program.setUniformVec('stroke_pos_screen', brush_pos_ndc_screen)
+			// program.setUniformVec('stroke_col', col)
+			// program.setUniformVec('brush_sz', brush_sz)
+			// program.setUniformFloat('stroke_opacity', stroke_opacity)
+			// program.setUniformVec('tilt', brush_rot)
+			// program.setUniformFloat('pressure', io.pressure)
+			// program.setUniformInt('mouse_down', io.mouse_down ? 1 : 0
 			program.setUniformTexture('canvas', canvas_fb.textures[0], 0)
 			program.setUniformTexture('temp_tex', temp_tex, 1)
 			program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 2)
