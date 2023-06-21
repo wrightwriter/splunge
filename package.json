@@ -6,7 +6,8 @@
   "scripts": {
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
     "lint": "eslint . --fix --ext .ts",
-    "build": "webpack --config ./config/webpack.config.ts --mode production --profile --json ./dist/stats.json",
+    "build": "webpack --config ./config/webpack.config.ts --mode production",
+    "buildb": "webpack --config ./config/webpack.config.ts --mode production --profile --json ./dist/stats.json",
     "start": "webpack-cli serve --config ./config/webpack.config.dev.ts --mode development --host=0.0.0.0",
     "analyze": "pnpm exec  webpack-bundle-analyzer ./dist/stats.json",
     "analyzeno": "pnpm exec webpack --profile --json > ./dist/stats.json && pnpm exec  webpack-bundle-analyzer -m json ./dist/stats.json -r ./dist/report.json"
@@ -57,6 +58,7 @@
     "@0b5vr/experimental": "^0.9.5",
     "@types/webmidi": "^2.0.7",
     "chroma-js": "^2.4.2",
+    "dexie": "4.0.1-alpha.22",
     "dropbox": "^10.34.0",
     "earcut": "^2.2.4",
     "libtess": "^1.2.2",
