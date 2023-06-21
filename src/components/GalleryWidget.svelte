@@ -42,6 +42,15 @@
 							</div>
 						</div>
 						<!-- svelte-ignore a11y-click-events-have-key-events -->
+						<div id="project-save-button" on:click={()=>{
+							localStorage.setItem('project', JSON.stringify(project))
+						}}>
+							<div id="project-save-button-title">Save to localStorage</div>
+							<div class="icon" style="transform: translate(0px,0.2rem);">
+								{@html captureIcon}
+							</div>
+						</div>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<div id="project-save-button" on:click={download_image}>
 							<div id="project-save-button-title">Download</div>
 							<div class="icon" style="transform: scale(1.34);">
