@@ -15,11 +15,12 @@ uniform vec2 tex_stretch;
 // uniform vec2 tilt;
 // uniform vec2 brush_sz;
 // uniform float pressure;
-uniform sampler2D canvas;
 uniform sampler2D canvas_back;
-uniform sampler2D canvas_read;
 uniform sampler2D temp_tex;
+uniform sampler2D canvas_a;
+uniform sampler2D canvas_b;
 
+// uniform float canvas_idx;
 
 			// ubo.buff.upload_external_array([
 			// 	t, 
@@ -48,6 +49,7 @@ uniform Settings {
   vec2 brush_sz;
   vec2 tilt;
   float time;
+  float canvas_idx;
   float zoom;
   float frame;
   float stroke_opacity;

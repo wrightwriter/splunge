@@ -123,7 +123,7 @@
 	let desired_zoom = 1
 	let panning: number[] = [0, 0]
 	let userAgentRes: Array<number> = [0, 0]
-	let canvasRes: Array<number> = [512 * 2, 512 * 4]
+	let canvasRes: Array<number> = [512 * 1, 512 * 2]
 	let default_framebuffer: Framebuffer
 
 	// Elements
@@ -225,7 +225,7 @@
 		init_utils()
 
 		gl.debugEnabled = process.env.NODE_ENV === 'development'
-		// gl.debugEnabled = false
+		gl.debugEnabled = false
 		init_gl_error_handling()
 
 		userAgentRes = [canvasElement.clientWidth, canvasElement.clientWidth]
@@ -296,7 +296,7 @@
 		canvas_tex = new Texture([canvasRes[0], canvasRes[1]])
 		canvas_fb = new Framebuffer([canvas_tex], true)
 		canvas_fb.clear([0, 0, 0, 0])
-		canvas_fb.pong_idx = 1 - canvas_fb.pong_idx
+		canvas_fb.pong()
 		canvas_fb.clear([0, 0, 0, 0])
 
 		const temp_tex = new Texture([canvasRes[0], canvasRes[1]])
@@ -332,60 +332,34 @@
 		const set_shared_uniforms = (program: ShaderProgram, col: number[], t: number) => {
 			ubo.buff.sz = 0
 			ubo.buff.push_vert([
-  // vec4 stroke_col;
-  // vec2 panning;
-  // vec2 canvasR;
-  // vec2 stroke_pos;
-  // vec2 stroke_pos_screen;
-  // vec2 R;
-  // vec2 brush_sz;
-  // vec2 tilt;
-  // float time;
-  // float zoom;
-  // float frame;
-  // float stroke_opacity;
-  // float pressure;
 				... col, 
 				... panning, 
-				...canvas_read_tex.res, 
+				...canvas_fb._textures[0].res, 
 				...brush_pos_ndc_canvas,
 				... brush_pos_ndc_screen, 
 				... default_framebuffer.textures[0].res,
 				... brush_sz, 
 				... brush_rot, 
 				t, 
+				canvas_fb.pong_idx,
 				zoom, 
 				frame, 
 				stroke_opacity,
 				io.pressure, 
 				// io.mouse_down ? 1 : 0, 
 			])
+			console.log(canvas_fb.pong_idx)
 			
 			ubo.buff.upload()
 			
-			// arr.forEach((v,i,a)=>{
-			// 	ubo.buff.push_vert
-			// })
+			// program.setUniformFloat("canvas_idx",canvas_fb.pong_idx)
+			// canvas_read_tex = canvas_fb.back_textures[0]
 
-			// ubo.buff.upload_external_array()
-			// program.setUniformFloat('time', t)
-			// program.setUniformFloat('zoom', zoom)
-			// program.setUniformFloat('frame', frame)
-			// program.setUniformVec('R', default_framebuffer.textures[0].res)
-			// program.setUniformVec('panning', panning)
-			// program.setUniformVec('canvasR', canvas_read_tex.res)
-			// program.setUniformVec('stroke_pos', brush_pos_ndc_canvas)
-			// program.setUniformVec('stroke_pos_screen', brush_pos_ndc_screen)
-			// program.setUniformVec('stroke_col', col)
-			// program.setUniformVec('brush_sz', brush_sz)
-			// program.setUniformFloat('stroke_opacity', stroke_opacity)
-			// program.setUniformVec('tilt', brush_rot)
-			// program.setUniformFloat('pressure', io.pressure)
-			// program.setUniformInt('mouse_down', io.mouse_down ? 1 : 0
-			program.setUniformTexture('canvas', canvas_fb.textures[0], 0)
-			program.setUniformTexture('temp_tex', temp_tex, 1)
-			program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 2)
-			program.setUniformTexture('canvas_read', canvas_read_tex, 3)
+			// program.setUniformTexture('canvas', canvas_fb.textures[0], 0)
+			program.setUniformTexture('temp_tex', temp_tex, 0)
+			program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 1)
+			program.setUniformTexture('canvas_b', canvas_fb._textures[0], 2)
+			program.setUniformTexture('canvas_a', canvas_fb._back_textures[0], 3)
 		}
 
 		drawer = new Drawer(
@@ -402,17 +376,14 @@
 			composite_stroke_to_canvas_program.use()
 			set_shared_uniforms(composite_stroke_to_canvas_program, [0, 0, 0, 0], t)
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-
 			temp_stroke_fb.clear([0, 0, 0, 0])
 		}
 
 		const redraw_whole_project = () => {
 			console.log('REDRAW EVERYTHING')
 			canvas_fb.clear()
-			canvas_fb.pong_idx = 1 - canvas_fb.pong_idx
+			canvas_fb.pong()
 			canvas_fb.clear()
-			canvas_fb.pong_idx = 1 - canvas_fb.pong_idx
-
 			temp_stroke_fb.clear()
 
 			let k = 0
@@ -421,13 +392,9 @@
 				temp_stroke_fb.start_draw()
 				drawer.draw_any_stroke(stroke, t, brush_buffer_b, zoom, [0, 0])
 				composite_stroke()
-				canvas_read_tex = canvas_fb.textures[0]
-				canvas_fb.pong_idx = 1 - canvas_fb.pong_idx
-				canvas_fb.needs_pong = false
+				canvas_fb.pong()
 				k++
 			}
-			canvas_read_tex = canvas_fb.back_textures[0]
-
 			redraw_needed = true
 		}
 		
@@ -442,34 +409,14 @@
 			redraw_whole_project()
 		}
 		let local_storage_proj = localStorage.getItem('project')
-		// local_storage_proj = null
 
 		if (local_storage_proj) {
 			local_storage_proj = JSON.parse(local_storage_proj)
 			// @ts-ignore
 			load_project(local_storage_proj)
 		}
-
-		const draw = (_t: number) => {
-			redraw_needed = false
-			const new_t = _t / 1000
-			delta_t = new_t - t
-			t = new_t
-			resizeIfNeeded(canvasElement, default_framebuffer, userAgentRes, (v: boolean) => {
-				redraw_needed = v
-			})
-			io.tick()
-			
-			if(new_project_pending){
-				load_project(new Project())
-				new_project_pending = false
-			}
-			if(project_pending_load){
-				load_project(project_pending_load)
-				// @ts-ignore
-				project_pending_load = undefined
-			}
-
+		
+		const handle_input_actions = ()=>{
 			if (io.getKey('AltLeft').down) {
 				if (io.getKey('AltLeft').just_pressed) {
 					picking = true
@@ -489,7 +436,7 @@
 					let coords = Utils.screen_NDC_to_canvas_NDC(
 						io.mouse_pos,
 						default_framebuffer.textures[0],
-						canvas_read_tex,
+						canvas_fb._textures[0],
 						zoom,
 						panning,
 					)
@@ -516,6 +463,7 @@
 				}
 			}
 
+			// ----- UNDO_REDO
 			let l_ctrl_down = io.getKey('ControlLeft').down
 			let l_shift_down = io.getKey('ShiftLeft').down
 			let z_just_pressed = io.getKey('KeyZ').just_pressed
@@ -528,11 +476,9 @@
 				if (redo_history_length <= project.brush_strokes.length) redraw_whole_project()
 				else redo_history_length -= 1
 			}
-
-			// ----- TEMP
-			if ((io.mouse_just_pressed || (io.mouse_down && io.mouse_just_moved)) && io.pointerType !== 'touch') {
-				project_has_been_modified = true
-				redraw_needed = true
+		}
+		
+		const record_stroke = ()=>{
 				if (io.mouse_just_pressed && !(redo_pending || undo_pending)) {
 					brush_stroke = new BrushStroke(selected_brush_type, new DrawParams(tex_dynamics, tex_lch_dynamics, tex_stretch))
 					for (let i = 0; i < redo_history_length; i++) {
@@ -593,19 +539,46 @@
 
 				brush_stroke.push_stroke(brush_pos_ndc_canvas, brush_rot, sz, stroke_opacity, col)
 
-				temp_stroke_fb.start_draw()
+		}
 
+		const draw = (_t: number) => {
+			redraw_needed = false
+			const new_t = _t / 1000
+			delta_t = new_t - t
+			t = new_t
+			resizeIfNeeded(canvasElement, default_framebuffer, userAgentRes, (v: boolean) => {
+				redraw_needed = v
+			})
+			io.tick()
+			
+			if(new_project_pending){
+				load_project(new Project())
+				new_project_pending = false
+			}
+			if(project_pending_load){
+				load_project(project_pending_load)
+				// @ts-ignore
+				project_pending_load = undefined
+			}
+
+			handle_input_actions()
+
+			// ----- RECORD STROKE / DRAW
+			if ((io.mouse_just_pressed || (io.mouse_down && io.mouse_just_moved)) && io.pointerType !== 'touch') {
+				project_has_been_modified = true
+				redraw_needed = true
+				record_stroke()
+				// localStorage.setItem('project', JSON.stringify(project))
+				temp_stroke_fb.start_draw()
 				drawer.draw_any_stroke(brush_stroke, t, brush_buffer, zoom, panning)
 			}
 			// ----- COMPOSITE
 			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
 				console.log(brush_stroke)
 				project.push_stroke(brush_stroke)
-				localStorage.setItem('project', JSON.stringify(project))
 				redraw_needed = true
-
 				composite_stroke()
-				canvas_read_tex = canvas_fb.textures[0]
+				canvas_fb.pong()
 			}
 
 			if (brushSizeWidgetDragging || brushSizeWidgetStoppedDragging) redraw_needed = true
@@ -628,12 +601,9 @@
 				if (picking) {
 					picker_program.use()
 					set_shared_uniforms(picker_program, [0, 0, 0, 0], t)
-					// console.log("picked COL")
-					// console.log(picked_col)
 					picker_program.setUniformVec('picked_col', picked_col)
-					picker_program.setUniformVec('stroke_pos', io.mouse_pos)
+					picker_program.setUniformVec('picker_pos', io.mouse_pos)
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-					// console.log("DRAW PICKER")
 				}
 			}
 			print_on_gl_error()

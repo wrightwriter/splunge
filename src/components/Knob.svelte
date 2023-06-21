@@ -136,6 +136,7 @@
   }
   .knob-container-container>.title {
     
+    cursor: pointer;
     /* position: absolute; */
     font-size: 0.8rem !important;
     /* position: absolute; */

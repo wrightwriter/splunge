@@ -70,6 +70,32 @@ function triangulate(contours) {
 	return triangleVerts
 }
 
+const get_subarray = (arr: Float32Array, offs_begin: number, offs_end: number): [Float32Array, number] => {
+	return [arr.subarray(offs_begin, offs_end), offs_end - 1]
+}
+
+const get_circ_pos_from_ang = (a: number) => {
+	const c = cos(-a)
+	const s = sin(-a)
+	return [c, s]
+}
+
+const add_ang_to_pos = (
+	pos: number[],
+	ang_offs: number[],
+	positive: boolean,
+	amt: number,
+	aspect_correction: number[],
+): number[] => {
+	if (positive) {
+		pos[0] += (ang_offs[0] * amt) / aspect_correction[0]
+		pos[1] += (ang_offs[1] * amt) / aspect_correction[1]
+	} else {
+		pos[0] -= (ang_offs[0] * amt) / aspect_correction[0]
+		pos[1] -= (ang_offs[1] * amt) / aspect_correction[1]
+	}
+	return pos
+}
 let gl: WebGL2RenderingContext
 export class Drawer {
 	draw_blobs_stroke_program: ShaderProgram
@@ -80,6 +106,8 @@ export class Drawer {
 	zoom: number = 0
 	panning: number[] = [0, 0]
 	t: number = 0
+	temp_array_a: Float32Array = new Float32Array(1_000_00)
+	temp_array_b: Float32Array = new Float32Array(1_000_00)
 
 	constructor(
 		draw_blobs_stroke_program: ShaderProgram,
@@ -111,12 +139,7 @@ export class Drawer {
 		draw_blobs_stroke_program.use()
 		set_shared_uniforms(draw_blobs_stroke_program, _col, this.t)
 
-		draw_blobs_stroke_program.setUniformVec('stroke_pos', _pos)
-		draw_blobs_stroke_program.setUniformVec('stroke_col', _col)
-		// draw_temp_stroke_program.setUniformVec('brush_sz', brush_sz)
-		draw_blobs_stroke_program.setUniformVec('brush_sz', _sz)
 		draw_blobs_stroke_program.setUniformFloat('stroke_opacity', _opacity)
-		draw_blobs_stroke_program.setUniformVec('tilt', _rot)
 		draw_blobs_stroke_program.setUniformVec('tex_lch_dynamics', [
 			_tex_lch_dynamics[0],
 			_tex_lch_dynamics[1],
@@ -137,54 +160,90 @@ export class Drawer {
 		push_with_offs([_opacity], 21)
 
 		window.ubo.buff.upload()
-		// push_with_offs(_rot, 17)
-		// 		ubo.buff.push_vert([
-		// // vec4 stroke_col;
-		// // vec2 panning;
-		// // vec2 canvasR;
-		// // vec2 stroke_pos;
-		// // vec2 stroke_pos_screen;
-		// // vec2 R;
-		// // vec2 brush_sz;
-		// // vec2 tilt;
-		// // float time;
-		// // float zoom;
-		// // float frame;
-		// // float stroke_opacity;
-		// // float pressure;
-		// 			... col,
-		// 			... panning,
-		// 			...canvas_read_tex.res,
-		// 			...brush_pos_ndc_canvas,
-		// 			... brush_pos_ndc_screen,
-		// 			... default_framebuffer.textures[0].res,
-		// 			... brush_sz,
-		// 			... brush_rot,
-		// 			t,
-		// 			zoom,
-		// 			frame,
-		// 			stroke_opacity,
-		// 			io.pressure,
-		// 			// io.mouse_down ? 1 : 0,
-		// 		])
-
-		// window.ubo.buff.upload_external_array([
-		// 	... col,
-		// 	... panning,
-		// 	...canvas_read_tex.res,
-		// 	...brush_pos_ndc_canvas,
-		// 	... brush_pos_ndc_screen,
-		// 	... default_framebuffer.textures[0].res,
-		// 	... brush_sz,
-		// 	... brush_rot,
-		// 	t,
-		// 	zoom,
-		// 	frame,
-		// 	stroke_opacity,
-		// 	io.pressure,
-		// 	// io.mouse_down ? 1 : 0,
-		// ])
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+	}
+
+	fill_buff_for_blob_brush(brush_stroke: BrushStroke, brush_buffer: Thing) {
+		brush_buffer.buffs[0].sz = 0
+		brush_buffer.buffs[1].sz = 0
+		const iters = brush_stroke.positions.length / 2 - 1
+		const aspect_correction = Utils.screen_NDC_to_canvas_NDC(
+			[1, 1],
+			this.default_framebuffer.textures[0],
+			this.canvas_tex,
+			1,
+			[0, 0],
+		)
+
+		const add_ang_to_pos = (
+			pos: number[],
+			ang_x: number[],
+			ang_y: number[],
+			positive: boolean,
+			sz_x: number,
+			sz_y: number,
+			aspect_correction: number[],
+		): number[] => {
+			if (positive) {
+				pos[0] += (ang_x[0] * sz_x) / aspect_correction[0]
+				pos[1] += (ang_x[1] * sz_x) / aspect_correction[1]
+				pos[0] += (ang_y[0] * sz_y) / aspect_correction[0]
+				pos[1] += (ang_y[1] * sz_y) / aspect_correction[1]
+			} else {
+				pos[0] -= (ang_x[0] * sz_x) / aspect_correction[0]
+				pos[1] -= (ang_x[1] * sz_x) / aspect_correction[1]
+				pos[0] += (ang_y[0] * sz_y) / aspect_correction[0]
+				pos[1] += (ang_y[1] * sz_y) / aspect_correction[1]
+			}
+			return pos
+		}
+		for (let i = 0; i < iters; i++) {
+			// #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a))
+			// brush_stroke.
+			let sz_x = brush_stroke.sizes[i * 2]
+			let sz_y = brush_stroke.sizes[i * 2 + 1]
+			// let next_sz = brush_stroke.sizes[i * 2 + 2]
+
+			let ang_x = get_circ_pos_from_ang(brush_stroke.rotations[i * 2 + 1])
+			let ang_y = [ang_x[1], -ang_x[0]]
+			// let next_ang = get_circ_pos_from_ang(brush_stroke.rotations[i * 2 + 3])
+			// let next_ang_b = [curr_ang[1],-curr_ang[0]]
+
+			let curr_pos = [brush_stroke.positions[i * 2], brush_stroke.positions[i * 2 + 1]]
+			// let next_pos = [brush_stroke.positions[i * 2 + 2], brush_stroke.positions[i * 2 + 3]]
+
+			let curr_pos_left = add_ang_to_pos([...curr_pos], ang_x, ang_y, true, sz_x, sz_y, aspect_correction)
+			let curr_pos_right = add_ang_to_pos([...curr_pos], ang_x, ang_y, false, sz_x, sz_y, aspect_correction)
+
+			let next_pos_left = [...curr_pos_left]
+			let next_pos_right = [...curr_pos_right]
+
+			next_pos_left[0] -= (ang_y[0] * sz_y) / aspect_correction[0]
+			next_pos_left[1] -= (ang_y[1] * sz_y) / aspect_correction[1]
+			next_pos_right[0] -= (ang_y[0] * sz_y) / aspect_correction[0]
+			next_pos_right[1] -= (ang_y[1] * sz_y) / aspect_correction[1]
+			// pos[1] += (ang_offs_b[1] * amt_b) / aspect_correction[1]
+
+			let curr_col = [brush_stroke.colours[i * 3], brush_stroke.colours[i * 3 + 1], brush_stroke.colours[i * 3 + 2]]
+			let curr_opacity = brush_stroke.opacities[i]
+
+			const curr_v = i / iters
+			const next_v = (i + 1) / iters
+
+			brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])
+			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
+			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
+			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+
+			brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
+			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
+			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].push_vert([...next_pos_right, 1, next_v])
+			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+		}
 	}
 
 	fill_buff_for_long_brush(brush_stroke: BrushStroke, brush_buffer: Thing) {
@@ -200,22 +259,6 @@ export class Drawer {
 		)
 		for (let i = 0; i < iters; i++) {
 			// #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a))
-			const get_circ_pos_from_ang = (a: number) => {
-				const c = cos(-a)
-				const s = sin(-a)
-				return [c, s]
-			}
-
-			const add_ang_to_pos = (pos: number[], ang_offs: number[], positive: boolean, amt: number): number[] => {
-				if (positive) {
-					pos[0] += (ang_offs[0] * amt) / aspect_correction[0]
-					pos[1] += (ang_offs[1] * amt) / aspect_correction[1]
-				} else {
-					pos[0] -= (ang_offs[0] * amt) / aspect_correction[0]
-					pos[1] -= (ang_offs[1] * amt) / aspect_correction[1]
-				}
-				return pos
-			}
 			// brush_stroke.
 			let curr_sz = brush_stroke.sizes[i * 2]
 			let next_sz = brush_stroke.sizes[i * 2 + 2]
@@ -226,11 +269,11 @@ export class Drawer {
 			let curr_pos = [brush_stroke.positions[i * 2], brush_stroke.positions[i * 2 + 1]]
 			let next_pos = [brush_stroke.positions[i * 2 + 2], brush_stroke.positions[i * 2 + 3]]
 
-			let curr_pos_left = add_ang_to_pos([...curr_pos], curr_ang, true, curr_sz)
-			let curr_pos_right = add_ang_to_pos([...curr_pos], curr_ang, false, curr_sz)
+			let curr_pos_left = add_ang_to_pos([...curr_pos], curr_ang, true, curr_sz, aspect_correction)
+			let curr_pos_right = add_ang_to_pos([...curr_pos], curr_ang, false, curr_sz, aspect_correction)
 
-			let next_pos_left = add_ang_to_pos([...next_pos], next_ang, true, next_sz)
-			let next_pos_right = add_ang_to_pos([...next_pos], next_ang, false, next_sz)
+			let next_pos_left = add_ang_to_pos([...next_pos], next_ang, true, next_sz, aspect_correction)
+			let next_pos_right = add_ang_to_pos([...next_pos], next_ang, false, next_sz, aspect_correction)
 
 			let curr_col = [brush_stroke.colours[i * 3], brush_stroke.colours[i * 3 + 1], brush_stroke.colours[i * 3 + 2]]
 			let curr_opacity = brush_stroke.opacities[i]
@@ -262,24 +305,30 @@ export class Drawer {
 		this.t = t
 		this.zoom = zoom
 		this.panning = [...panning]
+
 		if (stroke.brush_type === BrushType.Blobs) {
-			for (let i = 0; i < stroke.positions.length / 2; i++) {
-				let pos = [stroke.positions[i * 2], stroke.positions[i * 2 + 1]]
-				let sz = [stroke.sizes[i * 2], stroke.sizes[i * 2 + 1]]
-				let col = [stroke.colours[i * 3], stroke.colours[i * 3 + 1], stroke.colours[i * 3 + 2]]
-				let opacity = stroke.opacities[i]
-				let rot = [stroke.rotations[i * 2], stroke.rotations[i * 2 + 1]]
-				this.draw_blobs_stroke(
-					[...col, 1],
-					opacity,
-					pos,
-					rot,
-					sz,
-					stroke.draw_params.tex_lch_dynamics,
-					stroke.draw_params.tex_stretch,
-				)
-			}
+			// for (let i = 0; i < stroke.positions.length / 2; i++) {
+			// 	let pos = [stroke.positions[i * 2], stroke.positions[i * 2 + 1]]
+			// 	let sz = [stroke.sizes[i * 2], stroke.sizes[i * 2 + 1]]
+			// 	let col = [stroke.colours[i * 3], stroke.colours[i * 3 + 1], stroke.colours[i * 3 + 2]]
+			// 	let opacity = stroke.opacities[i]
+			// 	let rot = [stroke.rotations[i * 2], stroke.rotations[i * 2 + 1]]
+			// 	this.draw_blobs_stroke(
+			// 		[...col, 1],
+			// 		opacity,
+			// 		pos,
+			// 		rot,
+			// 		sz,
+			// 		stroke.draw_params.tex_lch_dynamics,
+			// 		stroke.draw_params.tex_stretch,
+			// 	)
+			// }
 			// console.log(stroke.positions)
+			this.fill_buff_for_blob_brush(stroke, brush_buffer)
+			brush_buffer.shader.use()
+			this.set_shared_uniforms(brush_buffer.shader, [0, 0, 0, 0], t)
+			brush_buffer.upload_all_buffs()
+			brush_buffer.draw()
 		} else if (stroke.brush_type === BrushType.Long) {
 			this.fill_buff_for_long_brush(stroke, brush_buffer)
 			brush_buffer.shader.use()
@@ -288,12 +337,8 @@ export class Drawer {
 			brush_buffer.draw()
 		} else if (stroke.brush_type === BrushType.Tri) {
 			let positions = [...stroke.positions]
-			// console.log(stroke)
-			let new_triangles = new Float32Array(positions.length * 3)
-			let new_cols = new Float32Array((positions.length / 2) * 3 * 4)
-			// new_cols.forEach((v, i, a) => {
-			// 	a[i] = 1
-			// })
+			const [new_triangles, offs] = get_subarray(this.temp_array_a, 0, positions.length * 3)
+			const [new_cols] = get_subarray(this.temp_array_a, offs, offs + (positions.length / 2) * 3 * 4)
 			for (let i = 0; i < positions.length / 2 - 1; i++) {
 				new_triangles[i * 3 * 2] = positions[0]
 				new_triangles[i * 3 * 2 + 1] = positions[0 + 1]

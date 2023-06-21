@@ -35,7 +35,7 @@ export function pause_on_gl_error() {
 	if (err !== 0) {
 		console.error(err)
 		console.error(gl_enum_to_string(err))
-		debugger
+		// debugger
 	}
 }
 
@@ -183,8 +183,16 @@ export class Texture {
 export class Framebuffer {
 	static currently_bound: Framebuffer
 	static framebuffers: Framebuffer[] = []
-	private _textures: Array<Texture>
-	private _back_textures: Array<Texture>
+	_textures: Array<Texture>
+	_back_textures: Array<Texture>
+	private _fb: WebGLFramebuffer
+	// @ts-ignore
+	private _fb_back: WebGLFramebuffer = undefined
+	default: boolean = false
+	pongable: boolean = false
+	needs_pong: boolean = false
+	pong_idx: number = 0
+
 	public get textures(): Array<Texture> {
 		if (this.pong_idx === 0) return this._textures
 		else return this._back_textures
@@ -194,18 +202,15 @@ export class Framebuffer {
 		else return this._textures
 	}
 
-	private _fb: WebGLFramebuffer
-	// @ts-ignore
-	private _fb_back: WebGLFramebuffer = undefined
-
 	public get fb(): WebGLFramebuffer {
 		if (this.pong_idx === 0) return this._fb
 		else return this._fb_back
 	}
-	default: boolean = false
-	pongable: boolean = false
-	needs_pong: boolean = false
-	pong_idx: number = 0
+
+	public pong() {
+		this.pong_idx = 1 - this.pong_idx
+		this.needs_pong = false
+	}
 	constructor(textures: Array<Texture>, pongable: boolean = false) {
 		this._fb = gl.createFramebuffer() as WebGLFramebuffer
 		this._textures = [...textures]
@@ -365,8 +370,9 @@ export function finish_frame() {
 	for (let framebuffer of Framebuffer.framebuffers) {
 		if (framebuffer.needs_pong) {
 			// console.log('ponged')
-			framebuffer.pong_idx = 1 - framebuffer.pong_idx
-			framebuffer.needs_pong = false
+			// framebuffer.pong_idx = 1 - framebuffer.pong_idx
+			// framebuffer.needs_pong = false
+			framebuffer.pong()
 		}
 	}
 }

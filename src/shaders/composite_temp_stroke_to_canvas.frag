@@ -7,6 +7,14 @@ out vec4 col;
 void main() {
   col = texture(canvas_back,uv);
 
+  // if(canvas_idx < 0.5 ){
+  //   col = texture(canvas_a,uv);
+  //   // col.xyzw = vec4(1);
+  // } else {
+  //   col = texture(canvas_b,uv); 
+  //   // col.xyzw = vec4(0);
+  // }
+
   vec4 temp_tex = texture(temp_tex,uv);
   // col.xyz = mix(col.xyz, temp_tex.xyz, temp_tex.w);
  
