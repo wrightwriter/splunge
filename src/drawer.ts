@@ -169,6 +169,8 @@ export class Drawer {
 			}
 			return pos
 		}
+
+		let idx = brush_buffer.buffs[0].sz
 		for (let i = 0; i < iters; i++) {
 			// let i_2 = i * 2
 			// #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a))
@@ -203,20 +205,74 @@ export class Drawer {
 			const curr_v = i / iters
 			const next_v = (i + 1) / iters
 
-			brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])
-			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-			brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
-			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-			brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
-			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			// brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])
+			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_left[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_left[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
 
-			brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
-			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-			brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
-			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-			brush_buffer.buffs[0].push_vert([...next_pos_right, 1, next_v])
-			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			// brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
+			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_right[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_right[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 1
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
+
+			// brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
+			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_left[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_left[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
+
+			// brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
+			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_right[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_right[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 1
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
+
+			// brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
+			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_left[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_left[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
+
+			// brush_buffer.buffs[0].push_vert([...next_pos_right, 1, next_v])
+			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_right[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_right[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
 		}
+		brush_buffer.buffs[0].sz += iters * 6 * 4
+		brush_buffer.buffs[1].sz += iters * 6 * 4
 		this.recorded_drawcalls.push(this.brush_buffer.buffs[0].sz)
 	}
 
