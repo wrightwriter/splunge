@@ -1,6 +1,8 @@
 #pragma glslify: import('./_top_includes.glsl')
 #pragma glslify: import('./_aspect_ratio.glsl')
 
+uniform float zoom;
+uniform vec2 brush_sz;
 out vec2 uv;
 void main(){
   gl_Position = vec4(positions[gl_VertexID],0,1);

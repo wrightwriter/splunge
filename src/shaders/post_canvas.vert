@@ -2,6 +2,8 @@
 out vec2 uv;
 #pragma glslify: import('./_aspect_ratio.glsl')
 
+uniform float zoom;
+uniform vec2 panning;
 void main(){
   uv = positions[gl_VertexID];
   uv = uv*0.5 + 0.5;

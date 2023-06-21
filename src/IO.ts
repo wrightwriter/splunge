@@ -50,10 +50,32 @@ type BtnCode =
 export class IO {
 	private keys = new Map<BtnCode, keyState>()
 
-	mouse_pos: Array<number> = [0, 0]
-	delta_mouse_pos: Array<number> = [0, 0]
-	mouse_pos_prev: Array<number> = [0, 0]
+	// mouse_pos: Array<number> = [0, 0]
+	mouse_pos: Float32Array = Float32Array.from([0, 0])
+	delta_mouse_pos: Float32Array = Float32Array.from([0, 0])
+	mouse_pos_prev: Float32Array = Float32Array.from([0, 0])
 	mouse_down: boolean = false
+
+	private _mouse_positions_during_last_frame = new Float32Array(50)
+	private _mouse_positions_during_last_frame_b = new Float32Array(50)
+	_mouse_positions_during_last_frame_cnt = 0
+	_mouse_positions_during_last_frame_cnt_b = 0
+	mouse_positions_arr_idx = 0
+
+	get mouse_positions_during_last_frame(): Float32Array {
+		return this.mouse_positions_arr_idx === 0
+			? this._mouse_positions_during_last_frame
+			: this._mouse_positions_during_last_frame_b
+	}
+	get mouse_positions_during_last_frame_cnt(): number {
+		return this.mouse_positions_arr_idx === 0
+			? this._mouse_positions_during_last_frame_cnt
+			: this._mouse_positions_during_last_frame_cnt_b
+	}
+	// set mouse_positions_during_last_frame_cnt(v: number): number{
+	// 	if(this.mouse_positions_arr_idx === 0)
+	// 		this._mouse_positions_during_last_frame_cnt = v else this._mouse_positions_during_last_frame_cnt_b = v
+	// }
 
 	pointerType: string = 'mouse'
 
@@ -75,7 +97,18 @@ export class IO {
 	tick() {
 		this.delta_mouse_pos[0] = this.mouse_pos[0] - this.mouse_pos_prev[0]
 		this.delta_mouse_pos[1] = this.mouse_pos[1] - this.mouse_pos_prev[1]
-		this.mouse_pos_prev = [...this.mouse_pos]
+		this.mouse_pos_prev[0] = this.mouse_pos[0]
+		this.mouse_pos_prev[1] = this.mouse_pos[1]
+
+		if (this.mouse_positions_arr_idx === 0) {
+			this._mouse_positions_during_last_frame_cnt = 0
+		} else {
+			this._mouse_positions_during_last_frame_cnt_b = 0
+		}
+		this.mouse_positions_arr_idx = 1 - this.mouse_positions_arr_idx
+		// console.log(this.mouse_positions_during_last_frame_cnt)
+		// console.log(this.mouse_positions_during_last_frame)
+
 		if (this.mouse_down !== this.mouse_down_prev) {
 			if (this.mouse_down) {
 				// this.mouse_pressed = true
@@ -171,7 +204,18 @@ export class IO {
 			const x = (pos.x / gl.canvas.width) * 2 - 1
 			const y = (pos.y / gl.canvas.height) * -2 + 1
 
-			this.mouse_pos = [x, y]
+			// this.mouse_pos = [x, y]
+			this.mouse_pos[0] = x
+			this.mouse_pos[1] = y
+
+			const is_back = this.mouse_positions_arr_idx === 0
+			const positions = is_back ? this._mouse_positions_during_last_frame_b : this._mouse_positions_during_last_frame
+			const idx = is_back ? this._mouse_positions_during_last_frame_cnt_b : this._mouse_positions_during_last_frame_cnt
+			positions[idx * 2] = x
+			positions[idx * 2 + 1] = y
+			if (is_back) this._mouse_positions_during_last_frame_cnt_b++
+			else this._mouse_positions_during_last_frame_cnt++
+
 			this.pressure = e.pointerType === 'mouse' ? 1 : e.pressure ?? this.pressure
 			this.mouse_just_moved = true
 

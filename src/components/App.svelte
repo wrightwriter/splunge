@@ -181,7 +181,7 @@
 
 	const pick_from_canvas = () => {
 		let coord = Utils.texture_NDC_to_texture_pixel_coords(
-			Utils.screen_NDC_to_canvas_NDC(io.mouse_pos, default_framebuffer.textures[0], canvas_read_tex, zoom, panning),
+			Utils.screen_NDC_to_canvas_NDC([...io.mouse_pos], default_framebuffer.textures[0], canvas_read_tex, zoom, panning),
 			canvas_read_tex,
 		)
 		let c = canvas_read_tex.read_back_pixel(coord)
@@ -272,24 +272,6 @@
 		init_web_gl()
 		init_other_stuff()
 
-		//! ------------------- SHADERS
-		const brush_preview_program = new ShaderProgram(require('shaders/brush_preview.vert'), require('shaders/brush_preview.frag'))
-		const picker_program = new ShaderProgram(require('shaders/picker.vert'), require('shaders/picker.frag'))
-		const draw_blobs_stroke_program = new ShaderProgram(
-			require('shaders/draw_blobs_stroke.vert'),
-			require('shaders/draw_blobs_stroke.frag'),
-		)
-		const composite_stroke_to_canvas_program = new ShaderProgram(
-			require('shaders/composite_temp_stroke_to_canvas.vert'),
-			require('shaders/composite_temp_stroke_to_canvas.frag'),
-		)
-		const brush_triangulated_program = new ShaderProgram(
-			require('shaders/brush_triangulated.vert'),
-			require('shaders/brush_triangulated.frag'),
-		)
-		//! ------------------- POST
-		const post_canvas_program = new ShaderProgram(require('shaders/post_canvas.vert'), require('shaders/post_canvas.frag'))
-
 		default_framebuffer.start_draw()
 		default_framebuffer.clear([0, 0, 0, 1])
 
@@ -297,26 +279,75 @@
 		canvas_fb = new Framebuffer([canvas_tex], true)
 		canvas_fb.clear([0, 0, 0, 0])
 		canvas_fb.pong()
+		canvas_fb.back_textures[0].bind_to_unit(1)
 		canvas_fb.clear([0, 0, 0, 0])
 
 		const temp_tex = new Texture([canvasRes[0], canvasRes[1]])
 		const temp_stroke_fb = new Framebuffer([temp_tex])
 		temp_stroke_fb.clear([0, 0, 0, 0])
 
+		//! ------------------- SHADERS
+		const set_uniform_textures = (program: ShaderProgram) =>{
+			program.setUniformTexture('temp_tex', temp_tex, 0)
+			program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 1)
+			program.setUniformTexture('canvas_b', canvas_fb._textures[0], 2)
+			program.setUniformTexture('canvas_a', canvas_fb._back_textures[0], 3)
+		}
+		const brush_preview_program = new ShaderProgram(require('shaders/brush_preview.vert'), require('shaders/brush_preview.frag'))
+		const picker_program = new ShaderProgram(require('shaders/picker.vert'), require('shaders/picker.frag'))
+		// const draw_blobs_stroke_program = new ShaderProgram(
+		// 	require('shaders/draw_blobs_stroke.vert'),
+		// 	require('shaders/draw_blobs_stroke.frag'),
+		// )
+		const composite_stroke_to_canvas_program = new ShaderProgram(
+			require('shaders/composite_temp_stroke_to_canvas.vert'),
+			require('shaders/composite_temp_stroke_to_canvas.frag'),
+		)
+		// const brush_triangulated_program = new ShaderProgram(
+		// 	require('shaders/brush_triangulated.vert'),
+		// 	require('shaders/brush_triangulated.frag'),
+		// )
+		const post_canvas_program = new ShaderProgram(require('shaders/post_canvas.vert'), require('shaders/post_canvas.frag'))
+		//@ts-ignore
+		post_canvas_program.zoom_loc = gl.getUniformLocation(post_canvas_program.program, "zoom")
+		//@ts-ignore
+		post_canvas_program.panning_loc = gl.getUniformLocation(post_canvas_program.program, "panning")
+		
+		const brush_long_program = new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag'))
+
+		brush_preview_program.use()
+		set_uniform_textures(brush_preview_program)
+		picker_program.use()
+		set_uniform_textures(picker_program)
+		// draw_blobs_stroke_program.use()
+		// set_uniform_textures(draw_blobs_stroke_program)
+		composite_stroke_to_canvas_program.use()
+		set_uniform_textures(composite_stroke_to_canvas_program)
+		// brush_triangulated_program.use()
+		// set_uniform_textures(brush_triangulated_program)
+		post_canvas_program.use()
+		set_uniform_textures(post_canvas_program)
+		brush_long_program.use()
+		set_uniform_textures(brush_long_program)
+		
+
+
+		//! ------------------- POST
 		let frame = 0
 		canvas_read_tex = canvas_fb.textures[0]
 
 		let brush_buffer = new Thing(
 			[new VertexBuffer(4, gl.FLOAT), new VertexBuffer(4, gl.FLOAT)],
 			gl.TRIANGLES,
-			new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag')),
+			brush_long_program
 		)
 
 		let brush_buffer_b = new Thing(
 			[new VertexBuffer(4, gl.FLOAT), new VertexBuffer(4, gl.FLOAT)],
 			gl.TRIANGLES,
-			new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag')),
+			brush_long_program
 		)
+		gl.bindVertexArray(brush_buffer_b.vao)
 		
 		let ubo = new UBO()
 		window.ubo = ubo
@@ -332,39 +363,18 @@
 		const set_shared_uniforms = (program: ShaderProgram, col: number[], t: number) => {
 			ubo.buff.sz = 0
 			ubo.buff.push_vert([
-				... col, 
-				... panning, 
 				...canvas_fb._textures[0].res, 
-				...brush_pos_ndc_canvas,
-				... brush_pos_ndc_screen, 
 				... default_framebuffer.textures[0].res,
-				... brush_sz, 
-				... brush_rot, 
 				t, 
 				canvas_fb.pong_idx,
-				zoom, 
-				frame, 
-				stroke_opacity,
-				io.pressure, 
-				// io.mouse_down ? 1 : 0, 
 			])
-			console.log(canvas_fb.pong_idx)
-			
 			ubo.buff.upload()
-			
-			// program.setUniformFloat("canvas_idx",canvas_fb.pong_idx)
-			// canvas_read_tex = canvas_fb.back_textures[0]
-
-			// program.setUniformTexture('canvas', canvas_fb.textures[0], 0)
-			program.setUniformTexture('temp_tex', temp_tex, 0)
-			program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 1)
-			program.setUniformTexture('canvas_b', canvas_fb._textures[0], 2)
-			program.setUniformTexture('canvas_a', canvas_fb._back_textures[0], 3)
+			canvas_fb.back_textures[0].bind_to_unit(1)
 		}
 
 		drawer = new Drawer(
-			draw_blobs_stroke_program,
-			brush_triangulated_program,
+			// draw_blobs_stroke_program,
+			// brush_triangulated_program,
 			set_shared_uniforms,
 			gl,
 			canvas_tex,
@@ -372,9 +382,16 @@
 		)
 
 		const composite_stroke = () => {
+			// canvas_fb.start_draw()
+			// composite_stroke_to_canvas_program.use()
+			// set_shared_uniforms(composite_stroke_to_canvas_program, [0, 0, 0, 0], t)
+			// gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+			// temp_stroke_fb.clear([0, 0, 0, 0])
 			canvas_fb.start_draw()
+			canvas_fb.clear([0,0,0,0])
 			composite_stroke_to_canvas_program.use()
 			set_shared_uniforms(composite_stroke_to_canvas_program, [0, 0, 0, 0], t)
+			canvas_fb.back_textures[0].bind_to_unit(1)
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 			temp_stroke_fb.clear([0, 0, 0, 0])
 		}
@@ -383,16 +400,44 @@
 			console.log('REDRAW EVERYTHING')
 			canvas_fb.clear()
 			canvas_fb.pong()
+			canvas_fb.back_textures[0].bind_to_unit(1)
 			canvas_fb.clear()
 			temp_stroke_fb.clear()
 
 			let k = 0
+			
+			drawer.brush_buffer = brush_buffer_b
+			drawer.reset()
 			for (let stroke of project.brush_strokes) {
 				if (k >= project.brush_strokes.length - redo_history_length) break
+				// drawer.draw_any_stroke(stroke, t, brush_buffer_b, zoom, [0, 0])
+				drawer.push_any_stroke(stroke)
+				k++
+			}
+			k = 0
+			drawer.brush_buffer.upload_all_buffs()
+			drawer.brush_buffer.shader.use()
+			set_shared_uniforms(drawer.brush_buffer.shader, [0, 0, 0, 0], t)
+			// composite_stroke_to_canvas_program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 1)
+
+			for(let amogus of drawer.recorded_drawcalls){
+				// gl.viewport(0, 0, this.textures[0].res[0], this.textures[0].res[1])
+				// gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb)
+				// Framebuffer.currently_bound = this
+				// gl.drawBuffers(draw_buffs)
 				temp_stroke_fb.start_draw()
-				drawer.draw_any_stroke(stroke, t, brush_buffer_b, zoom, [0, 0])
-				composite_stroke()
+				temp_stroke_fb.clear([0, 0, 0, 0])
+				drawer.brush_buffer.shader.use()
+				drawer.draw_stroke_idx(k)
+
+
+				canvas_fb.start_draw()
+				canvas_fb.clear([0,0,0,0])
+				composite_stroke_to_canvas_program.use()
+				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
 				canvas_fb.pong()
+				canvas_fb.back_textures[0].bind_to_unit(1)
 				k++
 			}
 			redraw_needed = true
@@ -434,7 +479,7 @@
 				redraw_needed = true
 				if (just_finished_pick) {
 					let coords = Utils.screen_NDC_to_canvas_NDC(
-						io.mouse_pos,
+						[...io.mouse_pos],
 						default_framebuffer.textures[0],
 						canvas_fb._textures[0],
 						zoom,
@@ -491,54 +536,59 @@
 
 				brush_rot = [...io.tilt]
 
-				brush_pos_ndc_screen = [...io.mouse_pos]
-				brush_pos_ndc_canvas = Utils.screen_NDC_to_canvas_NDC(
-					brush_pos_ndc_screen,
-					default_framebuffer.textures[0],
-					canvas_read_tex,
-					zoom,
-					panning,
-				)
-				brush_pos_ndc_canvas[0] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 251, 2) - 1)
-				brush_pos_ndc_canvas[1] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 1251, 2) - 1)
+				for(let i = 0; i < io.mouse_positions_during_last_frame_cnt; i++){
+					// brush_pos_ndc_screen = [...io.mouse_pos]
+					brush_pos_ndc_screen = [
+						io.mouse_positions_during_last_frame[i*2],
+						io.mouse_positions_during_last_frame[i*2 + 1]
+					]
+					brush_pos_ndc_canvas = Utils.screen_NDC_to_canvas_NDC(
+						brush_pos_ndc_screen,
+						default_framebuffer.textures[0],
+						canvas_read_tex,
+						zoom,
+						panning,
+					)
+					brush_pos_ndc_canvas[0] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 251, 2) - 1)
+					brush_pos_ndc_canvas[1] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 1251, 2) - 1)
 
-				let col = [...stroke_col]
+					let col = [...stroke_col]
 
-				{
-					const chroma_gl = (col: number[]) => {
-						return chroma.gl(col[0], col[1], col[2])
+					{
+						const chroma_gl = (col: number[]) => {
+							return chroma.gl(col[0], col[1], col[2])
+						}
+						const chroma_oklch = (col: number[]) => {
+							return chroma.oklch(col[0], col[1], col[2])
+						}
+
+						col = chroma_gl(col).oklch()
+						// col[2] = (t*300)%300
+						col[0] += (-0.5 + hash.valueNoiseSmooth(t * 100 * chaos_speed, 2)) * chaos * chaos_lch[0]
+						col[1] += (-0.5 + hash.valueNoiseSmooth(t * 100 * chaos_speed + 100, 2)) * chaos * chaos_lch[1]
+						col[2] += (-0.5 + hash.valueNoiseSmooth(t * 100 * chaos_speed + 200, 2)) * 300 * chaos * chaos_lch[2]
+						col[0] = clamp(col[0], 0, 1)
+						col[1] = clamp(col[1], 0, 1)
+						col[2] = mod(col[2], 360)
+
+						col = chroma_oklch(col).gl()
 					}
-					const chroma_oklch = (col: number[]) => {
-						return chroma.oklch(col[0], col[1], col[2])
+					{
+						stroke_opacity = lerp(stroke_opacity_dynamics[0], stroke_opacity_dynamics[1], io.pressure)
 					}
 
-					col = chroma_gl(col).oklch()
-					// col[2] = (t*300)%300
-					col[0] += hash.valueNoiseSmooth(t * 100 * chaos_speed, 2) * chaos * chaos_lch[0]
-					col[1] += hash.valueNoiseSmooth(t * 100 * chaos_speed + 100, 2) * chaos * chaos_lch[1]
-					col[2] += hash.valueNoiseSmooth(t * 100 * chaos_speed + 200, 2) * 300 * chaos * chaos_lch[2]
-					col[0] = clamp(col[0], 0, 1)
-					col[1] = clamp(col[1], 0, 1)
-					col[2] = mod(col[2], 360)
+					brush_rot[1] += rot_jitter * (2 * hash.valueNoiseSmooth(t * 10 + 100, 2) - 1)
 
-					col = chroma_oklch(col).gl()
+					let sz = [...brush_sz]
+
+					let size_pressure_weight = lerp(stroke_size_dynamics[0], stroke_size_dynamics[1], io.pressure)
+					let size_tilt_weight = lerp(0.4, 1, io.tilt[0] / tau)
+					// TODO: sz dynamics
+					sz[0] *= size_pressure_weight * size_tilt_weight
+					sz[1] *= size_pressure_weight * size_tilt_weight
+
+					brush_stroke.push_stroke(brush_pos_ndc_canvas, brush_rot, sz, stroke_opacity, col)
 				}
-				{
-					stroke_opacity = lerp(stroke_opacity_dynamics[0], stroke_opacity_dynamics[1], io.pressure)
-				}
-
-				brush_rot[1] += rot_jitter * (2 * hash.valueNoiseSmooth(t * 10 + 100, 2) - 1)
-
-				let sz = [...brush_sz]
-
-				let size_pressure_weight = lerp(stroke_size_dynamics[0], stroke_size_dynamics[1], io.pressure)
-				let size_tilt_weight = lerp(0.4, 1, io.tilt[0] / tau)
-				// TODO: sz dynamics
-				sz[0] *= size_pressure_weight * size_tilt_weight
-				sz[1] *= size_pressure_weight * size_tilt_weight
-
-				brush_stroke.push_stroke(brush_pos_ndc_canvas, brush_rot, sz, stroke_opacity, col)
-
 		}
 
 		const draw = (_t: number) => {
@@ -568,9 +618,17 @@
 				project_has_been_modified = true
 				redraw_needed = true
 				record_stroke()
-				// localStorage.setItem('project', JSON.stringify(project))
+				if(frame % 40 === 0)
+					localStorage.setItem('project', JSON.stringify(project))
 				temp_stroke_fb.start_draw()
-				drawer.draw_any_stroke(brush_stroke, t, brush_buffer, zoom, panning)
+				// drawer.draw_any_stroke(brush_stroke, t, brush_buffer, zoom, panning)
+				drawer.brush_buffer = brush_buffer_b
+				drawer.reset()
+				drawer.push_any_stroke(brush_stroke)
+				drawer.brush_buffer.upload_all_buffs()
+				drawer.brush_buffer.shader.use()
+				set_shared_uniforms(drawer.brush_buffer.shader, [0, 0, 0, 0], t)
+				drawer.draw_stroke_idx(0)
 			}
 			// ----- COMPOSITE
 			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
@@ -579,6 +637,7 @@
 				redraw_needed = true
 				composite_stroke()
 				canvas_fb.pong()
+				canvas_fb.back_textures[0].bind_to_unit(1)
 			}
 
 			if (brushSizeWidgetDragging || brushSizeWidgetStoppedDragging) redraw_needed = true
@@ -589,11 +648,20 @@
 				default_framebuffer.start_draw()
 
 				post_canvas_program.use()
+
+				// @ts-ignore
+				gl.uniform1f(post_canvas_program.zoom_loc, zoom)
+				// @ts-ignore
+				gl.uniform2fv(post_canvas_program.panning_loc, panning)
+				// post_canvas_program.setUniformFloat("zoom", zoom)
+				// post_canvas_program.setUniformVec("panning", panning)
 				set_shared_uniforms(post_canvas_program, [0, 0, 0, 0], t)
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
 				if (brushSizeWidgetDragging) {
 					brush_preview_program.use()
+					brush_preview_program.setUniformFloat("zoom", zoom)
+					brush_preview_program.setUniformVec("brush_sz", brush_sz)
 					set_shared_uniforms(brush_preview_program, [0, 0, 0, 0], t)
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 				}
@@ -602,7 +670,7 @@
 					picker_program.use()
 					set_shared_uniforms(picker_program, [0, 0, 0, 0], t)
 					picker_program.setUniformVec('picked_col', picked_col)
-					picker_program.setUniformVec('picker_pos', io.mouse_pos)
+					picker_program.setUniformVec('picker_pos', [...io.mouse_pos])
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 				}
 			}

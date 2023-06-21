@@ -41,8 +41,8 @@ export function pause_on_gl_error() {
 
 export function init_utils() {
 	gl = window.gl
-	gl.defaultVao = gl.createVertexArray() as WebGLVertexArrayObject
-	gl.bindVertexArray(gl.defaultVao)
+	// gl.defaultVao = gl.createVertexArray() as WebGLVertexArrayObject
+	// gl.bindVertexArray(gl.defaultVao)
 }
 export function resizeIfNeeded(
 	canvas: HTMLCanvasElement,
@@ -75,6 +75,10 @@ export class Texture {
 
 	clone(): Texture {
 		return new Texture(this.res)
+	}
+	bind_to_unit(unit: number) {
+		gl.activeTexture(gl.TEXTURE0 + unit)
+		gl.bindTexture(gl.TEXTURE_2D, this.tex)
 	}
 
 	read_back_array(offs: number[] = [0, 0], read_back_res: number[] = [...this.res]): Uint8Array {
@@ -278,7 +282,7 @@ export class Framebuffer {
 		gl.viewport(0, 0, this.textures[0].res[0], this.textures[0].res[1])
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb)
 		Framebuffer.currently_bound = this
-		gl.drawBuffers(draw_buffs)
+		// gl.drawBuffers(draw_buffs)
 	}
 	clear(colour: number[] = [0, 0, 0, 0]) {
 		if (this.fb !== Framebuffer.currently_bound.fb) gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb)
@@ -403,18 +407,25 @@ export class Thing {
 		this.shader = shader
 		this.vao = gl.createVertexArray() as WebGLVertexArrayObject
 		this.buffs = [...buffs]
+		gl.bindVertexArray(this.vao)
+		let i = 0
+		for (let buff of this.buffs) {
+			gl.enableVertexAttribArray(i)
+			buff.bindToAttrib(i)
+			i++
+		}
 	}
 	static draw_external_buffs_and_shader(buffs: BuffBinding[], shader: ShaderProgram, params: DrawParams) {
 		shader.use()
-		gl.bindVertexArray(gl.defaultVao)
-		gl.disableVertexAttribArray(0)
-		gl.disableVertexAttribArray(1)
+		// gl.bindVertexArray(gl.defaultVao)
+		// gl.disableVertexAttribArray(0)
+		// gl.disableVertexAttribArray(1)
 		let i = 0
-		for (let buff of buffs) {
-			gl.enableVertexAttribArray(i)
-			buff.buff.bindToAttrib(i, buff.params ?? undefined)
-			i++
-		}
+		// for (let buff of buffs) {
+		// 	gl.enableVertexAttribArray(i)
+		// 	buff.buff.bindToAttrib(i, buff.params ?? undefined)
+		// 	i++
+		// }
 		params.prim_type = params.prim_type ?? gl.TRIANGLES
 		params.draw_cnt = params.draw_cnt ?? buffs[0].buff.sz / buffs[0].buff.single_vert_sz
 
@@ -434,24 +445,16 @@ export class Thing {
 	}
 	draw_with_external_shader(shader: ShaderProgram) {
 		shader.use()
-		gl.bindVertexArray(this.vao)
-		let i = 0
-		for (let buff of this.buffs) {
-			gl.enableVertexAttribArray(i)
-			buff.bindToAttrib(i)
-			i++
-		}
-
 		if (this.prim_type === gl.TRIANGLES) {
 			let draw_cnt = this.buffs[0].sz / this.buffs[0].single_vert_sz
 			gl.drawArrays(this.prim_type, 0, draw_cnt)
 		} else {
 			alert('bleep bloop errrorrr')
 		}
-		gl.bindVertexArray(gl.defaultVao)
+		// gl.bindVertexArray(gl.defaultVao)
 	}
 
-	draw() {
+	draw(offs: number = 0) {
 		this.draw_with_external_shader(this.shader)
 	}
 }
@@ -481,7 +484,7 @@ export class VertexBuffer {
 	sz: number
 	max_sz: number
 
-	constructor(single_vert_sz: number, type: number = gl.FLOAT, max_size: number = 1000000, usage: number = gl.ARRAY_BUFFER) {
+	constructor(single_vert_sz: number, type: number = gl.FLOAT, max_size: number = 10000000, usage: number = gl.ARRAY_BUFFER) {
 		this.buff = gl.createBuffer() as WebGLBuffer
 		this.usage = usage
 		gl.bindBuffer(usage, this.buff)

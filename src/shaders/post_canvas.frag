@@ -6,13 +6,14 @@ in vec2 uv;
 out vec4 col;
 void main() {
   col = vec4(1);
-  if(canvas_idx < 0.5 ){
-    col.xyz = texture(canvas_a,uv).xyz;
-    // col.xyzw = vec4(1);
-  } else {
-    col.xyz = texture(canvas_b,uv).xyz; 
-    // col.xyzw = vec4(0);
-  }
+  
+
+    col.xyz = texture(canvas_back,uv).xyz; 
+  // if(canvas_idx < 0.5 ){
+  //   col.xyz = texture(canvas_a,uv).xyz;
+  // } else {
+  //   col.xyz = texture(canvas_b,uv).xyz; 
+  // }
   vec2 temp_tex_res = vec2(textureSize(temp_tex,0));
   vec4 temp_tex = texture(temp_tex,floor(uv*temp_tex_res)/temp_tex_res + 0.5/temp_tex_res);
   // if(temp_tex.w > 0.)

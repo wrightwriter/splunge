@@ -1,4 +1,4 @@
-import {Framebuffer, ShaderProgram, Texture, Thing, UBO} from 'gl_utils'
+import {Framebuffer, ShaderProgram, Texture, Thing, UBO, VertexBuffer} from 'gl_utils'
 import {Utils} from 'stuff'
 import {BrushStroke, BrushType} from 'brush_stroke'
 import {cos, floor, sin} from 'wmath'
@@ -98,75 +98,48 @@ const add_ang_to_pos = (
 }
 let gl: WebGL2RenderingContext
 export class Drawer {
-	draw_blobs_stroke_program: ShaderProgram
-	brush_triangulated_program: ShaderProgram
+	// draw_blobs_stroke_program: ShaderProgram
+	// brush_triangulated_program: ShaderProgram
 	set_shared_uniforms: Function
 	canvas_tex: Texture
 	default_framebuffer: Framebuffer
+	// @ts-ignore
+	brush_buffer: Thing
 	zoom: number = 0
 	panning: number[] = [0, 0]
 	t: number = 0
+	idx: number = 0
 	temp_array_a: Float32Array = new Float32Array(1_000_00)
 	temp_array_b: Float32Array = new Float32Array(1_000_00)
 
+	recorded_drawcalls: number[] = []
+
 	constructor(
-		draw_blobs_stroke_program: ShaderProgram,
-		brush_triangulated_program: ShaderProgram,
+		// draw_blobs_stroke_program: ShaderProgram,
+		// brush_triangulated_program: ShaderProgram,
 		set_shared_uniforms: Function,
 		_gl: WebGL2RenderingContext,
 		canvas_tex: Texture,
 		default_framebuffer: Framebuffer,
 	) {
 		this.set_shared_uniforms = set_shared_uniforms
-		this.draw_blobs_stroke_program = draw_blobs_stroke_program
+		// this.draw_blobs_stroke_program = draw_blobs_stroke_program
 		this.canvas_tex = canvas_tex
 		this.default_framebuffer = default_framebuffer
-		this.brush_triangulated_program = brush_triangulated_program
+		// this.brush_triangulated_program = brush_triangulated_program
 		gl = _gl
 	}
 
-	draw_blobs_stroke(
-		_col: number[],
-		_opacity: number,
-		_pos: number[],
-		_rot: number[],
-		_sz: number[],
-		_tex_lch_dynamics: number[],
-		_tex_stretch: number[],
-	) {
-		let draw_blobs_stroke_program = this.draw_blobs_stroke_program
-		let set_shared_uniforms = this.set_shared_uniforms
-		draw_blobs_stroke_program.use()
-		set_shared_uniforms(draw_blobs_stroke_program, _col, this.t)
-
-		draw_blobs_stroke_program.setUniformFloat('stroke_opacity', _opacity)
-		draw_blobs_stroke_program.setUniformVec('tex_lch_dynamics', [
-			_tex_lch_dynamics[0],
-			_tex_lch_dynamics[1],
-			_tex_lch_dynamics[2],
-		])
-		draw_blobs_stroke_program.setUniformVec('tex_stretch', [_tex_stretch[0], _tex_stretch[1]])
-
-		const push_with_offs = (vals: number[], offs: number) => {
-			vals.forEach((v, i) => {
-				window.ubo.buff.cpu_buff[offs + i] = v
-			})
-		}
-
-		push_with_offs(_col, 0)
-		push_with_offs(_pos, 8)
-		push_with_offs(_sz, 14)
-		push_with_offs(_rot, 16)
-		push_with_offs([_opacity], 21)
-
-		window.ubo.buff.upload()
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+	reset() {
+		this.idx = 0
+		this.recorded_drawcalls.length = 0
+		this.brush_buffer.buffs[0].sz = 0
+		this.brush_buffer.buffs[1].sz = 0
 	}
 
-	fill_buff_for_blob_brush(brush_stroke: BrushStroke, brush_buffer: Thing) {
-		brush_buffer.buffs[0].sz = 0
-		brush_buffer.buffs[1].sz = 0
-		const iters = brush_stroke.positions.length / 2 - 1
+	fill_buff_for_blob_brush(stroke: BrushStroke) {
+		const brush_buffer = this.brush_buffer
+		const iters = stroke.positions.length / 2 - 1
 		const aspect_correction = Utils.screen_NDC_to_canvas_NDC(
 			[1, 1],
 			this.default_framebuffer.textures[0],
@@ -182,7 +155,6 @@ export class Drawer {
 			positive: boolean,
 			sz_x: number,
 			sz_y: number,
-			aspect_correction: number[],
 		): number[] => {
 			if (positive) {
 				pos[0] += (ang_x[0] * sz_x) / aspect_correction[0]
@@ -198,22 +170,23 @@ export class Drawer {
 			return pos
 		}
 		for (let i = 0; i < iters; i++) {
+			// let i_2 = i * 2
 			// #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a))
 			// brush_stroke.
-			let sz_x = brush_stroke.sizes[i * 2]
-			let sz_y = brush_stroke.sizes[i * 2 + 1]
+			let sz_x = stroke.sizes[i * 2]
+			let sz_y = stroke.sizes[i * 2 + 1]
 			// let next_sz = brush_stroke.sizes[i * 2 + 2]
 
-			let ang_x = get_circ_pos_from_ang(brush_stroke.rotations[i * 2 + 1])
+			let ang_x = get_circ_pos_from_ang(stroke.rotations[i * 2 + 1])
 			let ang_y = [ang_x[1], -ang_x[0]]
 			// let next_ang = get_circ_pos_from_ang(brush_stroke.rotations[i * 2 + 3])
 			// let next_ang_b = [curr_ang[1],-curr_ang[0]]
 
-			let curr_pos = [brush_stroke.positions[i * 2], brush_stroke.positions[i * 2 + 1]]
+			let curr_pos = [stroke.positions[i * 2], stroke.positions[i * 2 + 1]]
 			// let next_pos = [brush_stroke.positions[i * 2 + 2], brush_stroke.positions[i * 2 + 3]]
 
-			let curr_pos_left = add_ang_to_pos([...curr_pos], ang_x, ang_y, true, sz_x, sz_y, aspect_correction)
-			let curr_pos_right = add_ang_to_pos([...curr_pos], ang_x, ang_y, false, sz_x, sz_y, aspect_correction)
+			let curr_pos_left = add_ang_to_pos([...curr_pos], ang_x, ang_y, true, sz_x, sz_y)
+			let curr_pos_right = add_ang_to_pos([...curr_pos], ang_x, ang_y, false, sz_x, sz_y)
 
 			let next_pos_left = [...curr_pos_left]
 			let next_pos_right = [...curr_pos_right]
@@ -224,8 +197,8 @@ export class Drawer {
 			next_pos_right[1] -= (ang_y[1] * sz_y) / aspect_correction[1]
 			// pos[1] += (ang_offs_b[1] * amt_b) / aspect_correction[1]
 
-			let curr_col = [brush_stroke.colours[i * 3], brush_stroke.colours[i * 3 + 1], brush_stroke.colours[i * 3 + 2]]
-			let curr_opacity = brush_stroke.opacities[i]
+			let curr_col = [stroke.colours[i * 3], stroke.colours[i * 3 + 1], stroke.colours[i * 3 + 2]]
+			let curr_opacity = stroke.opacities[i]
 
 			const curr_v = i / iters
 			const next_v = (i + 1) / iters
@@ -244,12 +217,12 @@ export class Drawer {
 			brush_buffer.buffs[0].push_vert([...next_pos_right, 1, next_v])
 			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
 		}
+		this.recorded_drawcalls.push(this.brush_buffer.buffs[0].sz)
 	}
 
-	fill_buff_for_long_brush(brush_stroke: BrushStroke, brush_buffer: Thing) {
-		brush_buffer.buffs[0].sz = 0
-		brush_buffer.buffs[1].sz = 0
-		const iters = brush_stroke.positions.length / 2 - 1
+	fill_buff_for_long_brush(stroke: BrushStroke) {
+		const brush_buffer = this.brush_buffer
+		const iters = stroke.positions.length / 2 - 1
 		const aspect_correction = Utils.screen_NDC_to_canvas_NDC(
 			[1, 1],
 			this.default_framebuffer.textures[0],
@@ -257,17 +230,20 @@ export class Drawer {
 			1,
 			[0, 0],
 		)
+
+		let idx = brush_buffer.buffs[0].sz
+
 		for (let i = 0; i < iters; i++) {
 			// #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a))
 			// brush_stroke.
-			let curr_sz = brush_stroke.sizes[i * 2]
-			let next_sz = brush_stroke.sizes[i * 2 + 2]
+			let curr_sz = stroke.sizes[i * 2]
+			let next_sz = stroke.sizes[i * 2 + 2]
 
-			let curr_ang = get_circ_pos_from_ang(brush_stroke.rotations[i * 2 + 1])
-			let next_ang = get_circ_pos_from_ang(brush_stroke.rotations[i * 2 + 3])
+			let curr_ang = get_circ_pos_from_ang(stroke.rotations[i * 2 + 1])
+			let next_ang = get_circ_pos_from_ang(stroke.rotations[i * 2 + 3])
 
-			let curr_pos = [brush_stroke.positions[i * 2], brush_stroke.positions[i * 2 + 1]]
-			let next_pos = [brush_stroke.positions[i * 2 + 2], brush_stroke.positions[i * 2 + 3]]
+			let curr_pos = [stroke.positions[i * 2], stroke.positions[i * 2 + 1]]
+			let next_pos = [stroke.positions[i * 2 + 2], stroke.positions[i * 2 + 3]]
 
 			let curr_pos_left = add_ang_to_pos([...curr_pos], curr_ang, true, curr_sz, aspect_correction)
 			let curr_pos_right = add_ang_to_pos([...curr_pos], curr_ang, false, curr_sz, aspect_correction)
@@ -275,168 +251,219 @@ export class Drawer {
 			let next_pos_left = add_ang_to_pos([...next_pos], next_ang, true, next_sz, aspect_correction)
 			let next_pos_right = add_ang_to_pos([...next_pos], next_ang, false, next_sz, aspect_correction)
 
-			let curr_col = [brush_stroke.colours[i * 3], brush_stroke.colours[i * 3 + 1], brush_stroke.colours[i * 3 + 2]]
-			let curr_opacity = brush_stroke.opacities[i]
+			let curr_col = [stroke.colours[i * 3], stroke.colours[i * 3 + 1], stroke.colours[i * 3 + 2]]
+			let curr_opacity = stroke.opacities[i]
 
-			let next_col = [brush_stroke.colours[i * 3 + 3], brush_stroke.colours[i * 3 + 4], brush_stroke.colours[i * 3 + 5]]
-			let next_opacity = brush_stroke.opacities[i + 1]
+			let next_col = [stroke.colours[i * 3 + 3], stroke.colours[i * 3 + 4], stroke.colours[i * 3 + 5]]
+			let next_opacity = stroke.opacities[i + 1]
 
 			const curr_v = i / iters
 			const next_v = (i + 1) / iters
 
-			brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])
-			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-			brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
-			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-			brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
-			brush_buffer.buffs[1].push_vert([...next_col, next_opacity])
+			// brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])
+			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_left[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_left[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
 
-			brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
-			brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-			brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
-			brush_buffer.buffs[1].push_vert([...next_col, next_opacity])
-			brush_buffer.buffs[0].push_vert([...next_pos_right, 1, next_v])
-			brush_buffer.buffs[1].push_vert([...next_col, next_opacity])
+			// brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
+			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_right[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_right[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 1
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
+
+			// brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
+			// brush_buffer.buffs[1].push_vert([...next_col, next_opacity])
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_left[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_left[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_opacity
+
+			// brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
+			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_right[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_pos_right[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 1
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = curr_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
+
+			// brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
+			// brush_buffer.buffs[1].push_vert([...next_col, next_opacity])
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_left[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_left[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_opacity
+
+			// brush_buffer.buffs[0].push_vert([...next_pos_right, 1, next_v])
+			// brush_buffer.buffs[1].push_vert([...next_col, next_opacity])
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_right[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_right[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = next_v
+			brush_buffer.buffs[1].cpu_buff[idx++] = next_opacity
 		}
+		brush_buffer.buffs[0].sz += iters * 6 * 4
+		brush_buffer.buffs[1].sz += iters * 6 * 4
+		this.recorded_drawcalls.push(this.brush_buffer.buffs[0].sz)
+	}
+	fill_buff_for_triangulated_brush(stroke: BrushStroke) {
+		const brush_buffer = this.brush_buffer
+		const {colours, opacities, positions} = stroke
+		// let positions = [...stroke.positions]
+		// const [new_triangles, offs] = get_subarray(this.temp_array_a, 0, positions.length * 3)
+		// const [new_cols] = get_subarray(this.temp_array_a, offs, offs + (positions.length / 2) * 3 * 4)
+		const iters = positions.length / 2 - 1
+		let idx = brush_buffer.buffs[0].sz
+		for (let i = 0; i < iters; i++) {
+			let u = 0
+			let v = 0
+			// brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
+
+			// new_triangles[i * 3 * 2] = positions[0]
+			// new_triangles[i * 3 * 2 + 1] = positions[0 + 1]
+			// new_cols[i * 3 * 4] = stroke.colours[0]
+			// new_cols[i * 3 * 4 + 1] = stroke.colours[1]
+			// new_cols[i * 3 * 4 + 2] = stroke.colours[2]
+			// new_cols[i * 3 * 4 + 3] = stroke.opacities[0]
+			// brush_buffer.buffs[0].push_vert([positions[0], positions[1], u, v])
+			// brush_buffer.buffs[1].push_vert([colours[0], colours[1], colours[2], opacities[1]])
+			brush_buffer.buffs[0].cpu_buff[idx] = positions[0]
+			brush_buffer.buffs[1].cpu_buff[idx++] = colours[0]
+			brush_buffer.buffs[0].cpu_buff[idx] = positions[1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = colours[1]
+			brush_buffer.buffs[0].cpu_buff[idx] = u
+			brush_buffer.buffs[1].cpu_buff[idx++] = colours[2]
+			brush_buffer.buffs[0].cpu_buff[idx] = v
+			brush_buffer.buffs[1].cpu_buff[idx++] = opacities[1]
+
+			// new_triangles[i * 3 * 2 + 2] = positions[i * 2]
+			// new_triangles[i * 3 * 2 + 3] = positions[i * 2 + 1]
+			// new_cols[i * 3 * 4 + 4] = stroke.colours[i * 3]
+			// new_cols[i * 3 * 4 + 5] = stroke.colours[i * 3 + 1]
+			// new_cols[i * 3 * 4 + 6] = stroke.colours[i * 3 + 2]
+			// new_cols[i * 3 * 4 + 7] = stroke.opacities[i]
+			// brush_buffer.buffs[0].push_vert([positions[i * 2], positions[i * 2 + 1], u, v])
+			// brush_buffer.buffs[1].push_vert([colours[i * 3], colours[i * 3 + 1], colours[i * 3 + 2], opacities[i]])
+
+			brush_buffer.buffs[0].cpu_buff[idx] = positions[i * 2]
+			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3]
+			brush_buffer.buffs[0].cpu_buff[idx] = positions[i * 2 + 1]
+			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3 + 1]
+			brush_buffer.buffs[0].cpu_buff[idx] = u
+			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3 + 2]
+			brush_buffer.buffs[0].cpu_buff[idx] = v
+			brush_buffer.buffs[1].cpu_buff[idx++] = opacities[i]
+
+			// new_triangles[i * 3 * 2 + 4] = positions[i * 2 + 2]
+			// new_triangles[i * 3 * 2 + 5] = positions[i * 2 + 3]
+			// new_cols[i * 3 * 4 + 8] = stroke.colours[i * 3 + 3]
+			// new_cols[i * 3 * 4 + 9] = stroke.colours[i * 3 + 4]
+			// new_cols[i * 3 * 4 + 10] = stroke.colours[i * 3 + 5]
+			// new_cols[i * 3 * 4 + 11] = stroke.opacities[i + 1]
+			// brush_buffer.buffs[0].push_vert([positions[i * 2 + 2], positions[i * 2 + 3], u, v])
+			// brush_buffer.buffs[1].push_vert([colours[i * 3 + 3], colours[i * 3 + 4], colours[i * 3 + 5], opacities[i + 1]])
+			brush_buffer.buffs[0].cpu_buff[idx] = positions[i * 2 + 2]
+			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3 + 3]
+			brush_buffer.buffs[0].cpu_buff[idx] = positions[i * 2 + 3]
+			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3 + 4]
+			brush_buffer.buffs[0].cpu_buff[idx] = u
+			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3 + 5]
+			brush_buffer.buffs[0].cpu_buff[idx] = v
+			brush_buffer.buffs[1].cpu_buff[idx++] = opacities[i + 1]
+		}
+		brush_buffer.buffs[0].sz += iters * 3 * 4
+		brush_buffer.buffs[1].sz += iters * 3 * 4
+		// brush_buffer.buffs[0].upload_external_array(new_triangles)
+		// brush_buffer.buffs[1].upload_external_array(new_cols)
+		this.recorded_drawcalls.push(this.brush_buffer.buffs[0].sz)
+	}
+
+	push_any_stroke(stroke: BrushStroke) {
+		console.log('START PUSHING')
+		if (stroke.brush_type === BrushType.Blobs) {
+			this.fill_buff_for_blob_brush(stroke)
+		} else if (stroke.brush_type === BrushType.Long) {
+			this.fill_buff_for_long_brush(stroke)
+		} else if (stroke.brush_type === BrushType.Tri) {
+			this.fill_buff_for_triangulated_brush(stroke)
+		}
+	}
+	draw_stroke_idx(idx: number) {
+		let draw_start = idx === 0 ? 0 : this.recorded_drawcalls[idx - 1]
+		let draw_cnt = idx === 0 ? this.recorded_drawcalls[0] : this.recorded_drawcalls[idx] - this.recorded_drawcalls[idx - 1]
+		gl.drawArrays(gl.TRIANGLES, draw_start / 4, draw_cnt / 4)
 	}
 
 	draw_any_stroke(stroke: BrushStroke, t: number, brush_buffer: Thing, zoom: number, panning: number[]) {
+		this.brush_buffer = brush_buffer
 		console.log('START DRAWING')
 		this.t = t
 		this.zoom = zoom
 		this.panning = [...panning]
 
-		if (stroke.brush_type === BrushType.Blobs) {
-			// for (let i = 0; i < stroke.positions.length / 2; i++) {
-			// 	let pos = [stroke.positions[i * 2], stroke.positions[i * 2 + 1]]
-			// 	let sz = [stroke.sizes[i * 2], stroke.sizes[i * 2 + 1]]
-			// 	let col = [stroke.colours[i * 3], stroke.colours[i * 3 + 1], stroke.colours[i * 3 + 2]]
-			// 	let opacity = stroke.opacities[i]
-			// 	let rot = [stroke.rotations[i * 2], stroke.rotations[i * 2 + 1]]
-			// 	this.draw_blobs_stroke(
-			// 		[...col, 1],
-			// 		opacity,
-			// 		pos,
-			// 		rot,
-			// 		sz,
-			// 		stroke.draw_params.tex_lch_dynamics,
-			// 		stroke.draw_params.tex_stretch,
-			// 	)
-			// }
-			// console.log(stroke.positions)
-			this.fill_buff_for_blob_brush(stroke, brush_buffer)
-			brush_buffer.shader.use()
-			this.set_shared_uniforms(brush_buffer.shader, [0, 0, 0, 0], t)
-			brush_buffer.upload_all_buffs()
-			brush_buffer.draw()
-		} else if (stroke.brush_type === BrushType.Long) {
-			this.fill_buff_for_long_brush(stroke, brush_buffer)
-			brush_buffer.shader.use()
-			this.set_shared_uniforms(brush_buffer.shader, [0, 0, 0, 0], t)
-			brush_buffer.upload_all_buffs()
-			brush_buffer.draw()
-		} else if (stroke.brush_type === BrushType.Tri) {
-			let positions = [...stroke.positions]
-			const [new_triangles, offs] = get_subarray(this.temp_array_a, 0, positions.length * 3)
-			const [new_cols] = get_subarray(this.temp_array_a, offs, offs + (positions.length / 2) * 3 * 4)
-			for (let i = 0; i < positions.length / 2 - 1; i++) {
-				new_triangles[i * 3 * 2] = positions[0]
-				new_triangles[i * 3 * 2 + 1] = positions[0 + 1]
-				new_cols[i * 3 * 4] = stroke.colours[0]
-				new_cols[i * 3 * 4 + 1] = stroke.colours[1]
-				new_cols[i * 3 * 4 + 2] = stroke.colours[2]
-				new_cols[i * 3 * 4 + 3] = stroke.opacities[0]
-				new_triangles[i * 3 * 2 + 2] = positions[i * 2]
-				new_triangles[i * 3 * 2 + 3] = positions[i * 2 + 1]
-				new_cols[i * 3 * 4 + 4] = stroke.colours[i * 3]
-				new_cols[i * 3 * 4 + 5] = stroke.colours[i * 3 + 1]
-				new_cols[i * 3 * 4 + 6] = stroke.colours[i * 3 + 2]
-				new_cols[i * 3 * 4 + 7] = stroke.opacities[i]
-				new_triangles[i * 3 * 2 + 4] = positions[i * 2 + 2]
-				new_triangles[i * 3 * 2 + 5] = positions[i * 2 + 3]
-				new_cols[i * 3 * 4 + 8] = stroke.colours[i * 3 + 3]
-				new_cols[i * 3 * 4 + 9] = stroke.colours[i * 3 + 4]
-				new_cols[i * 3 * 4 + 10] = stroke.colours[i * 3 + 5]
-				new_cols[i * 3 * 4 + 11] = stroke.opacities[i + 1]
-			}
-			this.brush_triangulated_program.use()
-			brush_buffer.buffs[0].upload_external_array(new_triangles)
-			brush_buffer.buffs[1].upload_external_array(new_cols)
-
-			this.set_shared_uniforms(this.brush_triangulated_program, [0, 0, 0, 0], t)
-			// brush_buffer.draw_with_external_shader(this.brush_triangulated_program)
-			// if (triangles.length > 50) debugger
-			Thing.draw_external_buffs_and_shader(
-				[
-					{buff: brush_buffer.buffs[0], params: {vert_sz: 2}},
-					{buff: brush_buffer.buffs[1], params: {vert_sz: 4}},
-				],
-				this.brush_triangulated_program,
-				{
-					// draw_cnt: brush_buffer.buffs[0].sz / 2,
-					draw_cnt: new_triangles.length / 2,
-					// draw_cnt: this.bu,
-				},
-			)
-		} else {
-			// const Tess2 = require('tess2')
-			// let positions = [...stroke.positions]
-			// // console.log(stroke)
-			// positions.forEach((v, i, a) => {
-			// 	a[i] = (v * 0.5 + 0.5) * 1000
-			// 	a[i] = floor(a[i])
-			// })
-			// // {
-			// // let triangles = earcut(positions)
-			// // const new_triangles = new Float32Array(triangles.length * 2)
-			// // triangles.forEach((v: number, i: number, a: number) => {
-			// // new_triangles[i * 2] = stroke.positions[v * 2]
-			// // new_triangles[i * 2 + 1] = stroke.positions[v * 2 + 1]
-			// // })
-			// // }
-			// // {
-			// // const triangles = Tess2.tesselate({
-			// // 	contours: [positions],
-			// // 	windingRule: Tess2.WINDING_NONZERO,
-			// // 	elementType: Tess2.POLYGONS,
-			// // 	polySize: 3,
-			// // 	vertexSize: 2,
-			// // })
-			// // const new_triangles = new Float32Array(triangles.elements.length * 2)
-			// // triangles.elements.forEach((v: number, i: number, a: number) => {
-			// // 	new_triangles[i * 2] = (triangles.vertices[v * 2] / 1000 - 0.5) / 0.5
-			// // 	new_triangles[i * 2 + 1] = (triangles.vertices[v * 2 + 1] / 1000 - 0.5) / 0.5
-			// // 	// a[i] = (a[i] / 1000 - 0.5) / 0.5
-			// // 	// a[i] = (v / 10000) * 5 * 10
-			// // })
-			// // }
-			// // {
-			// const triangles: number[] = triangulate([positions])
-			// const new_triangles = new Float32Array(triangles.length)
-			// // @ts-ignore
-			// // triangles.forEach((v: number, i: number, a: number) => {
-			// 	// new_triangles[i] = (v / 1000 - 0.5) / 0.5
-			// 	// new_triangles[i * 2] = stroke.positions[v * 2]
-			// 	// new_triangles[i * 2 + 1] = stroke.positions[v * 2 + 1]
-			// // })
-			// // }
-			// // console.log(triangles)
-			// this.brush_triangulated_program.use()
-			// brush_buffer.buffs[0].upload_external_array(new_triangles)
-			// // brush_buffer.buffs[1].upload_external_buff(triangles)
-			// this.set_shared_uniforms(this.brush_triangulated_program, [0, 0, 0, 0], t)
-			// // brush_buffer.draw_with_external_shader(this.brush_triangulated_program)
-			// // if (triangles.length > 50) debugger
-			// Thing.draw_external_buffs_and_shader(
-			// 	[{buff: brush_buffer.buffs[0], params: {vert_sz: 2}}],
-			// 	this.brush_triangulated_program,
-			// 	{
-			// 		// draw_cnt: triangles.length / 3,
-			// 		draw_cnt: new_triangles.length / 3 / 2,
-			// 	},
-			// )
-			// // brush_buffer.buffs[0].push_vert([...curr_pos_left, 0, curr_v])
-			// // brush_buffer.buffs[1].push_vert([...curr_col, curr_opacity])
-		}
+		brush_buffer.draw()
 	}
 }
+
+// draw_blobs_stroke(
+// 	_col: number[],
+// 	_opacity: number,
+// 	_pos: number[],
+// 	_rot: number[],
+// 	_sz: number[],
+// 	_tex_lch_dynamics: number[],
+// 	_tex_stretch: number[],
+// ) {
+// 	let draw_blobs_stroke_program = this.draw_blobs_stroke_program
+// 	let set_shared_uniforms = this.set_shared_uniforms
+// 	draw_blobs_stroke_program.use()
+// 	set_shared_uniforms(draw_blobs_stroke_program, _col, this.t)
+
+// 	draw_blobs_stroke_program.setUniformFloat('stroke_opacity', _opacity)
+// 	draw_blobs_stroke_program.setUniformVec('tex_lch_dynamics', [
+// 		_tex_lch_dynamics[0],
+// 		_tex_lch_dynamics[1],
+// 		_tex_lch_dynamics[2],
+// 	])
+// 	draw_blobs_stroke_program.setUniformVec('tex_stretch', [_tex_stretch[0], _tex_stretch[1]])
+
+// 	const push_with_offs = (vals: number[], offs: number) => {
+// 		vals.forEach((v, i) => {
+// 			window.ubo.buff.cpu_buff[offs + i] = v
+// 		})
+// 	}
+
+// 	push_with_offs(_col, 0)
+// 	push_with_offs(_pos, 8)
+// 	push_with_offs(_sz, 14)
+// 	push_with_offs(_rot, 16)
+// 	push_with_offs([_opacity], 21)
+
+// 	window.ubo.buff.upload()
+// 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+// }
