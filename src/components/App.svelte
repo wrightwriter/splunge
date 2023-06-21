@@ -113,6 +113,7 @@
 	import earcut from 'earcut'
 	import {Dropbox} from 'dropbox'
 	import getToken from 'getToken'
+	import Dexie from 'dexie';
 	import {Drawer} from 'drawer'
 
 	// Init
@@ -618,8 +619,6 @@
 				project_has_been_modified = true
 				redraw_needed = true
 				record_stroke()
-				if(frame % 40 === 0)
-					localStorage.setItem('project', JSON.stringify(project))
 				temp_stroke_fb.start_draw()
 				// drawer.draw_any_stroke(brush_stroke, t, brush_buffer, zoom, panning)
 				drawer.brush_buffer = brush_buffer_b
@@ -632,6 +631,7 @@
 			}
 			// ----- COMPOSITE
 			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
+				// localStorage.setItem('project', JSON.stringify(project))
 				console.log(brush_stroke)
 				project.push_stroke(brush_stroke)
 				redraw_needed = true
