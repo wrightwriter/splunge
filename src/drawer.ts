@@ -1,9 +1,11 @@
-import {Framebuffer, ShaderProgram, Texture, Thing, UBO, VertexBuffer} from 'gl_utils'
 import {Utils} from 'stuff'
 import {BrushStroke, BrushType} from 'brush_stroke'
 import {cos, floor, sin} from 'wmath'
 import earcut from 'earcut'
 import libtess from 'libtess'
+import {Framebuffer} from 'gl/Framebuffer'
+import {Texture} from 'gl/Texture'
+import {Thing} from 'gl/Thing'
 const tessy = (function initTesselator() {
 	// function called for each vertex of tesselator output
 	function vertexCallback(data, polyVertArray) {

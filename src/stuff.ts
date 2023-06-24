@@ -1,5 +1,5 @@
 import {BrushStroke} from 'brush_stroke'
-import {Texture} from 'gl_utils'
+import {Texture} from 'gl/Texture'
 import {pow} from 'wmath'
 
 export function assert(v: boolean) {

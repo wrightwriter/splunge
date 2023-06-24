@@ -90,7 +90,7 @@
 	import {get, writable} from 'svelte/store'
 	import {floating_modal_message} from 'store'
 
-	import {Texture, Framebuffer, ShaderProgram, init_utils, resizeIfNeeded, finish_frame, Thing, VertexBuffer, print_on_gl_error, init_gl_error_handling, UBO} from 'gl_utils'
+	import {resizeIfNeeded, finish_frame, print_on_gl_error, init_gl_error_handling} from 'gl_utils'
 
 	import Knob from './Knob.svelte'
 	import BrushSizeWidget from './BrushSizeWidget.svelte'
@@ -115,6 +115,11 @@
 	import getToken from 'getToken'
 	import Dexie from 'dexie';
 	import {Drawer} from 'drawer'
+	import { Framebuffer } from 'gl/Framebuffer'
+	import { VertexBuffer, UBO } from 'gl/Buffer'
+	import { Texture } from 'gl/Texture'
+	import { ShaderProgram } from 'gl/ShaderProgram'
+	import { Thing } from 'gl/Thing'
 
 	// Init
 	let hash = new Hash()
@@ -255,7 +260,6 @@
 		gl.getExtension('OES_texture_float_linear');
 		gl.getExtension('EXT_color_buffer_float');
 
-		init_utils()
 
 		gl.debugEnabled = process.env.NODE_ENV === 'development'
 		gl.debugEnabled = false
