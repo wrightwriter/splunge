@@ -6,7 +6,7 @@
 			<Knob bind:value={stroke_col[2]} title={'B'} />
 			<ColourDisplay bind:colour={stroke_col} bind:just_finished_pick={just_finished_pick} />
 
-			<Knob bind:this={chaosKnob} bind:value={chaos} title={'Chaos'} triggerModal={openModal} modal={chaosSemiModal} />
+			<Knob bind:this={chaosKnob} bind:value={curr_brush.chaos} title={'Chaos'} triggerModal={openModal} modal={chaosSemiModal} />
 			<BrushSizeWidget
 				bind:brush_sz={brush_sz}
 				canvas_res={canvasRes}
@@ -14,17 +14,19 @@
 				bind:stopped_dragging={brushSizeWidgetStoppedDragging} />
 			<Knob
 				bind:this={dynamicsKnob}
-				bind:value={dynamics}
+				bind:value={curr_brush.dynamics}
 				title={'Dynamics'}
 				triggerModal={openModal}
 				modal={dynamicsSemiModal} />
 			<Knob
 				bind:this={texDynamicsKnob}
-				bind:value={tex_dynamics}
+				bind:value={curr_brush.tex_dynamics}
 				title={'Tex'}
 				triggerModal={openModal}
 				modal={texDynamicsSemiModal} />
-			<BrushTypeWidget bind:selected_brush_type={selected_brush_type} />
+			<!-- <BrushTypeWidget bind:selected_brush_type={curr_brush.selected_brush_type} /> -->
+			<BrushTypeWidget bind:curr_brush={curr_brush} />
+			<BrushPresetWidget bind:brush_presets={brush_presets} bind:selected_brush_preset={curr_brush} />
 			<UndoRedoWidget
 				undo={() => {
 					undo_pending = true
@@ -55,35 +57,31 @@
 				bind:just_finished_pick={just_finished_pick} />
 		</div>
 		<SemiModal bind:this={chaosSemiModal} knob={chaosKnob}>
-			<Knob bind:value={chaos_lch[0]} title={'Chaos L'} />
-			<Knob bind:value={chaos_lch[1]} title={'Chaos C'} />
-			<Knob bind:value={chaos_lch[2]} title={'Chaos H'} />
-			<Knob bind:value={chaos_speed} title={'Chaos Speed'} />
+			<Knob bind:value={curr_brush.chaos_lch[0]} title={'Chaos L'} />
+			<Knob bind:value={curr_brush.chaos_lch[1]} title={'Chaos C'} />
+			<Knob bind:value={curr_brush.chaos_lch[2]} title={'Chaos H'} />
+			<Knob bind:value={curr_brush.chaos_speed} title={'Chaos Speed'} />
 		</SemiModal>
 		<SemiModal bind:this={dynamicsSemiModal} knob={dynamicsKnob}>
-			<Knob bind:value={stroke_opacity_dynamics[0]} title={'Opacity min'} />
-			<Knob bind:value={stroke_opacity_dynamics[1]} title={'Opacity max'} />
-			<Knob bind:value={stroke_size_dynamics[0]} title={'Size min'} />
-			<Knob bind:value={stroke_size_dynamics[1]} title={'Size max'} />
-			<Knob bind:value={rot_jitter} title={'Rot jitt'} />
-			<Knob bind:value={pos_jitter} title={'Pos jitt'} />
+			<Knob bind:value={curr_brush.stroke_opacity_dynamics[0]} title={'Opacity min'} />
+			<Knob bind:value={curr_brush.stroke_opacity_dynamics[1]} title={'Opacity max'} />
+			<Knob bind:value={curr_brush.stroke_size_dynamics[0]} title={'Size min'} />
+			<Knob bind:value={curr_brush.stroke_size_dynamics[1]} title={'Size max'} />
+			<Knob bind:value={curr_brush.rot_jitter} title={'Rot jitt'} />
+			<Knob bind:value={curr_brush.pos_jitter} title={'Pos jitt'} />
 		</SemiModal>
 		<SemiModal bind:this={texDynamicsSemiModal} knob={texDynamicsKnob}>
-			<Knob bind:value={tex_lch_dynamics[0]} title={'Tex V'} />
-			<Knob bind:value={tex_lch_dynamics[1]} title={'Tex S'} />
-			<Knob bind:value={tex_lch_dynamics[2]} title={'Tex H'} />
-			<Knob bind:value={tex_stretch[0]} title={'Stretch X'} />
-			<Knob bind:value={tex_stretch[1]} title={'Stretch Y'} />
+			<Knob bind:value={curr_brush.tex_lch_dynamics[0]} title={'Tex V'} />
+			<Knob bind:value={curr_brush.tex_lch_dynamics[1]} title={'Tex S'} />
+			<Knob bind:value={curr_brush.tex_lch_dynamics[2]} title={'Tex H'} />
+			<Knob bind:value={curr_brush.tex_stretch[0]} title={'Stretch X'} />
+			<Knob bind:value={curr_brush.tex_stretch[1]} title={'Stretch Y'} />
+			<TextureWidget bind:brush_textures={brush_textures} bind:selected_brush_texture={curr_brush.selected_brush_texture} />
 		</SemiModal>
 	</div>
-	<!-- {@html `<style> #bar>*:last-of-type{margin-left:auto; padding-right: 4rem;} </style>`}  -->
 	<canvas id="canvas" bind:this={canvasElement} />
 </main>
 
-<svelte:head>
-	<!-- <script async defer src="https://apis.google.com/js/api.js" on:load={handleGApiLoad}></script> -->
-	<!-- <script async defer src="https://accounts.google.com/gsi/client" on:load={handleGLClientLoad}></script> -->
-</svelte:head>
 
 <script lang="ts">
 	// import type monaco from 'monaco-editor';
@@ -97,19 +95,21 @@
 	import Knob from './Knob.svelte'
 	import BrushSizeWidget from './BrushSizeWidget.svelte'
 	import BrushTypeWidget from './BrushTypeWidget.svelte'
+	import BrushPresetWidget from './BrushPresetWidget.svelte'
 	import UndoRedoWidget from './UndoRedoWidget.svelte'
 	import GalleryWidget from './GalleryWidget.svelte'
 	import FloatingModal from './FloatingModal.svelte'
 	import PickColourWidget from './PickColourWidget.svelte'
+	import TextureWidget from './TextureWidget.svelte'
 
 	import ColourDisplay from './ColourDisplay.svelte'
 	import SemiModal from './SemiModal.svelte'
 	import {IO} from 'IO'
 	import chroma from 'chroma-js'
-	import {Hash, abs, cos, floor, pow, sin, tau, tri, mix} from 'wmath'
-	import {clamp, lerp, mod} from '@0b5vr/experimental'
-	import {Project, Utils} from 'stuff'
-	import {BrushStroke, BrushType, DrawParams} from 'brush_stroke'
+	import {Hash, abs, cos, floor, pow, sin, tau, tri, mix, max} from 'wmath'
+	import {clamp, lerp, mod, smootheststep, smoothstep} from '@0b5vr/experimental'
+	import {BrushTexture, Project, Utils} from 'stuff'
+	import {BrushPreset, BrushStroke, BrushType, DrawParams} from 'brush_stroke'
 	import earcut from 'earcut'
 	import {Dropbox} from 'dropbox'
 	import getToken from 'getToken'
@@ -146,21 +146,38 @@
 	let brush_pos_ndc_screen: number[] = [0, 0]
 	let brush_pos_ndc_canvas: number[] = [0, 0]
 	let brush_sz: number[] = [1, 0.2]
-	let selected_brush_type: BrushType = BrushType.Blobs
+	
+	
+	let brush_presets: BrushPreset[] = []
+	for(let i = 0; i < 6; i++){
+		brush_presets.push(new BrushPreset())
+	}
+	let curr_brush: BrushPreset = brush_presets[0]
 
-	let chaos_lch: Array<number> = [0, 0, 1]
-	let chaos_speed: number = 0.3
-	let chaos: number = 0.7
 
-	let dynamics: number = 0.3
-	let stroke_opacity_dynamics: number[] = [0, 1]
-	let stroke_size_dynamics: number[] = [0.7, 1]
-	let rot_jitter: number = 0
-	let pos_jitter: number = 0
+	// let selected_brush_type: BrushType = BrushType.Blobs
 
-	let tex_dynamics: number = 0.3
-	let tex_lch_dynamics: number[] = [0, 0, 0.02]
-	let tex_stretch: number[] = [1, 0.2]
+	// let chaos_lch: Array<number> = [0, 0, 1]
+	// let chaos_speed: number = 0.3
+	// let chaos: number = 0.7
+
+	// let dynamics: number = 0.3
+	// let stroke_opacity_dynamics: number[] = [0, 1]
+	// let stroke_size_dynamics: number[] = [0.7, 1]
+	// let rot_jitter: number = 0
+	// let pos_jitter: number = 0
+
+	// let tex_dynamics: number = 0.3
+	// let tex_lch_dynamics: number[] = [0, 0, 0.02]
+	// let tex_stretch: number[] = [1, 0.2]
+
+	// let selected_brush_texture: BrushTexture
+
+	let brush_textures: Array<BrushTexture> = []
+
+	
+
+
 
 	let new_project_pending: boolean = false
 	let undo_pending: boolean = false
@@ -179,6 +196,16 @@
 	let canvas_read_tex: Texture
 
 	let drawer: Drawer
+	let ubo: UBO
+
+	const set_shared_uniforms = () => {
+		ubo.buff.sz = 0
+		ubo.buff.cpu_buff[0] = canvas_fb._textures[0].res[0]
+		ubo.buff.cpu_buff[1] = canvas_fb._textures[0].res[1]
+		ubo.buff.cpu_buff[2] = default_framebuffer.textures[0].res[0]
+		ubo.buff.cpu_buff[3] = default_framebuffer.textures[0].res[1]
+		ubo.buff.upload()
+	}
 
 	const pick_from_canvas = () => {
 		let coord = Utils.texture_NDC_to_texture_pixel_coords(
@@ -221,8 +248,13 @@
 		//@ts-ignore
 		window.gl = gl = canvasElement.getContext('webgl2', {
 			preserveDrawingBuffer: true,
-			alpha: false,
+			alpha: true,
+			premultipliedAlpha: false
 		})
+		gl.getExtension('OES_texture_float');
+		gl.getExtension('OES_texture_float_linear');
+		gl.getExtension('EXT_color_buffer_float');
+
 		init_utils()
 
 		gl.debugEnabled = process.env.NODE_ENV === 'development'
@@ -242,13 +274,36 @@
 		default_framebuffer._textures = [Object.create(Texture.prototype)]
 		default_framebuffer.textures[0].res = [...userAgentRes]
 
-		resizeIfNeeded(canvasElement, default_framebuffer, userAgentRes, (e) => {})
+		default_framebuffer.bind()
+
+		canvas_tex = new Texture([canvasRes[0], canvasRes[1]], gl.RGBA16F) 
+		canvas_fb = new Framebuffer([canvas_tex], true)
+
+		ubo = new UBO()
+		window.ubo = ubo
+		
+
+		resizeIfNeeded(canvasElement, default_framebuffer, userAgentRes, (e) => {}, ()=>{set_shared_uniforms()})
+		set_shared_uniforms()
 
 		gl.disable(gl.CULL_FACE)
 		gl.disable(gl.DEPTH_TEST)
-		// gl.enable(gl.BLEND)
+		gl.enable(gl.BLEND)
+		// gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+		// gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE);
+		// gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD)
+		
+		// gl.blend
+		gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA,);
+		gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD) 
+		
+
+		// gl.blendEquationSeparate(gl.ONE, gl.MAX)
+		// gl.blendFuncSeparate(gl.FUNC_ADD)
+		// gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.MAX, gl.MAX);
 	}
-	const init_other_stuff = () => {
+	const init_other_stuff = async () => {
 		io = new IO()
 		document.addEventListener('contextmenu', (event) => event.preventDefault())
 		// @ts-ignore
@@ -257,6 +312,32 @@
 			// @ts-ignore
 			window.history.pushState(null, null, window.location.href);
 		});
+
+		brush_textures.push(
+			await BrushTexture.create(require("/../public/images/brow.webp").default)
+		)
+		brush_textures.push(
+			await BrushTexture.create(require("/../public/images/charcoal.webp").default)
+		)
+		brush_textures.push(
+			await BrushTexture.create(require("/../public/images/circle.webp").default)
+		)
+		brush_textures.push(
+			await BrushTexture.create(require("/../public/images/gradient_bottom_to_top.webp").default)
+		)
+		brush_textures.push(
+			await BrushTexture.create(require("/../public/images/oil_01.webp").default)
+		)
+		brush_textures.push(
+			await BrushTexture.create(require("/../public/images/oil_taper.webp").default)
+		)
+		brush_textures.push(
+			await BrushTexture.create(require("/../public/images/square.webp").default)
+		)
+		brush_textures = [...brush_textures]
+
+		curr_brush.selected_brush_texture = brush_textures[0]
+		
 		// window.onbeforeunload = async ()=> {
 		// 	const is_safe = await is_safe_to_switch_to_new_project()
 		// 	console.log(is_safe)
@@ -271,43 +352,52 @@
 
 	onMount(async () => {
 		init_web_gl()
-		init_other_stuff()
+		await init_other_stuff()
 
-		default_framebuffer.start_draw()
+		default_framebuffer.bind()
 		default_framebuffer.clear([0, 0, 0, 1])
-
-		canvas_tex = new Texture([canvasRes[0], canvasRes[1]])
-		canvas_fb = new Framebuffer([canvas_tex], true)
+ 
+		// canvas_tex = new Texture([canvasRes[0], canvasRes[1]], gl.RGBA16F)
 		canvas_fb.clear([0, 0, 0, 0])
 		canvas_fb.pong()
 		canvas_fb.back_textures[0].bind_to_unit(1)
 		canvas_fb.clear([0, 0, 0, 0])
 
-		const temp_tex = new Texture([canvasRes[0], canvasRes[1]])
+		const temp_tex = new Texture([canvasRes[0], canvasRes[1]], gl.RGBA16F)
 		const temp_stroke_fb = new Framebuffer([temp_tex])
 		temp_stroke_fb.clear([0, 0, 0, 0])
 
+		// @ts-ignore
+		// const delay = ms => new Promise(res => setTimeout(res, ms));
+		
+		// await delay(3000)
+
 		//! ------------------- SHADERS
-		const set_uniform_textures = (program: ShaderProgram) =>{
+		const init_texture_uniforms = (program: ShaderProgram) =>{
 			program.setUniformTexture('temp_tex', temp_tex, 0)
 			program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 1)
 			program.setUniformTexture('canvas_b', canvas_fb._textures[0], 2)
 			program.setUniformTexture('canvas_a', canvas_fb._back_textures[0], 3)
+			
+			const start_idx = 4
+			const brush_tex_units: number[] = []
+			brush_textures.forEach((brush_tex, i )=>{
+				const name = `brush_texture_${i}`
+				console.log(name)
+				// const brush_textures_loc = gl.getUniformLocation(program.program, name)
+				const brush_textures_loc = gl.getUniformLocation(program.program, name)
+
+				brush_tex.gpu_tex.bind_to_unit(start_idx + i)				
+				gl.uniform1i(brush_textures_loc, start_idx + i);
+			})
+			gl.activeTexture(gl.TEXTURE0) // TODELETE
 		}
 		const brush_preview_program = new ShaderProgram(require('shaders/brush_preview.vert'), require('shaders/brush_preview.frag'))
 		const picker_program = new ShaderProgram(require('shaders/picker.vert'), require('shaders/picker.frag'))
-		// const draw_blobs_stroke_program = new ShaderProgram(
-		// 	require('shaders/draw_blobs_stroke.vert'),
-		// 	require('shaders/draw_blobs_stroke.frag'),
-		// )
 		const composite_stroke_to_canvas_program = new ShaderProgram(
 			require('shaders/composite_temp_stroke_to_canvas.vert'),
 			require('shaders/composite_temp_stroke_to_canvas.frag'),
 		)
-		// const brush_triangulated_program = new ShaderProgram(
-		// 	require('shaders/brush_triangulated.vert'),
-		// 	require('shaders/brush_triangulated.frag'),
-		// )
 		const post_canvas_program = new ShaderProgram(require('shaders/post_canvas.vert'), require('shaders/post_canvas.frag'))
 		//@ts-ignore
 		post_canvas_program.zoom_loc = gl.getUniformLocation(post_canvas_program.program, "zoom")
@@ -317,41 +407,29 @@
 		const brush_long_program = new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag'))
 
 		brush_preview_program.use()
-		set_uniform_textures(brush_preview_program)
+		init_texture_uniforms(brush_preview_program)
 		picker_program.use()
-		set_uniform_textures(picker_program)
-		// draw_blobs_stroke_program.use()
-		// set_uniform_textures(draw_blobs_stroke_program)
+		init_texture_uniforms(picker_program)
 		composite_stroke_to_canvas_program.use()
-		set_uniform_textures(composite_stroke_to_canvas_program)
-		// brush_triangulated_program.use()
-		// set_uniform_textures(brush_triangulated_program)
+		init_texture_uniforms(composite_stroke_to_canvas_program)
 		post_canvas_program.use()
-		set_uniform_textures(post_canvas_program)
+		init_texture_uniforms(post_canvas_program)
 		brush_long_program.use()
-		set_uniform_textures(brush_long_program)
+		init_texture_uniforms(brush_long_program)
 		
-
 
 		//! ------------------- POST
 		let frame = 0
 		canvas_read_tex = canvas_fb.textures[0]
+
 
 		let brush_buffer = new Thing(
 			[new VertexBuffer(4, gl.FLOAT), new VertexBuffer(4, gl.FLOAT)],
 			gl.TRIANGLES,
 			brush_long_program
 		)
-
-		let brush_buffer_b = new Thing(
-			[new VertexBuffer(4, gl.FLOAT), new VertexBuffer(4, gl.FLOAT)],
-			gl.TRIANGLES,
-			brush_long_program
-		)
-		gl.bindVertexArray(brush_buffer_b.vao)
+		gl.bindVertexArray(brush_buffer.vao)
 		
-		let ubo = new UBO()
-		window.ubo = ubo
 
 		let t: number = 0
 		let delta_t: number = 0
@@ -359,42 +437,24 @@
 
 		let redo_history_length = 0
 
-		let brush_stroke = new BrushStroke(selected_brush_type, new DrawParams(tex_dynamics, tex_lch_dynamics, tex_stretch))
+		let brush_stroke = new BrushStroke(curr_brush.selected_brush_type, new DrawParams(curr_brush.tex_dynamics, curr_brush.tex_lch_dynamics, curr_brush.tex_stretch))
 
-		const set_shared_uniforms = (program: ShaderProgram, col: number[], t: number) => {
-			ubo.buff.sz = 0
-			ubo.buff.push_vert([
-				...canvas_fb._textures[0].res, 
-				... default_framebuffer.textures[0].res,
-				t, 
-				canvas_fb.pong_idx,
-			])
-			ubo.buff.upload()
-			canvas_fb.back_textures[0].bind_to_unit(1)
-		}
 
 		drawer = new Drawer(
-			// draw_blobs_stroke_program,
-			// brush_triangulated_program,
-			set_shared_uniforms,
 			gl,
 			canvas_tex,
 			default_framebuffer,
 		)
 
 		const composite_stroke = () => {
-			// canvas_fb.start_draw()
-			// composite_stroke_to_canvas_program.use()
-			// set_shared_uniforms(composite_stroke_to_canvas_program, [0, 0, 0, 0], t)
-			// gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-			// temp_stroke_fb.clear([0, 0, 0, 0])
-			canvas_fb.start_draw()
+			gl.disable(gl.BLEND)
+			canvas_fb.bind()
 			canvas_fb.clear([0,0,0,0])
 			composite_stroke_to_canvas_program.use()
-			set_shared_uniforms(composite_stroke_to_canvas_program, [0, 0, 0, 0], t)
+			composite_stroke_to_canvas_program.setUniformFloat("pong_idx", canvas_fb.pong_idx)
 			canvas_fb.back_textures[0].bind_to_unit(1)
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-			temp_stroke_fb.clear([0, 0, 0, 0])
+			temp_stroke_fb.clear()
 		}
 
 		const redraw_whole_project = () => {
@@ -407,7 +467,7 @@
 
 			let k = 0
 			
-			drawer.brush_buffer = brush_buffer_b
+			drawer.brush_buffer = brush_buffer
 			drawer.reset()
 			for (let stroke of project.brush_strokes) {
 				if (k >= project.brush_strokes.length - redo_history_length) break
@@ -418,7 +478,6 @@
 			k = 0
 			drawer.brush_buffer.upload_all_buffs()
 			drawer.brush_buffer.shader.use()
-			set_shared_uniforms(drawer.brush_buffer.shader, [0, 0, 0, 0], t)
 			// composite_stroke_to_canvas_program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 1)
 
 			for(let amogus of drawer.recorded_drawcalls){
@@ -426,15 +485,18 @@
 				// gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb)
 				// Framebuffer.currently_bound = this
 				// gl.drawBuffers(draw_buffs)
-				temp_stroke_fb.start_draw()
-				temp_stroke_fb.clear([0, 0, 0, 0])
+				gl.enable(gl.BLEND)
+				temp_stroke_fb.bind()
+				temp_stroke_fb.clear()
 				drawer.brush_buffer.shader.use()
 				drawer.draw_stroke_idx(k)
 
 
-				canvas_fb.start_draw()
-				canvas_fb.clear([0,0,0,0])
+				canvas_fb.bind()
+				canvas_fb.clear()
+				gl.disable(gl.BLEND)
 				composite_stroke_to_canvas_program.use()
+			  composite_stroke_to_canvas_program.setUniformFloat("pong_idx", canvas_fb.pong_idx)
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
 				canvas_fb.pong()
@@ -526,7 +588,7 @@
 		
 		const record_stroke = ()=>{
 				if (io.mouse_just_pressed && !(redo_pending || undo_pending)) {
-					brush_stroke = new BrushStroke(selected_brush_type, new DrawParams(tex_dynamics, tex_lch_dynamics, tex_stretch))
+					brush_stroke = new BrushStroke(curr_brush.selected_brush_type, new DrawParams(curr_brush.tex_dynamics, curr_brush.tex_lch_dynamics, curr_brush.tex_stretch))
 					for (let i = 0; i < redo_history_length; i++) {
 						project.brush_strokes.pop()
 					}
@@ -550,8 +612,8 @@
 						zoom,
 						panning,
 					)
-					brush_pos_ndc_canvas[0] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 251, 2) - 1)
-					brush_pos_ndc_canvas[1] += pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 1251, 2) - 1)
+					brush_pos_ndc_canvas[0] += curr_brush.pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 251, 2) - 1)
+					brush_pos_ndc_canvas[1] += curr_brush.pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 1251, 2) - 1)
 
 					let col = [...stroke_col]
 
@@ -563,11 +625,18 @@
 							return chroma.oklch(col[0], col[1], col[2])
 						}
 
+						
 						col = chroma_gl(col).oklch()
-						// col[2] = (t*300)%300
-						col[0] += (-0.5 + hash.valueNoiseSmooth(t * 100 * chaos_speed, 2)) * chaos * chaos_lch[0]
-						col[1] += (-0.5 + hash.valueNoiseSmooth(t * 100 * chaos_speed + 100, 2)) * chaos * chaos_lch[1]
-						col[2] += (-0.5 + hash.valueNoiseSmooth(t * 100 * chaos_speed + 200, 2)) * 300 * chaos * chaos_lch[2]
+						const c = col[1]
+
+						let hue_jitt_amt = (1-pow(c ,0.2)*1.2)*4
+						hue_jitt_amt = max(hue_jitt_amt,0)
+						hue_jitt_amt += pow(smoothstep(0.,1.,1-c) ,57.)*2.2
+						
+						
+						col[0] += (-0.5 + hash.valueNoiseSmooth(t * 100 * curr_brush.chaos_speed, 2)) * curr_brush.chaos * curr_brush.chaos_lch[0]
+						col[1] += (-0.5 + hash.valueNoiseSmooth(t * 100 * curr_brush.chaos_speed + 100, 2)) * curr_brush.chaos * curr_brush.chaos_lch[1] 
+						col[2] += hue_jitt_amt*(-0.5 + hash.valueNoiseSmooth(t * 100 * curr_brush.chaos_speed + 200, 2)) * 300 * curr_brush.chaos * curr_brush.chaos_lch[2]
 						col[0] = clamp(col[0], 0, 1)
 						col[1] = clamp(col[1], 0, 1)
 						col[2] = mod(col[2], 360)
@@ -575,14 +644,14 @@
 						col = chroma_oklch(col).gl()
 					}
 					{
-						stroke_opacity = lerp(stroke_opacity_dynamics[0], stroke_opacity_dynamics[1], io.pressure)
+						stroke_opacity = lerp(curr_brush.stroke_opacity_dynamics[0], curr_brush.stroke_opacity_dynamics[1], io.pressure)
 					}
 
-					brush_rot[1] += rot_jitter * (2 * hash.valueNoiseSmooth(t * 10 + 100, 2) - 1)
+					brush_rot[1] += curr_brush.rot_jitter * (2 * hash.valueNoiseSmooth(t * 10 + 100, 2) - 1)
 
 					let sz = [...brush_sz]
 
-					let size_pressure_weight = lerp(stroke_size_dynamics[0], stroke_size_dynamics[1], io.pressure)
+					let size_pressure_weight = lerp(curr_brush.stroke_size_dynamics[0],curr_brush. stroke_size_dynamics[1], io.pressure)
 					let size_tilt_weight = lerp(0.4, 1, io.tilt[0] / tau)
 					// TODO: sz dynamics
 					sz[0] *= size_pressure_weight * size_tilt_weight
@@ -599,7 +668,7 @@
 			t = new_t
 			resizeIfNeeded(canvasElement, default_framebuffer, userAgentRes, (v: boolean) => {
 				redraw_needed = v
-			})
+			},()=>{set_shared_uniforms()})
 			io.tick()
 			
 			if(new_project_pending){
@@ -619,14 +688,16 @@
 				project_has_been_modified = true
 				redraw_needed = true
 				record_stroke()
-				temp_stroke_fb.start_draw()
+				gl.enable(gl.BLEND)
+				temp_stroke_fb.clear()
+				temp_stroke_fb.bind()
 				// drawer.draw_any_stroke(brush_stroke, t, brush_buffer, zoom, panning)
-				drawer.brush_buffer = brush_buffer_b
+				drawer.brush_buffer = brush_buffer
 				drawer.reset()
 				drawer.push_any_stroke(brush_stroke)
 				drawer.brush_buffer.upload_all_buffs()
 				drawer.brush_buffer.shader.use()
-				set_shared_uniforms(drawer.brush_buffer.shader, [0, 0, 0, 0], t)
+				// set_shared_uniforms(t)
 				drawer.draw_stroke_idx(0)
 			}
 			// ----- COMPOSITE
@@ -644,8 +715,9 @@
 
 			// ----- REDRAW
 			if (redraw_needed) {
+				// gl.disable(gl.BLEND)
 				default_framebuffer.clear([0, 0, 0, 1])
-				default_framebuffer.start_draw()
+				default_framebuffer.bind()
 
 				post_canvas_program.use()
 
@@ -655,20 +727,21 @@
 				gl.uniform2fv(post_canvas_program.panning_loc, panning)
 				// post_canvas_program.setUniformFloat("zoom", zoom)
 				// post_canvas_program.setUniformVec("panning", panning)
-				set_shared_uniforms(post_canvas_program, [0, 0, 0, 0], t)
+				canvas_fb.back_textures[0].bind_to_unit(1)
+				// set_shared_uniforms(t)
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
 				if (brushSizeWidgetDragging) {
 					brush_preview_program.use()
 					brush_preview_program.setUniformFloat("zoom", zoom)
 					brush_preview_program.setUniformVec("brush_sz", brush_sz)
-					set_shared_uniforms(brush_preview_program, [0, 0, 0, 0], t)
+					// set_shared_uniforms(t)
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 				}
 
 				if (picking) {
 					picker_program.use()
-					set_shared_uniforms(picker_program, [0, 0, 0, 0], t)
+					// set_shared_uniforms(t)
 					picker_program.setUniformVec('picked_col', picked_col)
 					picker_program.setUniformVec('picker_pos', [...io.mouse_pos])
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)

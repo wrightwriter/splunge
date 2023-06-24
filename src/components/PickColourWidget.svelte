@@ -71,7 +71,8 @@
 		justify-content: center;
 		align-items: center;
 		/* border-radius: 50%; */
-		margin-bottom: 1.25rem;
+    margin-bottom: auto;
+    margin-top: auto;
 		margin-right: 1rem;
 		pointer-events: all;
 		user-select: none;

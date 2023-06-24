@@ -6,6 +6,22 @@ export function assert(v: boolean) {
 	if (!v) debugger
 }
 
+export class BrushTexture {
+	// @ts-ignore
+	gpu_tex: Texture = undefined
+	// @ts-ignore
+	path: string = undefined
+
+	static async create(path): Promise<BrushTexture> {
+		let gpu_tex = await Texture.from_image_path(path)
+
+		return {
+			gpu_tex,
+			path,
+		}
+	}
+}
+
 export class Utils {
 	static isOnMobile = (): boolean => {
 		let check = false

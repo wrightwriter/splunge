@@ -80,27 +80,8 @@ const get_circ_pos_from_ang = (a: number) => {
 	return [c, s]
 }
 
-const add_ang_to_pos = (
-	pos: number[],
-	ang_offs: number[],
-	positive: boolean,
-	amt: number,
-	aspect_correction: number[],
-): number[] => {
-	if (positive) {
-		pos[0] += (ang_offs[0] * amt) / aspect_correction[0]
-		pos[1] += (ang_offs[1] * amt) / aspect_correction[1]
-	} else {
-		pos[0] -= (ang_offs[0] * amt) / aspect_correction[0]
-		pos[1] -= (ang_offs[1] * amt) / aspect_correction[1]
-	}
-	return pos
-}
 let gl: WebGL2RenderingContext
 export class Drawer {
-	// draw_blobs_stroke_program: ShaderProgram
-	// brush_triangulated_program: ShaderProgram
-	set_shared_uniforms: Function
 	canvas_tex: Texture
 	default_framebuffer: Framebuffer
 	// @ts-ignore
@@ -114,25 +95,16 @@ export class Drawer {
 
 	recorded_drawcalls: number[] = []
 
-	constructor(
-		// draw_blobs_stroke_program: ShaderProgram,
-		// brush_triangulated_program: ShaderProgram,
-		set_shared_uniforms: Function,
-		_gl: WebGL2RenderingContext,
-		canvas_tex: Texture,
-		default_framebuffer: Framebuffer,
-	) {
-		this.set_shared_uniforms = set_shared_uniforms
-		// this.draw_blobs_stroke_program = draw_blobs_stroke_program
+	constructor(_gl: WebGL2RenderingContext, canvas_tex: Texture, default_framebuffer: Framebuffer) {
 		this.canvas_tex = canvas_tex
 		this.default_framebuffer = default_framebuffer
-		// this.brush_triangulated_program = brush_triangulated_program
 		gl = _gl
 	}
 
 	reset() {
 		this.idx = 0
 		this.recorded_drawcalls.length = 0
+		// this.recorded_drawcalls = []
 		this.brush_buffer.buffs[0].sz = 0
 		this.brush_buffer.buffs[1].sz = 0
 	}
@@ -140,13 +112,15 @@ export class Drawer {
 	fill_buff_for_blob_brush(stroke: BrushStroke) {
 		const brush_buffer = this.brush_buffer
 		const iters = stroke.positions.length / 2 - 1
-		const aspect_correction = Utils.screen_NDC_to_canvas_NDC(
+		let aspect_correction = Utils.screen_NDC_to_canvas_NDC(
 			[1, 1],
 			this.default_framebuffer.textures[0],
 			this.canvas_tex,
 			1,
 			[0, 0],
 		)
+		aspect_correction[0] = 1 / aspect_correction[0]
+		aspect_correction[1] = 1 / aspect_correction[1]
 
 		const add_ang_to_pos = (
 			pos: number[],
@@ -157,15 +131,15 @@ export class Drawer {
 			sz_y: number,
 		): number[] => {
 			if (positive) {
-				pos[0] += (ang_x[0] * sz_x) / aspect_correction[0]
-				pos[1] += (ang_x[1] * sz_x) / aspect_correction[1]
-				pos[0] += (ang_y[0] * sz_y) / aspect_correction[0]
-				pos[1] += (ang_y[1] * sz_y) / aspect_correction[1]
+				pos[0] += ang_x[0] * sz_x * aspect_correction[0]
+				pos[1] += ang_x[1] * sz_x * aspect_correction[1]
+				pos[0] += ang_y[0] * sz_y * aspect_correction[0]
+				pos[1] += ang_y[1] * sz_y * aspect_correction[1]
 			} else {
-				pos[0] -= (ang_x[0] * sz_x) / aspect_correction[0]
-				pos[1] -= (ang_x[1] * sz_x) / aspect_correction[1]
-				pos[0] += (ang_y[0] * sz_y) / aspect_correction[0]
-				pos[1] += (ang_y[1] * sz_y) / aspect_correction[1]
+				pos[0] -= ang_x[0] * sz_x * aspect_correction[0]
+				pos[1] -= ang_x[1] * sz_x * aspect_correction[1]
+				pos[0] += ang_y[0] * sz_y * aspect_correction[0]
+				pos[1] += ang_y[1] * sz_y * aspect_correction[1]
 			}
 			return pos
 		}
@@ -177,6 +151,8 @@ export class Drawer {
 			// brush_stroke.
 			let sz_x = stroke.sizes[i * 2]
 			let sz_y = stroke.sizes[i * 2 + 1]
+			let offs_x = sz_x / 6
+			let offs_y = sz_y / 4
 			// let next_sz = brush_stroke.sizes[i * 2 + 2]
 
 			let ang_x = get_circ_pos_from_ang(stroke.rotations[i * 2 + 1])
@@ -185,6 +161,8 @@ export class Drawer {
 			// let next_ang_b = [curr_ang[1],-curr_ang[0]]
 
 			let curr_pos = [stroke.positions[i * 2], stroke.positions[i * 2 + 1]]
+			// curr_pos[0] += offs_x
+			curr_pos[1] += offs_y
 			// let next_pos = [brush_stroke.positions[i * 2 + 2], brush_stroke.positions[i * 2 + 3]]
 
 			let curr_pos_left = add_ang_to_pos([...curr_pos], ang_x, ang_y, true, sz_x, sz_y)
@@ -193,10 +171,10 @@ export class Drawer {
 			let next_pos_left = [...curr_pos_left]
 			let next_pos_right = [...curr_pos_right]
 
-			next_pos_left[0] -= (ang_y[0] * sz_y) / aspect_correction[0]
-			next_pos_left[1] -= (ang_y[1] * sz_y) / aspect_correction[1]
-			next_pos_right[0] -= (ang_y[0] * sz_y) / aspect_correction[0]
-			next_pos_right[1] -= (ang_y[1] * sz_y) / aspect_correction[1]
+			next_pos_left[0] -= ang_y[0] * sz_y * aspect_correction[0]
+			next_pos_left[1] -= ang_y[1] * sz_y * aspect_correction[1]
+			next_pos_right[0] -= ang_y[0] * sz_y * aspect_correction[0]
+			next_pos_right[1] -= ang_y[1] * sz_y * aspect_correction[1]
 			// pos[1] += (ang_offs_b[1] * amt_b) / aspect_correction[1]
 
 			let curr_col = [stroke.colours[i * 3], stroke.colours[i * 3 + 1], stroke.colours[i * 3 + 2]]
@@ -213,7 +191,7 @@ export class Drawer {
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
 			brush_buffer.buffs[0].cpu_buff[idx] = 0
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
-			brush_buffer.buffs[0].cpu_buff[idx] = curr_v
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
 
 			// brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
@@ -224,7 +202,7 @@ export class Drawer {
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
 			brush_buffer.buffs[0].cpu_buff[idx] = 1
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
-			brush_buffer.buffs[0].cpu_buff[idx] = curr_v
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
 
 			// brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
@@ -235,7 +213,7 @@ export class Drawer {
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
 			brush_buffer.buffs[0].cpu_buff[idx] = 0
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
-			brush_buffer.buffs[0].cpu_buff[idx] = next_v
+			brush_buffer.buffs[0].cpu_buff[idx] = 1
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
 
 			// brush_buffer.buffs[0].push_vert([...curr_pos_right, 1, curr_v])
@@ -246,7 +224,7 @@ export class Drawer {
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
 			brush_buffer.buffs[0].cpu_buff[idx] = 1
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
-			brush_buffer.buffs[0].cpu_buff[idx] = curr_v
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
 
 			// brush_buffer.buffs[0].push_vert([...next_pos_left, 0, next_v])
@@ -257,7 +235,7 @@ export class Drawer {
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
 			brush_buffer.buffs[0].cpu_buff[idx] = 0
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
-			brush_buffer.buffs[0].cpu_buff[idx] = next_v
+			brush_buffer.buffs[0].cpu_buff[idx] = 1
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
 
 			// brush_buffer.buffs[0].push_vert([...next_pos_right, 1, next_v])
@@ -266,9 +244,9 @@ export class Drawer {
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[0]
 			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_right[1]
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[1]
-			brush_buffer.buffs[0].cpu_buff[idx] = 0
+			brush_buffer.buffs[0].cpu_buff[idx] = 1
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_col[2]
-			brush_buffer.buffs[0].cpu_buff[idx] = next_v
+			brush_buffer.buffs[0].cpu_buff[idx] = 1
 			brush_buffer.buffs[1].cpu_buff[idx++] = curr_opacity
 		}
 		brush_buffer.buffs[0].sz += iters * 6 * 4
@@ -279,13 +257,32 @@ export class Drawer {
 	fill_buff_for_long_brush(stroke: BrushStroke) {
 		const brush_buffer = this.brush_buffer
 		const iters = stroke.positions.length / 2 - 1
-		const aspect_correction = Utils.screen_NDC_to_canvas_NDC(
+		let aspect_correction = Utils.screen_NDC_to_canvas_NDC(
 			[1, 1],
 			this.default_framebuffer.textures[0],
 			this.canvas_tex,
 			1,
 			[0, 0],
 		)
+		aspect_correction[0] = 1 / aspect_correction[0]
+		aspect_correction[1] = 1 / aspect_correction[1]
+
+		const add_ang_to_pos = (
+			pos: number[],
+			ang_offs: number[],
+			positive: boolean,
+			amt: number,
+			aspect_correction: number[],
+		): number[] => {
+			if (positive) {
+				pos[0] += ang_offs[0] * amt * aspect_correction[0]
+				pos[1] += ang_offs[1] * amt * aspect_correction[1]
+			} else {
+				pos[0] -= ang_offs[0] * amt * aspect_correction[0]
+				pos[1] -= ang_offs[1] * amt * aspect_correction[1]
+			}
+			return pos
+		}
 
 		let idx = brush_buffer.buffs[0].sz
 
@@ -378,7 +375,7 @@ export class Drawer {
 			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[0]
 			brush_buffer.buffs[0].cpu_buff[idx] = next_pos_right[1]
 			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[1]
-			brush_buffer.buffs[0].cpu_buff[idx] = 0
+			brush_buffer.buffs[0].cpu_buff[idx] = 1
 			brush_buffer.buffs[1].cpu_buff[idx++] = next_col[2]
 			brush_buffer.buffs[0].cpu_buff[idx] = next_v
 			brush_buffer.buffs[1].cpu_buff[idx++] = next_opacity
@@ -412,9 +409,9 @@ export class Drawer {
 			brush_buffer.buffs[1].cpu_buff[idx++] = colours[0]
 			brush_buffer.buffs[0].cpu_buff[idx] = positions[1]
 			brush_buffer.buffs[1].cpu_buff[idx++] = colours[1]
-			brush_buffer.buffs[0].cpu_buff[idx] = u
+			brush_buffer.buffs[0].cpu_buff[idx] = i / (iters + 1)
 			brush_buffer.buffs[1].cpu_buff[idx++] = colours[2]
-			brush_buffer.buffs[0].cpu_buff[idx] = v
+			brush_buffer.buffs[0].cpu_buff[idx] = 0
 			brush_buffer.buffs[1].cpu_buff[idx++] = opacities[1]
 
 			// new_triangles[i * 3 * 2 + 2] = positions[i * 2]
@@ -430,9 +427,9 @@ export class Drawer {
 			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3]
 			brush_buffer.buffs[0].cpu_buff[idx] = positions[i * 2 + 1]
 			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3 + 1]
-			brush_buffer.buffs[0].cpu_buff[idx] = u
+			brush_buffer.buffs[0].cpu_buff[idx] = i / (iters + 1)
 			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3 + 2]
-			brush_buffer.buffs[0].cpu_buff[idx] = v
+			brush_buffer.buffs[0].cpu_buff[idx] = 1
 			brush_buffer.buffs[1].cpu_buff[idx++] = opacities[i]
 
 			// new_triangles[i * 3 * 2 + 4] = positions[i * 2 + 2]
@@ -447,9 +444,9 @@ export class Drawer {
 			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3 + 3]
 			brush_buffer.buffs[0].cpu_buff[idx] = positions[i * 2 + 3]
 			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3 + 4]
-			brush_buffer.buffs[0].cpu_buff[idx] = u
+			brush_buffer.buffs[0].cpu_buff[idx] = (i + 1) / (iters + 1)
 			brush_buffer.buffs[1].cpu_buff[idx++] = colours[i * 3 + 5]
-			brush_buffer.buffs[0].cpu_buff[idx] = v
+			brush_buffer.buffs[0].cpu_buff[idx] = 1
 			brush_buffer.buffs[1].cpu_buff[idx++] = opacities[i + 1]
 		}
 		brush_buffer.buffs[0].sz += iters * 3 * 4

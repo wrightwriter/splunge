@@ -65,6 +65,7 @@
     "spectorjs": "^0.9.29",
     "spectral.js": "^2.0.2",
     "tess2": "^1.0.0",
-    "triangle-wasm": "^1.0.0"
+    "triangle-wasm": "^1.0.0",
+    "url-loader": "^4.1.1"
   }
 }

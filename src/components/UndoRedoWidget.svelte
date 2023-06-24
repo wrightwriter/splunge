@@ -45,8 +45,9 @@
     justify-content: center;
     align-items: center;
     border-radius: 50%;
-    margin-bottom: 1.25rem;
     margin-right: 1rem;
+    margin-bottom: auto;
+    margin-top: auto;
     pointer-events: all;
     user-select: none;
   }  

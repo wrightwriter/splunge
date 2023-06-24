@@ -49,6 +49,7 @@ export function resizeIfNeeded(
 	default_framebuffer: Framebuffer,
 	client_res: number[],
 	set_redraw_needed: (v: boolean) => void,
+	set_shared_uniforms: Function,
 ) {
 	const displayWidth = canvas.clientWidth
 	const displayHeight = canvas.clientHeight
@@ -62,19 +63,99 @@ export function resizeIfNeeded(
 		// console.log(client_res)
 		// console.log(canvas)
 		set_redraw_needed(true)
+		// @ts-ignore
+		default_framebuffer._textures[0].res = [...client_res]
+		set_shared_uniforms()
 	}
-
-	// @ts-ignore
-	default_framebuffer._textures[0].res = [...client_res]
 
 	return needResize
 }
 export class Texture {
 	tex: WebGLTexture
+	internal_format: number
+	format: number
+	type: number
 	res: Array<number>
 
+	constructor(res: number[], internal_format: number = gl.RGBA) {
+		const eq_any = (a: any, b: any[]): boolean => {
+			let eq = false
+			b.forEach((b) => {
+				if (b === a) {
+					eq = true
+					// return eq
+				}
+			})
+			return eq
+		}
+		// @ts-ignore
+		this.tex = gl.createTexture()
+		this.res = [...res]
+		this.internal_format = internal_format
+
+		const is_float = eq_any(internal_format, [gl.RGBA32F, gl.RGBA16F, gl.RGB16F, gl.RGB32F])
+
+		let comp_cnt = 4
+		if (eq_any(internal_format, [gl.RGBA32F, gl.RGBA16F, gl.RGBA, gl.RGBA16I, gl.RGBA16UI, gl.RGBA32I])) {
+			comp_cnt = 4
+		}
+		if (eq_any(internal_format, [gl.RGB32F, gl.RGB16F, gl.RGB, gl.RGB16I, gl.RGB16UI, gl.RGB32I])) {
+			comp_cnt = 3
+		}
+
+		this.format = comp_cnt === 4 ? gl.RGBA : gl.RGB
+		this.type = is_float ? gl.FLOAT : gl.UNSIGNED_BYTE
+
+		gl.bindTexture(gl.TEXTURE_2D, this.tex)
+
+		gl.texImage2D(gl.TEXTURE_2D, 0, internal_format, res[0], res[1], 0, this.format, this.type, null)
+
+		if (is_float) {
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+		} else {
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+		}
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
+		// console.log(gl.isTexture(this.tex))
+
+		if (!gl.isTexture(this.tex)) {
+			console.error('TEXTURE INCOMPLETE')
+		}
+	}
+	static async from_image_path(img_path: string): Promise<Texture> {
+		function loadImage(url: string): Promise<HTMLImageElement> {
+			return new Promise((resolve) => {
+				const image = new Image()
+				image.addEventListener('load', () => {
+					resolve(image)
+				})
+				image.src = url
+			})
+		}
+
+		const img = await loadImage(img_path)
+		const tex = new Texture([img.naturalWidth, img.naturalHeight])
+		tex.upload_from_cpu(img)
+		// Not needed?
+		gl.finish()
+		img.remove()
+		return tex
+	}
+
+	upload_from_cpu(image: HTMLImageElement | number[] | Float32Array) {
+		if (image instanceof HTMLImageElement) {
+			gl.texImage2D(gl.TEXTURE_2D, 0, this.internal_format, this.res[0], this.res[1], 0, this.format, this.type, image)
+		} else {
+			debugger
+		}
+	}
+
 	clone(): Texture {
-		return new Texture(this.res)
+		return new Texture(this.res, this.internal_format)
 	}
 	bind_to_unit(unit: number) {
 		gl.activeTexture(gl.TEXTURE0 + unit)
@@ -89,7 +170,7 @@ export class Texture {
 
 		// const data = new Uint8Array(this.res[0] * this.res[1] * 4)
 		const data = new Uint8Array(read_back_res[0] * read_back_res[1] * 4)
-		gl.readPixels(offs[0], offs[1], read_back_res[0], read_back_res[1], gl.RGBA, gl.UNSIGNED_BYTE, data)
+		gl.readPixels(offs[0], offs[1], read_back_res[0], read_back_res[1], this.format, this.type, data)
 		// console.log(data)
 		gl.deleteFramebuffer(temp_fb)
 		gl.bindFramebuffer(gl.FRAMEBUFFER, prev_bound_fb.fb)
@@ -163,25 +244,6 @@ export class Texture {
 		canvas.remove()
 		// @ts-ignore
 		return [img, blob]
-	}
-	constructor(res: number[]) {
-		// @ts-ignore
-		this.tex = gl.createTexture()
-		this.res = [...res]
-		gl.bindTexture(gl.TEXTURE_2D, this.tex)
-
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, res[0], res[1], 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
-
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-
-		// console.log(gl.isTexture(this.tex))
-
-		if (!gl.isTexture(this.tex)) {
-			console.error('TEXTURE INCOMPLETE')
-		}
 	}
 }
 export class Framebuffer {
@@ -265,7 +327,7 @@ export class Framebuffer {
 		if (this !== Framebuffer.currently_bound) gl.bindFramebuffer(gl.FRAMEBUFFER, Framebuffer.currently_bound._fb)
 		Framebuffer.framebuffers.push(this)
 	}
-	start_draw() {
+	bind() {
 		if (this.pongable) this.needs_pong = true
 		let draw_buffs: number[] = []
 

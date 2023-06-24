@@ -108,6 +108,20 @@ module.exports.default = {
 			{test: /\.css$/i, use: ['style-loader', 'css-loader']},
 			{test: /\.(png|jpe?g|gif)$/i, use: ['file-loader']},
 			{
+				test: /\.webp$/,
+				use: [
+					{
+						loader: 'url-loader',
+						options: {
+							limit: false, // Disable base64 encoding
+							fallback: 'file-loader',
+							outputPath: 'images', // Output directory for the images
+							publicPath: '/images', // Public URL path for the images
+						},
+					},
+				],
+			},
+			{
 				test: /\.(glsl|vs|fs|vert|frag)$/,
 				exclude: /node_modules/,
 				type: 'asset/source',

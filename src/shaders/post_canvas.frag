@@ -8,7 +8,24 @@ void main() {
   col = vec4(1);
   
 
-    col.xyz = texture(canvas_back,uv).xyz; 
+  vec2 tuv = uv;
+  vec2 fuv = floor(uv*R)/R;
+  vec2 fruv = fract(uv*R);
+  vec3 st = vec3(1./R,0);
+  col.xyz = mix(
+    mix(
+      texture(canvas_back,fuv).xyz,
+      texture(canvas_back,fuv + st.xz).xyz,
+      fruv.x
+    ),
+    mix(
+      texture(canvas_back,fuv + st.zy).xyz,
+      texture(canvas_back,fuv + st.xy).xyz,
+      fruv.x
+    ),
+    fruv.y
+  ); 
+
   // if(canvas_idx < 0.5 ){
   //   col.xyz = texture(canvas_a,uv).xyz;
   // } else {
@@ -22,6 +39,7 @@ void main() {
  
     
   col = pow(col,vec4(0.454545454545)); 
+  col.w = 1.;
 }    
 
   

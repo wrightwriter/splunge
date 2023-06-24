@@ -2,12 +2,13 @@
 
 #pragma glslify: import('./_blend.glsl')
 
+uniform float pong_idx;
 in vec2 uv;
 out vec4 col;
 void main() {
   col = texture(canvas_back,uv);
 
-  // if(canvas_idx < 0.5 ){
+  // if(pong_idx < 0.5 ){
   //   col = texture(canvas_a,uv);
   //   // col.xyzw = vec4(1);
   // } else {

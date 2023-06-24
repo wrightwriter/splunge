@@ -1,3 +1,5 @@
+import {BrushTexture} from 'stuff'
+
 export class DrawParams {
 	tex_dynamics: number = 0.3
 	tex_lch_dynamics: number[] = [0, 0, 0.2]
@@ -8,6 +10,30 @@ export class DrawParams {
 		this.tex_stretch = [...tex_stretch]
 	}
 }
+
+export class BrushPreset {
+	selected_brush_type: BrushType = BrushType.Blobs
+
+	chaos_lch: Array<number> = [0, 0, 1]
+	chaos_speed: number = 0.3
+	chaos: number = 0.7
+
+	dynamics: number = 0.3
+	stroke_opacity_dynamics: number[] = [0, 1]
+	stroke_size_dynamics: number[] = [0.7, 1]
+	rot_jitter: number = 0
+	pos_jitter: number = 0
+
+	// @ts-ignore
+	selected_brush_texture: BrushTexture = undefined
+
+	tex_dynamics: number = 0.3
+	tex_lch_dynamics: number[] = [0, 0, 0.02]
+	tex_stretch: number[] = [1, 0.2]
+
+	constructor() {}
+}
+
 export enum BrushType {
 	Blobs,
 	Long,

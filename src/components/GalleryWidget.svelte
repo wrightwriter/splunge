@@ -450,10 +450,12 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		margin-bottom: 1.25rem;
 		margin-right: 1rem;
 		pointer-events: all;
 		user-select: none;
+		margin-bottom: auto;
+		margin-top: auto;
+    margin-right: 0rem;
 	}
 
 	.knob {
