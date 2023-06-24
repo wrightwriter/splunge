@@ -8,6 +8,8 @@ export class Texture {
 	type: number
 	res: Array<number>
 
+	private is_float: boolean
+
 	constructor(res: number[], internal_format: number = gl.RGBA) {
 		const eq_any = (a: any, b: any[]): boolean => {
 			let eq = false
@@ -24,7 +26,7 @@ export class Texture {
 		this.res = [...res]
 		this.internal_format = internal_format
 
-		const is_float = eq_any(internal_format, [gl.RGBA32F, gl.RGBA16F, gl.RGB16F, gl.RGB32F])
+		this.is_float = eq_any(internal_format, [gl.RGBA32F, gl.RGBA16F, gl.RGB16F, gl.RGB32F])
 
 		let comp_cnt = 4
 		if (eq_any(internal_format, [gl.RGBA32F, gl.RGBA16F, gl.RGBA, gl.RGBA16I, gl.RGBA16UI, gl.RGBA32I])) {
@@ -35,13 +37,13 @@ export class Texture {
 		}
 
 		this.format = comp_cnt === 4 ? gl.RGBA : gl.RGB
-		this.type = is_float ? gl.FLOAT : gl.UNSIGNED_BYTE
+		this.type = this.is_float ? gl.FLOAT : gl.UNSIGNED_BYTE
 
 		gl.bindTexture(gl.TEXTURE_2D, this.tex)
 
 		gl.texImage2D(gl.TEXTURE_2D, 0, internal_format, res[0], res[1], 0, this.format, this.type, null)
 
-		if (is_float) {
+		if (this.is_float) {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 		} else {
@@ -93,14 +95,17 @@ export class Texture {
 		gl.bindTexture(gl.TEXTURE_2D, this.tex)
 	}
 
-	read_back_array(offs: number[] = [0, 0], read_back_res: number[] = [...this.res]): Uint8Array {
+	read_back_array(offs: number[] = [0, 0], read_back_res: number[] = [...this.res]): Uint8Array | Float32Array {
 		let temp_fb = gl.createFramebuffer() as WebGLFramebuffer
 		let prev_bound_fb = Framebuffer.currently_bound
 		gl.bindFramebuffer(gl.FRAMEBUFFER, temp_fb)
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.tex, 0)
 
 		// const data = new Uint8Array(this.res[0] * this.res[1] * 4)
-		const data = new Uint8Array(read_back_res[0] * read_back_res[1] * 4)
+
+		const data = this.is_float
+			? new Float32Array(read_back_res[0] * read_back_res[1] * 4)
+			: new Uint8Array(read_back_res[0] * read_back_res[1] * 4)
 		gl.readPixels(offs[0], offs[1], read_back_res[0], read_back_res[1], this.format, this.type, data)
 		// console.log(data)
 		gl.deleteFramebuffer(temp_fb)
@@ -109,6 +114,11 @@ export class Texture {
 	}
 	read_back_pixel(offs: number[]): Array<number> {
 		let data = this.read_back_array(offs, [1, 1])
+		if (this.is_float) {
+			data.forEach((e, i, a) => {
+				a[i] *= 255
+			})
+		}
 		data[3] = 255
 		// @ts-ignore
 		return Array.from(data)

@@ -90,7 +90,7 @@
 	import {get, writable} from 'svelte/store'
 	import {floating_modal_message} from 'store'
 
-	import {resizeIfNeeded, finish_frame, print_on_gl_error, init_gl_error_handling} from 'gl_utils'
+	import {resizeIfNeeded, print_on_gl_error, init_gl_error_handling} from 'gl_utils'
 
 	import Knob from './Knob.svelte'
 	import BrushSizeWidget from './BrushSizeWidget.svelte'
@@ -293,19 +293,10 @@
 		gl.disable(gl.CULL_FACE)
 		gl.disable(gl.DEPTH_TEST)
 		gl.enable(gl.BLEND)
-		// gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-		// gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE);
-		// gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD)
 		
 		// gl.blend
 		gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA,);
 		gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD) 
-		
-
-		// gl.blendEquationSeparate(gl.ONE, gl.MAX)
-		// gl.blendFuncSeparate(gl.FUNC_ADD)
-		// gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.MAX, gl.MAX);
 	}
 	const init_other_stuff = async () => {
 		io = new IO()
@@ -340,7 +331,9 @@
 		)
 		brush_textures = [...brush_textures]
 
-		curr_brush.selected_brush_texture = brush_textures[0]
+		for(let brush of brush_presets){
+			brush.selected_brush_texture = brush_textures[0]
+		}
 		
 		// window.onbeforeunload = async ()=> {
 		// 	const is_safe = await is_safe_to_switch_to_new_project()
@@ -370,11 +363,6 @@
 		const temp_tex = new Texture([canvasRes[0], canvasRes[1]], gl.RGBA16F)
 		const temp_stroke_fb = new Framebuffer([temp_tex])
 		temp_stroke_fb.clear([0, 0, 0, 0])
-
-		// @ts-ignore
-		// const delay = ms => new Promise(res => setTimeout(res, ms));
-		
-		// await delay(3000)
 
 		//! ------------------- SHADERS
 		const init_texture_uniforms = (program: ShaderProgram) =>{
@@ -757,7 +745,11 @@
 			undo_pending = false
 			io.tick_end()
 			frame++
-			finish_frame()
+			for (let framebuffer of Framebuffer.framebuffers) {
+				if (framebuffer.needs_pong) {
+					framebuffer.pong()
+				}
+			}
 			requestAnimationFrame(draw)
 		}
 		;(() => {

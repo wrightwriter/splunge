@@ -66,14 +66,3 @@ export function resizeIfNeeded(
 
 	return needResize
 }
-
-export function finish_frame() {
-	for (let framebuffer of Framebuffer.framebuffers) {
-		if (framebuffer.needs_pong) {
-			// console.log('ponged')
-			// framebuffer.pong_idx = 1 - framebuffer.pong_idx
-			// framebuffer.needs_pong = false
-			framebuffer.pong()
-		}
-	}
-}
