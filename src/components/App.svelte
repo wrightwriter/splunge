@@ -689,7 +689,6 @@
 				drawer.push_any_stroke(brush_stroke)
 				drawer.brush_buffer.upload_all_buffs()
 				drawer.brush_buffer.shader.use()
-				// set_shared_uniforms(t)
 				drawer.draw_stroke_idx(0)
 			}
 			// ----- COMPOSITE
@@ -720,20 +719,17 @@
 				// post_canvas_program.setUniformFloat("zoom", zoom)
 				// post_canvas_program.setUniformVec("panning", panning)
 				canvas_fb.back_textures[0].bind_to_unit(1)
-				// set_shared_uniforms(t)
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
 				if (brushSizeWidgetDragging) {
 					brush_preview_program.use()
 					brush_preview_program.setUniformFloat("zoom", zoom)
 					brush_preview_program.setUniformVec("brush_sz", brush_sz)
-					// set_shared_uniforms(t)
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 				}
 
 				if (picking) {
 					picker_program.use()
-					// set_shared_uniforms(t)
 					picker_program.setUniformVec('picked_col', picked_col)
 					picker_program.setUniformVec('picker_pos', [...io.mouse_pos])
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
