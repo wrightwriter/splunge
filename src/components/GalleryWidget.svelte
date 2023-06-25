@@ -127,7 +127,6 @@
 	import downloadIcon from '/../public/download.svg'
 	// @ts-ignore
 	import timeIcon from '/../public/time.svg'
-	import getToken from 'getToken'
 	import {Dropbox, DropboxAuth} from 'dropbox'
 	import type {Project} from 'stuff'
 	import { onMount } from 'svelte'

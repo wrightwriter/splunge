@@ -1,5 +1,7 @@
 #pragma glslify: import('./_top_includes.glsl')
 
+uniform int brush_texture_idx;
+
 in vec2 uv;
 in vec4 vCol;
 out vec4 col;
@@ -23,8 +25,9 @@ void main() {
   col = vCol;
   
   // col.xyz = uv.xyx;
-  
-  col.w *= pow(texture(brush_texture_1,uv).w,1.0);
+  // col.w *= sample_brush_tex(1, uv).w;
+  col.w *= sample_brush_tex(brush_texture_idx, uv).w;
+  // col.w *= pow(texture(brush_texture[brush_texture_idx],uv).w,1.0);
   // col.xyz /= pow(max(col.w,0.001),0.2);
   // col.w = length(uv - 0.5) < 0.25 ? 1. : 0.; 
   // col.xyz = uv.xyx;

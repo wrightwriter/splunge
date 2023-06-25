@@ -3,6 +3,7 @@
 #pragma glslify: import('./_blend.glsl')
 
 uniform float pong_idx;
+uniform int blending_colour_space;
 in vec2 uv;
 out vec4 col;
 void main() {
@@ -20,5 +21,5 @@ void main() {
   // col.xyz = mix(col.xyz, temp_tex.xyz, temp_tex.w);
  
   if(temp_tex.w > 0.000001)
-    col = blend_brushstroke(col,temp_tex); 
+    col = blend_brushstroke(col,temp_tex,blending_colour_space); 
 }      

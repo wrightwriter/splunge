@@ -1,13 +1,26 @@
 import {BrushTexture} from 'stuff'
 
+export enum BlendingColourSpace {
+	RGB,
+	OkLCH,
+	Pigments,
+}
+
 export class DrawParams {
 	tex_dynamics: number = 0.3
 	tex_lch_dynamics: number[] = [0, 0, 0.2]
 	tex_stretch: number[] = [1, 0.2]
-	constructor(tex_dynamics: number, tex_lch_dynamics: number[], tex_stretch: number[]) {
+	blending_colour_space = BlendingColourSpace.Pigments
+	constructor(
+		tex_dynamics: number,
+		tex_lch_dynamics: number[],
+		tex_stretch: number[],
+		blending_colour_space: BlendingColourSpace,
+	) {
 		this.tex_dynamics = tex_dynamics
 		this.tex_lch_dynamics = [...tex_lch_dynamics]
 		this.tex_stretch = [...tex_stretch]
+		this.blending_colour_space = blending_colour_space
 	}
 }
 
@@ -41,6 +54,7 @@ export enum BrushType {
 }
 export class BrushStroke {
 	brush_type: BrushType
+	brush_texture: BrushTexture
 	draw_params: DrawParams
 	positions: number[] = []
 	rotations: number[] = []
@@ -49,9 +63,10 @@ export class BrushStroke {
 	colours: number[] = []
 
 	idx: number = 0
-	constructor(brush_type: BrushType, draw_params: DrawParams) {
+	constructor(brush_type: BrushType, draw_params: DrawParams, brush_texture: BrushTexture) {
 		this.draw_params = draw_params
 		this.brush_type = brush_type
+		this.brush_texture = brush_texture
 	}
 	push_stroke(position: number[], rotation: number[], size: number[], opacity: number, colour: number[]) {
 		// assert(position.length === 2)

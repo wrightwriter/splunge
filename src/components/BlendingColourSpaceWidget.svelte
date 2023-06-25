@@ -3,23 +3,25 @@
 <div class="knob-container-container">
 	<!-- svelte-ignore a11y-missing-attribute -->
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<img
-		src={selected_brush_texture ? selected_brush_texture.path : ''}
-		on:click={() => {
-			dropdown_toggled = !dropdown_toggled
-		}} />
+	<div>{BlendingColourSpace[selected_colour_space]}</div>
 	{#if dropdown_toggled}
 		<div id="dropdown">
-			{#each brush_textures as texture, i}
-				{#if texture !== selected_brush_texture}
+			{#each Object.keys(BlendingColourSpace) as colour_space, i}
+				{#if BlendingColourSpace[colour_space]  !== selected_colour_space && isNaN(BlendingColourSpace[colour_space])}
 					<!-- svelte-ignore a11y-missing-attribute -->
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<img
+					<div on:click={()=>{
+						// @ts-ignore
+						selected_colour_space = colour_space
+					}}>
+						{BlendingColourSpace[colour_space]}
+					</div>
+					<!-- <img
 						src={texture.path}
 						on:click={() => {
 							selected_brush_texture = texture
 							dropdown_toggled = false
-						}} />
+						}} /> -->
 				{/if}
 			{/each}
 		</div>
@@ -27,15 +29,17 @@
 </div>
 
 <script lang="ts">
-	import {BrushType} from 'brush_stroke'
+	import {BlendingColourSpace, BrushType} from 'brush_stroke'
 	import type {BrushTexture} from 'stuff'
 	import {onMount} from 'svelte'
 
-	export let brush_textures: Array<BrushTexture>
-	export let selected_brush_texture: BrushTexture
+	// export let brush_textures: Array<BrushTexture>
+	export let selected_colour_space: BlendingColourSpace
 
-	let dropdown_toggled = false
+	let dropdown_toggled = true
 
+	onMount(() => {
+	})
 </script>
 
 <style lang="scss">
@@ -43,7 +47,7 @@
 		user-select: none;
 		-webkit-tap-highlight-color: transparent;
 	}
-	img {
+	div {
 		&:active {
 			filter: invert(1);
 			background: black;
@@ -68,8 +72,6 @@
 
 		border: 1px solid white;
 		min-width: 0px;
-		aspect-ratio: 1/1;
-		height: 100%;
 		#dropdown {
 			display: flex;
 			flex-direction: column;
@@ -77,16 +79,14 @@
 			height: unset;
 			background: black;
 			// top: 88px;
-			> img {
+			> div {
 				z-index: 10000000;
-				aspect-ratio: 1/1;
+				// aspect-ratio: 1/1;
 				width: 100%;
 				// position: static;
 			}
 		}
-		> img {
-			aspect-ratio: 1/1;
-			height: 100%;
+		> div {
 		}
 	}
 </style>

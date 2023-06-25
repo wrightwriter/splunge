@@ -17,7 +17,6 @@
 
   const update_styles = ()=>{
     let k = 0 
-    // alert(selected_brush_type)
     try{
       for(let element of elements){
         let brush_type = brush_types[k]
@@ -38,10 +37,6 @@
   $: {
     selected_brush_type = curr_brush.selected_brush_type
     update_styles()
-  }
-  
-  const updateOutline = ()=>{
-
   }
   
 

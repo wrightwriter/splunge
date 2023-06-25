@@ -1,3 +1,5 @@
+import {min, sqrt} from 'wmath'
+
 interface keyState {
 	down: boolean
 	just_pressed: boolean
@@ -50,6 +52,20 @@ type BtnCode =
 export class IO {
 	private keys = new Map<BtnCode, keyState>()
 
+	// touch_positions = new Float32Array(8)
+	// touch_positions_cnt = 0
+	touches: {[key: number]: number[]} = {}
+	two_finger_pinch_prev = false
+	two_finger_pinch = false
+	just_finished_pinch = false
+	just_started_pinch = false
+	touches_starting_positions = new Float32Array(4)
+	touches_starting_mid_point = new Float32Array(2)
+	touches_starting_length = 0
+	touches_mid_point_prev = new Float32Array(2)
+	pinch_pos = new Float32Array(2)
+	pinch_zoom = 0
+
 	// mouse_pos: Array<number> = [0, 0]
 	mouse_pos: Float32Array = Float32Array.from([0, 0])
 	delta_mouse_pos: Float32Array = Float32Array.from([0, 0])
@@ -72,10 +88,6 @@ export class IO {
 			? this._mouse_positions_during_last_frame_cnt
 			: this._mouse_positions_during_last_frame_cnt_b
 	}
-	// set mouse_positions_during_last_frame_cnt(v: number): number{
-	// 	if(this.mouse_positions_arr_idx === 0)
-	// 		this._mouse_positions_during_last_frame_cnt = v else this._mouse_positions_during_last_frame_cnt_b = v
-	// }
 
 	pointerType: string = 'mouse'
 
@@ -106,8 +118,12 @@ export class IO {
 			this._mouse_positions_during_last_frame_cnt_b = 0
 		}
 		this.mouse_positions_arr_idx = 1 - this.mouse_positions_arr_idx
-		// console.log(this.mouse_positions_during_last_frame_cnt)
-		// console.log(this.mouse_positions_during_last_frame)
+
+		if (this.two_finger_pinch === false && this.two_finger_pinch_prev === true) {
+			this.just_finished_pinch = true
+		} else if (this.two_finger_pinch === true && this.two_finger_pinch_prev === false) {
+			this.just_started_pinch = true
+		}
 
 		if (this.mouse_down !== this.mouse_down_prev) {
 			if (this.mouse_down) {
@@ -127,6 +143,9 @@ export class IO {
 		this.mmb_just_unpressed = false
 		this.mmb_just_pressed = false
 		this.mouse_wheel = 0
+		this.two_finger_pinch_prev = this.two_finger_pinch
+		this.just_finished_pinch = false
+		this.just_started_pinch = false
 		Object.values(this.keys).forEach((key) => {
 			key.just_unpressed = false
 			key.just_pressed = false
@@ -225,11 +244,86 @@ export class IO {
 		})
 
 		// @ts-ignore
+		document.querySelector('canvas').addEventListener('touchstart', (e) => {
+			for (let i = 0; i < e.targetTouches.length; i++) {
+				const touch = e.targetTouches[i]
+				const touch_id = touch.identifier
+				this.touches[touch_id] = [touch.clientX, touch.clientY]
+			}
+		})
+
+		const length = (ax: number, ay: number, bx: number, by: number): number => {
+			return sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by))
+		}
+
+		// @ts-ignore
+		document.querySelector('canvas').addEventListener('touchmove', (e) => {
+			if (e.targetTouches.length === 2) {
+				if (this.two_finger_pinch === false) {
+					// begin pinch
+					this.touches_starting_positions[0] = e.targetTouches[0].clientX
+					this.touches_starting_positions[1] = e.targetTouches[0].clientY
+					this.touches_starting_positions[2] = e.targetTouches[1].clientX
+					this.touches_starting_positions[3] = e.targetTouches[1].clientY
+					this.touches_starting_mid_point[0] = e.targetTouches[0].clientX * 0.5 + e.targetTouches[1].clientX * 0.5
+					this.touches_starting_mid_point[1] = e.targetTouches[0].clientY * 0.5 + e.targetTouches[1].clientY * 0.5
+					this.pinch_zoom = 0
+					this.touches_starting_length = length(
+						e.targetTouches[0].clientX,
+						e.targetTouches[0].clientY,
+						e.targetTouches[1].clientX,
+						e.targetTouches[1].clientY,
+					)
+					this.touches_mid_point_prev[0] = this.touches_starting_mid_point[0]
+					this.touches_mid_point_prev[1] = this.touches_starting_mid_point[1]
+					this.pinch_pos[0] = 0
+					this.pinch_pos[1] = 0
+				}
+				this.two_finger_pinch = true
+				const mid_point_x = e.targetTouches[0].clientX * 0.5 + e.targetTouches[1].clientX * 0.5
+				const mid_point_y = e.targetTouches[0].clientY * 0.5 + e.targetTouches[1].clientY * 0.5
+
+				const len = length(
+					e.targetTouches[0].clientX,
+					e.targetTouches[0].clientY,
+					e.targetTouches[1].clientX,
+					e.targetTouches[1].clientY,
+				)
+				const res = min(window.innerWidth, window.innerHeight)
+				this.pinch_zoom = ((len - this.touches_starting_length) / res) * 4
+
+				this.pinch_pos[0] += (((mid_point_x - this.touches_mid_point_prev[0]) / res) * 2) / window.zoom[0]
+				this.pinch_pos[1] += (((mid_point_y - this.touches_mid_point_prev[1]) / res) * 2) / window.zoom[0]
+				this.touches_mid_point_prev[0] = mid_point_x
+				this.touches_mid_point_prev[1] = mid_point_y
+			} else {
+				if (this.two_finger_pinch === true) {
+					this.two_finger_pinch = false
+				}
+			}
+		})
+
+		const touch_end = (e: TouchEvent) => {
+			for (const id in Object.keys(this.touches)) {
+				delete this.touches[id]
+			}
+			this.two_finger_pinch = false
+		}
+
+		// @ts-ignore
+		document.querySelector('canvas').addEventListener('touchcancel', (e) => {
+			touch_end(e)
+		})
+		// @ts-ignore
+		document.querySelector('canvas').addEventListener('touchend', (e) => {
+			touch_end(e)
+		})
+
+		// @ts-ignore
 		document.querySelector('canvas').addEventListener('pointerdown', (e) => {
 			this.pointerType = e.pointerType
 			if (e.pointerType === 'mouse' && e.button !== 0) return
 			this.mouse_down = true
-			console.log(e)
 		})
 		// @ts-ignore
 		window.addEventListener('pointerup', () => {

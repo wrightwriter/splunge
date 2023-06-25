@@ -12,17 +12,10 @@
   for(let preset of brush_presets){
     elements.length++
   }
-  // let brush_types: string[] = [ ]
-  // for(let type of Object.keys(BrushType).filter((v) => isNaN(Number(v)))){
-  //   brush_types.push(type)
-  //   elements.length++
-  // }
 
   onMount(()=>{
     let k = 0 
     for(let element of elements){
-      // let brush_type = brush_types[k]
-      // let brush_type_int = BrushType[brush_types[k]]
       if(selected_brush_preset === brush_presets[k]){
         element.style.outline = '1px solid white'
         element.style.outlineOffset = '0.1rem'

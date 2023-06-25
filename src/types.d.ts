@@ -3,7 +3,9 @@ import {UBO} from 'gl_utils'
 export declare global {
 	var gl: WebGL2RenderingContext
 	var ubo: UBO
-	interface Window {}
+	interface Window {
+		zoom: Float32Array
+	}
 	interface PointerEvent {
 		altitudeAngle: number
 		azimuthAngle: number

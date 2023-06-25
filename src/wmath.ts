@@ -14,6 +14,9 @@ export const halfPi: number = Math.PI / 2
 export function max(a: number, b: number): number {
 	return Math.max(a, b)
 }
+export function min(a: number, b: number): number {
+	return Math.min(a, b)
+}
 export function mix(a: number, b: number, f: number): number {
 	return a * (1.0 - f) + b * f
 }

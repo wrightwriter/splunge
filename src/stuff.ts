@@ -11,14 +11,27 @@ export class BrushTexture {
 	gpu_tex: Texture = undefined
 	// @ts-ignore
 	path: string = undefined
+	// @ts-ignore
+	idx: number
 
-	static async create(path): Promise<BrushTexture> {
+	static async create(path, idx: number): Promise<BrushTexture> {
 		let gpu_tex = await Texture.from_image_path(path)
 
 		return {
 			gpu_tex,
 			path,
+			idx,
 		}
+	}
+}
+
+export class Project {
+	id: number = Date.now()
+	saved: boolean = false
+	brush_strokes: BrushStroke[] = []
+	constructor() {}
+	push_stroke(stroke: BrushStroke) {
+		this.brush_strokes.push(stroke)
 	}
 }
 
@@ -88,15 +101,5 @@ export class Utils {
 	}
 	static texture_NDC_to_texture_pixel_coords(u: number[], tex: Texture): number[] {
 		return [(u[0] * 0.5 + 0.5) * tex.res[0], (u[1] * 0.5 + 0.5) * tex.res[1]]
-	}
-}
-
-export class Project {
-	id: number = Date.now()
-	saved: boolean = false
-	brush_strokes: BrushStroke[] = []
-	constructor() {}
-	push_stroke(stroke: BrushStroke) {
-		this.brush_strokes.push(stroke)
 	}
 }
