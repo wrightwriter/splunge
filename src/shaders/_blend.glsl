@@ -13,7 +13,7 @@ vec4 blend_brushstroke(vec4 col, vec4 stroke, int blending_colour_space){
     stroke.xyz = stroke.xyz/max(stroke.w,0.001);
     
     if(mode == 0){
-      col.xyz = spectral_mix(col.xyz, stroke.xyz, stroke.w);
+      col.xyz = spectral_mix(col.xyz, clamp(stroke.xyz,0.00001,0.99999), stroke.w);
       if(stroke.w > 0.99999)
         col.xyz = stroke.xyz;
     } else if(mode == 1){
@@ -31,8 +31,14 @@ vec4 blend_brushstroke(vec4 col, vec4 stroke, int blending_colour_space){
         col.z = mix(col.z, h_b, stroke.w);
       }
       col.z = mod(col.z, tau);
+      // col.z = max(col.z)
+      // if(isnan(col.z)){
+      //   col.z = 1.;
+      // }
 
       col.xyz = oklch_to_srgb( col.xyz );
+      col.xyz = clamp(col.xyz,0.,1.);
+    
     } else {
       col.xyz = mix(col.xyz, stroke.xyz, stroke.w);
     }

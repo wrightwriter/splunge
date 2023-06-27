@@ -10,7 +10,7 @@ out vec4 col;
 void main() {
   // col = texture(canvas_back,uv);
   
-  col = texture(canvas_a,uv);
+  col = texture(canvas_b,uv);
   col.w = 1.;
 
     // col.xyzw = vec4(1);

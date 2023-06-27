@@ -21,6 +21,13 @@ export function mix(a: number, b: number, f: number): number {
 	return a * (1.0 - f) + b * f
 }
 
+export function log(a: number): number {
+	return Math.log(a)
+}
+export function log2(a: number): number {
+	return Math.log2(a)
+}
+
 export class Hash {
 	seed = 0
 	constructor(seed = 1251254) {
@@ -127,6 +134,9 @@ export function dmod(a: number, b: number, c: number? = 2) {
 
 export function abs(a: number): number {
 	return Math.abs(a)
+}
+export function sign(a: number): number {
+	return a < 0 ? -1 : 1
 }
 
 export function tri(a: number): number {

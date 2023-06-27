@@ -29,6 +29,8 @@ export class Project {
 	id: number = Date.now()
 	saved: boolean = false
 	brush_strokes: BrushStroke[] = []
+	canvasRes: number[] = [1024, 2048]
+	// canvasRes: number[] = [2048, 1024]
 	constructor() {}
 	push_stroke(stroke: BrushStroke) {
 		this.brush_strokes.push(stroke)
@@ -95,7 +97,12 @@ export class Utils {
 		} else {
 			// u[1] -= (1 - ratio) * 0.5
 			u[0] /= zoom
-			u[1] /= ratio / zoom
+			u[1] /= ratio * zoom
+
+			let cont = Utils.css_contain([1, 1], user_res, canvas_res)
+
+			u[0] -= pan[0] * cont[0]
+			u[1] -= pan[1] * cont[1]
 		}
 		return u
 	}

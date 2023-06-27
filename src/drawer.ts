@@ -114,15 +114,24 @@ export class Drawer {
 	fill_buff_for_blob_brush(stroke: BrushStroke) {
 		const brush_buffer = this.brush_buffer
 		const iters = stroke.positions.length / 2 - 1
-		let aspect_correction = Utils.screen_NDC_to_canvas_NDC(
-			[1, 1],
-			this.default_framebuffer.textures[0],
-			this.canvas_tex,
-			1,
-			[0, 0],
-		)
-		aspect_correction[0] = 1 / aspect_correction[0]
-		aspect_correction[1] = 1 / aspect_correction[1]
+		// let aspect_correction = Utils.screen_NDC_to_canvas_NDC(
+		// 	[1, 1],
+		// 	this.default_framebuffer.textures[0],
+		// 	this.canvas_tex,
+		// 	1,
+		// 	[0, 0],
+		// )
+		// aspect_correction[0] = aspect_correction[0]
+		// aspect_correction[1] = aspect_correction[1]
+
+		let aspect_correction = [0, 0]
+		if (this.canvas_tex.res[0] > this.canvas_tex.res[1]) {
+			aspect_correction[0] = this.canvas_tex.res[1] / this.canvas_tex.res[0]
+			aspect_correction[1] = 1
+		} else {
+			aspect_correction[0] = 1
+			aspect_correction[1] = this.canvas_tex.res[0] / this.canvas_tex.res[1]
+		}
 
 		const add_ang_to_pos = (
 			pos: number[],
@@ -148,13 +157,8 @@ export class Drawer {
 
 		let idx = brush_buffer.buffs[0].sz
 		for (let i = 0; i < iters; i++) {
-			// let i_2 = i * 2
-			// #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a))
-			// brush_stroke.
-			let sz_x = stroke.sizes[i * 2]
-			let sz_y = stroke.sizes[i * 2 + 1]
-			let offs_x = sz_x / 6
-			let offs_y = sz_y / 4
+			let sz_x = stroke.sizes[i * 2] / 2
+			let sz_y = stroke.sizes[i * 2 + 1] / 2
 			// let next_sz = brush_stroke.sizes[i * 2 + 2]
 
 			let ang_x = get_circ_pos_from_ang(stroke.rotations[i * 2 + 1])
@@ -164,7 +168,7 @@ export class Drawer {
 
 			let curr_pos = [stroke.positions[i * 2], stroke.positions[i * 2 + 1]]
 			// curr_pos[0] += offs_x
-			curr_pos[1] += offs_y
+			// curr_pos[1] += offs_y
 			// let next_pos = [brush_stroke.positions[i * 2 + 2], brush_stroke.positions[i * 2 + 3]]
 
 			let curr_pos_left = add_ang_to_pos([...curr_pos], ang_x, ang_y, true, sz_x, sz_y)
@@ -173,10 +177,11 @@ export class Drawer {
 			let next_pos_left = [...curr_pos_left]
 			let next_pos_right = [...curr_pos_right]
 
-			next_pos_left[0] -= ang_y[0] * sz_y * aspect_correction[0]
-			next_pos_left[1] -= ang_y[1] * sz_y * aspect_correction[1]
-			next_pos_right[0] -= ang_y[0] * sz_y * aspect_correction[0]
-			next_pos_right[1] -= ang_y[1] * sz_y * aspect_correction[1]
+			// ----------------- OFFS
+			next_pos_left[0] -= ang_y[0] * sz_y * aspect_correction[0] * 2
+			next_pos_left[1] -= ang_y[1] * sz_y * aspect_correction[1] * 2
+			next_pos_right[0] -= ang_y[0] * sz_y * aspect_correction[0] * 2
+			next_pos_right[1] -= ang_y[1] * sz_y * aspect_correction[1] * 2
 			// pos[1] += (ang_offs_b[1] * amt_b) / aspect_correction[1]
 
 			let curr_col = [stroke.colours[i * 3], stroke.colours[i * 3 + 1], stroke.colours[i * 3 + 2]]
@@ -259,15 +264,14 @@ export class Drawer {
 	fill_buff_for_long_brush(stroke: BrushStroke) {
 		const brush_buffer = this.brush_buffer
 		const iters = stroke.positions.length / 2 - 1
-		let aspect_correction = Utils.screen_NDC_to_canvas_NDC(
-			[1, 1],
-			this.default_framebuffer.textures[0],
-			this.canvas_tex,
-			1,
-			[0, 0],
-		)
-		aspect_correction[0] = 1 / aspect_correction[0]
-		aspect_correction[1] = 1 / aspect_correction[1]
+		let aspect_correction = [0, 0]
+		if (this.canvas_tex.res[0] > this.canvas_tex.res[1]) {
+			aspect_correction[0] = this.canvas_tex.res[1] / this.canvas_tex.res[0]
+			aspect_correction[1] = 1
+		} else {
+			aspect_correction[0] = 1
+			aspect_correction[1] = this.canvas_tex.res[0] / this.canvas_tex.res[1]
+		}
 
 		const add_ang_to_pos = (
 			pos: number[],
@@ -459,7 +463,8 @@ export class Drawer {
 	}
 
 	push_any_stroke(stroke: BrushStroke) {
-		console.log('START PUSHING')
+		// console.log('START PUSHING')
+		// console.time('SINGLE STROKE')
 		if (stroke.brush_type === BrushType.Blobs) {
 			this.fill_buff_for_blob_brush(stroke)
 		} else if (stroke.brush_type === BrushType.Long) {
@@ -467,6 +472,7 @@ export class Drawer {
 		} else if (stroke.brush_type === BrushType.Tri) {
 			this.fill_buff_for_triangulated_brush(stroke)
 		}
+		// console.timeEnd('SINGLE STROKE')
 	}
 	draw_stroke_idx(idx: number) {
 		let draw_start = idx === 0 ? 0 : this.recorded_drawcalls[idx - 1]

@@ -10,3 +10,4 @@ report.json
 start.bat
 getToken.ts
 dist/
+.lh/

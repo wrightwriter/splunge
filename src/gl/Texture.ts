@@ -1,7 +1,9 @@
-import {pow} from 'wmath'
+import {pause_on_gl_error} from 'gl_utils'
+import {log2, min, pow} from 'wmath'
 import {Framebuffer} from './Framebuffer'
 
 export class Texture {
+	// @ts-ignore
 	tex: WebGLTexture
 	internal_format: number
 	format: number
@@ -9,8 +11,10 @@ export class Texture {
 	res: Array<number>
 
 	private is_float: boolean
+	mipmapped: boolean
+	private mip_levels: number
 
-	constructor(res: number[], internal_format: number = gl.RGBA) {
+	constructor(res: number[], internal_format: number = gl.RGBA, mipmapped = false, mip_levels: number = 0) {
 		const eq_any = (a: any, b: any[]): boolean => {
 			let eq = false
 			b.forEach((b) => {
@@ -21,27 +25,38 @@ export class Texture {
 			})
 			return eq
 		}
-		// @ts-ignore
-		this.tex = gl.createTexture()
 		this.res = [...res]
 		this.internal_format = internal_format
+
+		this.mipmapped = mipmapped
+		this.mip_levels = mip_levels
 
 		this.is_float = eq_any(internal_format, [gl.RGBA32F, gl.RGBA16F, gl.RGB16F, gl.RGB32F])
 
 		let comp_cnt = 4
-		if (eq_any(internal_format, [gl.RGBA32F, gl.RGBA16F, gl.RGBA, gl.RGBA16I, gl.RGBA16UI, gl.RGBA32I])) {
+		if (eq_any(internal_format, [gl.RGBA32F, gl.RGBA16F, gl.RGBA, gl.RGBA16I, gl.RGBA16UI, gl.RGBA32I, gl.RGBA8I, gl.RGBA8UI])) {
 			comp_cnt = 4
 		}
-		if (eq_any(internal_format, [gl.RGB32F, gl.RGB16F, gl.RGB, gl.RGB16I, gl.RGB16UI, gl.RGB32I])) {
+		if (eq_any(internal_format, [gl.RGB32F, gl.RGB16F, gl.RGB, gl.RGB16I, gl.RGB16UI, gl.RGB32I, gl.RGB8I, gl.RGB8UI])) {
 			comp_cnt = 3
 		}
 
 		this.format = comp_cnt === 4 ? gl.RGBA : gl.RGB
 		this.type = this.is_float ? gl.FLOAT : gl.UNSIGNED_BYTE
 
-		gl.bindTexture(gl.TEXTURE_2D, this.tex)
+		if (eq_any(internal_format, [gl.RGBA8UI, gl.RGBA16UI, gl.RGBA32UI, gl.RGB8UI, gl.RGB16UI, gl.RGB32UI])) {
+			this.type = gl.UNSIGNED_INT
+		}
+		if (eq_any(internal_format, [gl.RGBA8I, gl.RGBA16I, gl.RGBA32I, gl.RGB8I, gl.RGB16I, gl.RGB32I])) {
+			this.type = gl.INT
+		}
+		this.recreate()
+	}
+	recreate() {
+		// @ts-ignore
+		this.tex = gl.createTexture()
 
-		gl.texImage2D(gl.TEXTURE_2D, 0, internal_format, res[0], res[1], 0, this.format, this.type, null)
+		gl.bindTexture(gl.TEXTURE_2D, this.tex)
 
 		if (this.is_float) {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
@@ -53,10 +68,36 @@ export class Texture {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
+		if (this.mipmapped) {
+			if (this.mip_levels === 0) {
+				if (this.res[0] > 4 && this.res[1] > 4) {
+					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
+					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+					gl.texStorage2D(gl.TEXTURE_2D, log2(min(this.res[0], this.res[1])), this.internal_format, this.res[0], this.res[1])
+				} else {
+					gl.texImage2D(gl.TEXTURE_2D, 0, this.internal_format, this.res[0], this.res[1], 0, this.format, this.type, null)
+				}
+			}
+			pause_on_gl_error()
+		} else {
+			gl.texImage2D(gl.TEXTURE_2D, 0, this.internal_format, this.res[0], this.res[1], 0, this.format, this.type, null)
+		}
 		// console.log(gl.isTexture(this.tex))
 
 		if (!gl.isTexture(this.tex)) {
 			console.error('TEXTURE INCOMPLETE')
+		}
+	}
+
+	resize(new_res: number[]) {
+		this.res = [...new_res]
+		if (this.mipmapped) {
+			gl.deleteTexture(this.tex)
+			this.recreate()
+		} else {
+			gl.activeTexture(gl.TEXTURE15)
+			gl.bindTexture(gl.TEXTURE_2D, this.tex)
+			gl.texImage2D(gl.TEXTURE_2D, 0, this.internal_format, this.res[0], this.res[1], 0, this.format, this.type, null)
 		}
 	}
 	static async from_image_path(img_path: string): Promise<Texture> {
@@ -71,8 +112,12 @@ export class Texture {
 		}
 
 		const img = await loadImage(img_path)
-		const tex = new Texture([img.naturalWidth, img.naturalHeight])
-		tex.upload_from_cpu(img)
+		const tex = new Texture([img.naturalWidth, img.naturalHeight], gl.RGBA8, true, 0)
+		// tex.upload_from_cpu(img)
+		// gl.getTexParameter(gl.TEXTURE_2D, gl.TYPE)
+		gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, tex.res[0], tex.res[1], tex.format, tex.type, img)
+		gl.generateMipmap(gl.TEXTURE_2D)
+		pause_on_gl_error()
 		// Not needed?
 		gl.finish()
 		img.remove()
@@ -88,7 +133,7 @@ export class Texture {
 	}
 
 	clone(): Texture {
-		return new Texture(this.res, this.internal_format)
+		return new Texture(this.res, this.internal_format, this.mipmapped, this.mip_levels)
 	}
 	bind_to_unit(unit: number) {
 		gl.activeTexture(gl.TEXTURE0 + unit)
@@ -134,11 +179,19 @@ export class Texture {
 		let idx = 0
 		for (let pixel of data) {
 			if (i === 3) {
-				data[idx] = 255
+				if (this.is_float) {
+					data[idx] = 255
+				} else {
+					data[idx] = 255
+				}
 				i = -1
 			} else {
 				if (gamma_correct) {
-					data[idx] = 255 * pow(data[idx] / 255, 0.4545454545)
+					if (this.is_float) {
+						data[idx] = 255 * pow(data[idx], 0.4545454545)
+					} else {
+						data[idx] = 255 * pow(data[idx] / 255, 0.4545454545)
+					}
 				}
 				// data[idx] *= 240
 			}

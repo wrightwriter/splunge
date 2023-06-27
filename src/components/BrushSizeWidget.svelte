@@ -25,7 +25,7 @@
 	import playingIcon from '/../public/play.svg'
 
 	export let brush_sz: number[] = [0.2, 0.2]
-	export let canvas_res: number[]
+	// export let canvas_res: number[]
 
 	export let pixelRange = 200
 	let value = [0, 0]

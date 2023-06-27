@@ -31,16 +31,9 @@ export class Framebuffer {
 		this.pong_idx = 1 - this.pong_idx
 		this.needs_pong = false
 	}
-	constructor(textures: Array<Texture>, pongable: boolean = false) {
-		this._fb = gl.createFramebuffer() as WebGLFramebuffer
-		this._textures = [...textures]
-		this.pongable = pongable
-		this._back_textures = []
-		if (pongable) {
-			this._fb_back = gl.createFramebuffer() as WebGLFramebuffer
-			for (let tex of textures) {
-				this._back_textures.push(tex.clone())
-			}
+
+	public recreate() {
+		if (this.pongable) {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, this._fb_back)
 
 			let i = 0
@@ -52,7 +45,6 @@ export class Framebuffer {
 					tex.tex,
 					0, // level, this is the mipmap level
 				)
-				i++
 			}
 
 			if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
@@ -77,6 +69,21 @@ export class Framebuffer {
 		if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
 			console.error('FRAMEBUFFER INCOMPLETE')
 		}
+	}
+	constructor(textures: Array<Texture>, pongable: boolean = false) {
+		this._fb = gl.createFramebuffer() as WebGLFramebuffer
+		this._textures = [...textures]
+		this.pongable = pongable
+		this._back_textures = []
+
+		if (this.pongable) {
+			this._fb_back = gl.createFramebuffer() as WebGLFramebuffer
+			for (let tex of this.textures) {
+				this._back_textures.push(tex.clone())
+			}
+		}
+
+		this.recreate()
 
 		if (this !== Framebuffer.currently_bound) gl.bindFramebuffer(gl.FRAMEBUFFER, Framebuffer.currently_bound._fb)
 		Framebuffer.framebuffers.push(this)

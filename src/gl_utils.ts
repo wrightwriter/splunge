@@ -36,7 +36,7 @@ export function pause_on_gl_error() {
 	if (err !== 0) {
 		console.error(err)
 		console.error(gl_enum_to_string(err))
-		// debugger
+		debugger
 	}
 }
 

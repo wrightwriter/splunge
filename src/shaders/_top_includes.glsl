@@ -36,53 +36,13 @@ uniform sampler2D brush_texture[7];
 // uniform sampler2D brush_texture_11;
 // uniform sampler2D brush_texture_12;
 
-vec4 sample_brush_tex(int idx, vec2 uv){
-  if(idx == 0){
-    return texture(brush_texture[0],uv);
-  }
-  if(idx == 1){
-    return texture(brush_texture[1],uv);
-  }
-  if(idx == 2){
-    return texture(brush_texture[2],uv);
-  }
-  if(idx == 3){
-    return texture(brush_texture[3],uv);
-  }
-  if(idx == 4){
-    return texture(brush_texture[4],uv);
-  }
-  if(idx == 5){
-    return texture(brush_texture[5],uv);
-  }
-  if(idx == 6){
-    return texture(brush_texture[6],uv);
-  } 
-  // if(idx == 7){
-  //   return texture(brush_texture[7],uv);
-  // }
-  // if(idx == 8){
-  //   return texture(brush_texture_8,uv);
-  // }
-  // if(idx == 9){
-  //   return texture(brush_texture_9,uv);
-  // }
-  // if(idx == 10){
-  //   return texture(brush_texture_10,uv);
-  // }
-  // if(idx == 11){
-  //   return texture(brush_texture_11,uv);
-  // }
-  // if(idx == 12){
-  //   return texture(brush_texture_12,uv);
-  // }
-}
 // uniform float canvas_idx;
 uniform Settings {
   vec2 canvasR;
   vec2 R;
   float time;
   float canvas_idx;
+  float is_on_mobile;
 };
 
 #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a))

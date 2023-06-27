@@ -82,7 +82,13 @@ module.exports.default = {
 						// @ts-ignore
 						onwarn: (warning, handler) => {
 							const {code, frame} = warning
-							if (code === 'css-unused-selector' || code === 'unused-export-let') return
+							if (
+								code === 'css-unused-selector' ||
+								code === 'unused-export-let' ||
+								code === 'a11y-click-events-have-key-events' ||
+								code === 'a11y-missing-attribute'
+							)
+								return
 							// console.log(code)
 							// console.log(warning)
 							// console.log(handler)

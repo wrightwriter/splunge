@@ -81,6 +81,54 @@
 						</div>
 						{@html launchIcon}
 					</div>
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<div id="button" on:click={async () => { 
+						size_modal_opened = true
+						resize_widget_canvas_size[0] = current_project.canvasRes[0]
+						resize_widget_canvas_size[1] = current_project.canvasRes[1]
+					}}>
+						<div>
+							Resize
+						</div>
+						{@html resizeIcon}
+					</div>
+					<div id="size-modal" style={size_modal_opened ? "" : "display: none;"}>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
+						<div
+							id="back-button"
+							on:click={() => {
+								size_modal_opened = false
+							}}
+							style='margin-bottom: 0.45rem;'
+							>
+							{@html forbidIcon}
+						</div>
+						<div style='margin-bottom: 1rem;'>
+							Resize canvas
+						</div>
+						<div style='margin-bottom: 1rem;'>
+							{resize_widget_canvas_size[0]} x {resize_widget_canvas_size[1]}
+						</div>
+						<div style={`
+							background: white;
+							width: 10rem;
+							aspect-ratio: 1/${resize_widget_canvas_size[1]/resize_widget_canvas_size[0]}
+						`} on:pointerdown={resize_widget_pointer_down} >
+						</div>
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
+						<div
+							id="back-button"
+							class="ok-button"
+							on:click={() => {
+								resize_project(resize_widget_canvas_size)
+								size_modal_opened = false
+								gallery_open = false
+							}}
+							style='margin-top: 1.14rem;'
+							 >
+							{@html okIcon}
+						</div>
+					</div>
 				</div>
 				<div id="gallery-elements">
 					{#each gallery_elements as element, i}
@@ -120,7 +168,11 @@
 	// @ts-ignore
 	import launchIcon from '/../public/launch.svg'
 	// @ts-ignore
+	import resizeIcon from '/../public/resize.svg'
+	// @ts-ignore
 	import forbidIcon from '/../public/forbid.svg'
+	// @ts-ignore
+	import okIcon from '/../public/ok.svg'
 	// @ts-ignore
 	import captureIcon from '/../public/capture.svg'
 	// @ts-ignore
@@ -137,6 +189,7 @@
 
 	export let current_project: Project
 	export let get_current_canvas_as_image: () => Promise<[HTMLImageElement, Blob]>
+	export let resize_project: (new_size: number[]) => void
 	export let new_project: () => void
 	export let load_project: (project: Project) => void
 	export let project_has_been_modified: boolean
@@ -153,10 +206,12 @@
 	}
 
 	let gallery_open = false
+	let size_modal_opened = false
 
 	let canvas_image: HTMLImageElement | undefined = undefined
 	let canvas_image_blob: Blob | undefined = undefined
 	let canvas_image_src: string = ''
+	
 
 
 	class Element {
@@ -261,6 +316,45 @@
 		await refetch_canvases()
 	}
 
+	const resize_widget_pixel_range = 200
+	const min = 0
+	const max = 4
+
+	let resize_widget_canvas_size = [0,0]
+	let resize_widget_start_y = 0
+	let resize_wdiget_start_value = [0, 0]
+	let resize_widget_start_x = 0
+
+	$: valueRange = max - min
+
+	function resize_widget_pointer_move({clientX, clientY}) {
+		let valueDiffY = (valueRange * (resize_widget_start_y - clientY)) / resize_widget_pixel_range
+		let valueDiffX = (valueRange * (resize_widget_start_x - clientX)) / resize_widget_pixel_range
+
+		resize_widget_canvas_size[0] = resize_wdiget_start_value[0] - valueDiffX*1000
+		resize_widget_canvas_size[1] = resize_wdiget_start_value[1] + valueDiffY*1000
+		// brush_sz[0] = clamp(startValue[0] - valueDiffX, min, max)
+		// brush_sz[1] = clamp(startValue[1] + valueDiffY, min, max)
+	}
+
+	function resize_widget_pointer_down(e: PointerEvent) {
+		let {clientX, clientY} = e
+		// console.log({ clientY });
+		console.log('down')
+
+		resize_widget_start_y = clientY
+		resize_widget_start_x = clientX
+		resize_wdiget_start_value = [...resize_widget_canvas_size]
+
+		window.addEventListener('pointermove', resize_widget_pointer_move)
+		window.addEventListener('pointerup', resize_widget_pointer_up)
+		e.stopPropagation()
+	}
+
+	function resize_widget_pointer_up() {
+		window.removeEventListener('pointermove', resize_widget_pointer_move)
+		window.removeEventListener('pointerup', resize_widget_pointer_up)
+	}
 
 	onMount(async () => {
 		await dbx_auther.try_init_dropbox()
@@ -296,6 +390,19 @@
 	}
 	:global(#gallery-container::-webkit-scrollbar-thumb){
 		background: white; 
+	}
+	#size-modal {
+		position: fixed;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100vw;
+		height: 100vh;
+		left: 0;
+		top: 0;
+		z-index: 101;
+		background: black;
+		justify-content: center;
 	}
 	#gallery-container-outer {
 		position: fixed;
@@ -342,16 +449,23 @@
 					display: flex;
 					cursor: pointer;
 					padding: 0rem 0.2rem;
+					:global(svg){
+						height: 100%;
+					}
 					&:active{
 						filter: invert(1);
 						background: black;
 					}
 				}
+				align-items: center;
 				margin-bottom: 1rem;
 				width: 100%;
 				font-size: 2rem;
 				display: flex;
 				justify-content: space-between;
+			}
+			.ok-button :global(svg) {
+				transform: scale(0.96) !important; 
 			}
 			#back-button > :global(svg) {
 				&:active{

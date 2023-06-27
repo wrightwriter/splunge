@@ -3,6 +3,7 @@ import {UBO} from 'gl_utils'
 export declare global {
 	var gl: WebGL2RenderingContext
 	var ubo: UBO
+	var isOnMobile: boolean
 	interface Window {
 		zoom: Float32Array
 	}
