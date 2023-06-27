@@ -1,7 +1,6 @@
 <svelte:options accessors />
 
 <div bind:this={pickerElement} on:pointerdown={pointerDown} class="knob-container">
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<div class="knob" class:picking={picking}>
 		{@html pickIcon}
 	</div>

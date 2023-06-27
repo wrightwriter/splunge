@@ -48,10 +48,10 @@
 
 <div class='knob-container-container'>
   {#each brush_types as brush_type, i}
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
     <div 
       class="title menu-toggle" 
       bind:this={elements[i]}
+      role="button" tabindex="0" 
       on:click={()=>{
         curr_brush.selected_brush_type = BrushType[brush_type]
         let k = 0

@@ -5,26 +5,31 @@
 	import chroma from "chroma-js"
 
 	export let colour: Array<number>;
-	export let just_finished_pick: boolean
+	// export let colour_r: number;
+	// export let colour_g: number;
+	// export let colour_b: number;
+	// export let just_finished_pick: boolean
 	
 	// $: valueRange = max - min;
 	// $: rotation = startRotation + (value - min) / valueRange * rotRange;
   let container
 
 
-  const re_render_colour = (colour)=>{
+  const re_render_colour = (colour_r, colour_g, colour_b)=>{
     if(container){
       container.style.setProperty('--color', `rgba(${
-      255 * Math.pow(colour[0], 0.45454545454545454545)}, ${
-      255 * Math.pow(colour[1], 0.45454545454545454545)}, ${
-      255 * Math.pow(colour[2], 0.45454545454545454545)}, ${
-      255 * Math.pow(colour[3], 0.45454545454545454545)})`)
+      255 * Math.pow(colour_r, 0.45454545454545454545)}, ${
+      255 * Math.pow(colour_g, 0.45454545454545454545)}, ${
+      255 * Math.pow(colour_b, 0.45454545454545454545)}, ${
+      255 * Math.pow(1.0, 0.45454545454545454545)})`)
     }
   }
+
+	export let update_display = (colour_r, colour_g, colour_b)=>{re_render_colour(colour_r, colour_g, colour_b)}
   
 	// $: col = `rgba(${colour[0]}, ${colour[1]}, ${colour[2]}, ${colour[3]})`;
-	$: re_render_colour(colour);
-	$: if(just_finished_pick) re_render_colour(colour);
+	$: re_render_colour(colour[0], colour[1], colour[2]);
+	// $: if(update_display) {re_render_colour(colour_r, colour_g, colour_b); update_display = false}
 
 	const pixelRange = 200
 	let value = [0, 0]
@@ -61,8 +66,6 @@
 
     col[0] += valueDiffY*0.3
     col[2] += valueDiffX*360*0.3
-    // col[1] += (-0.5 + hash.valueNoiseSmooth(t * 100 * curr_brush.chaos_speed + 100, 2)) * curr_brush.chaos * curr_brush.chaos_lch[1] 
-    // col[2] += hue_jitt_amt*(-0.5 + hash.valueNoiseSmooth(t * 100 * curr_brush.chaos_speed + 200, 2)) * 300 * curr_brush.chaos * curr_brush.chaos_lch[2]
     col[0] = clamp(col[0], 0, 1)
     col[1] = clamp(col[1], 0, 1)
     col[2] = mod(col[2], 360)
@@ -72,8 +75,6 @@
     colour[0] = col[0]
     colour[1] = col[1]
     colour[2] = col[2]
-		// brush_sz[0] = clamp(startValue[0] - valueDiffX, min, max)
-		// brush_sz[1] = clamp(startValue[1] + valueDiffY, min, max)
 	}
 
 	function pointerDown(e: PointerEvent) {
@@ -81,7 +82,7 @@
 		const {clientX, clientY} = e
 		startY = clientY
 		startX = clientX
-		startValue = [...colour]
+		startValue = [colour[0], colour[1], colour[2], 1]
 
 		window.addEventListener('pointermove', pointerMove)
 		window.addEventListener('pointerup', pointerUp)
@@ -110,17 +111,9 @@
     }
     margin-right: 0.5rem;
     aspect-ratio: 2/1;
-    max-height: 75%;
+    max-height: 100%;
     height: 100%;
     display: flex;
     background-color: var(--color);
   }  
-
-  .knob {
-    display: block;
-    aspect-ratio: 1/1;
-    height: 100%;
-    /* height: 80%; */
-    padding: 0;
-  }
 </style>

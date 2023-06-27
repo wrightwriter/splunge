@@ -26,6 +26,10 @@ export class Framebuffer {
 		if (this.pong_idx === 0) return this._fb
 		else return this._fb_back
 	}
+	public get fb_back(): WebGLFramebuffer {
+		if (this.pong_idx === 0) return this._fb_back
+		else return this._fb
+	}
 
 	public pong() {
 		this.pong_idx = 1 - this.pong_idx
@@ -85,7 +89,8 @@ export class Framebuffer {
 
 		this.recreate()
 
-		if (this !== Framebuffer.currently_bound) gl.bindFramebuffer(gl.FRAMEBUFFER, Framebuffer.currently_bound._fb)
+		// if (this !== Framebuffer.currently_bound) gl.bindFramebuffer(gl.FRAMEBUFFER, Framebuffer.currently_bound._fb)
+		gl.bindFramebuffer(gl.FRAMEBUFFER, Framebuffer.currently_bound._fb)
 		Framebuffer.framebuffers.push(this)
 	}
 	bind() {
@@ -108,9 +113,11 @@ export class Framebuffer {
 		// gl.drawBuffers(draw_buffs)
 	}
 	clear(colour: number[] = [0, 0, 0, 0]) {
-		if (this.fb !== Framebuffer.currently_bound.fb) gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb)
+		// if (this.fb !== Framebuffer.currently_bound.fb) gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb)
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb)
 		gl.clearColor(colour[0], colour[1], colour[2], colour[3])
 		gl.clear(gl.COLOR_BUFFER_BIT)
-		if (this.fb !== Framebuffer.currently_bound.fb) gl.bindFramebuffer(gl.FRAMEBUFFER, Framebuffer.currently_bound.fb)
+		// if (this.fb !== Framebuffer.currently_bound.fb) gl.bindFramebuffer(gl.FRAMEBUFFER, Framebuffer.currently_bound.fb)
+		gl.bindFramebuffer(gl.FRAMEBUFFER, Framebuffer.currently_bound.fb)
 	}
 }

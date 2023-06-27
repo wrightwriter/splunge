@@ -1,9 +1,5 @@
 import {Framebuffer} from 'gl/Framebuffer'
-import {validateHeaderValue} from 'http'
-import {isThisTypeNode} from 'typescript'
-import {pow} from 'wmath'
-
-// let gl: WebGL2RenderingContext
+import {Texture} from 'gl/Texture'
 
 export function init_gl_error_handling() {
 	if (!gl.debugEnabled) return
@@ -38,6 +34,20 @@ export function pause_on_gl_error() {
 		console.error(gl_enum_to_string(err))
 		debugger
 	}
+}
+
+export function copy_fb_to_texture(in_framebuffer: WebGLFramebuffer, out_texture: Texture) {
+	gl.bindFramebuffer(gl.FRAMEBUFFER, in_framebuffer)
+	gl.bindTexture(gl.TEXTURE_2D, out_texture.tex)
+	gl.copyTexImage2D(gl.TEXTURE_2D, 0, out_texture.internal_format, 0, 0, out_texture.res[0], out_texture.res[1], 0)
+}
+export function copy_fb_to_fb(in_framebuffer: WebGLFramebuffer, out_framebuffer: WebGLFramebuffer, res: number[]) {
+	gl.bindFramebuffer(gl.READ_FRAMEBUFFER, in_framebuffer)
+	gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, out_framebuffer)
+	gl.blitFramebuffer(0, 0, res[0], res[1], 0, 0, res[0], res[1], gl.COLOR_BUFFER_BIT, gl.NEAREST)
+	// gl.bindFramebuffer(gl.FRAMEBUFFER, in_framebuffer)
+	// gl.bindTexture(gl.TEXTURE_2D, out_texture.tex)
+	// gl.copyTexImage2D(gl.TEXTURE_2D, 0, out_texture.internal_format, 0, 0, out_texture.res[0], out_texture.res[1], 0)
 }
 
 export function resizeIfNeeded(

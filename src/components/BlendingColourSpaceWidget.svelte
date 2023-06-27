@@ -1,16 +1,12 @@
 <svelte:options accessors />
 
 <div class="knob-container-container">
-	<!-- svelte-ignore a11y-missing-attribute -->
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<div>{BlendingColourSpace[selected_colour_space]}</div>
 	{#if dropdown_toggled}
 		<div id="dropdown">
 			{#each Object.keys(BlendingColourSpace) as colour_space, i}
 				{#if BlendingColourSpace[colour_space]  !== selected_colour_space && isNaN(BlendingColourSpace[colour_space])}
-					<!-- svelte-ignore a11y-missing-attribute -->
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<div on:click={()=>{
+					<div role="button" tabindex="0" on:click={()=>{
 						// @ts-ignore
 						selected_colour_space = colour_space
 					}}>

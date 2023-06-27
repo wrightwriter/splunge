@@ -1,8 +1,6 @@
 <svelte:options accessors />
 
 <div class="knob-container-container">
-	<!-- svelte-ignore a11y-missing-attribute -->
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<img
 		src={selected_brush_texture ? selected_brush_texture.path : ''}
 		on:click={() => {
@@ -12,8 +10,6 @@
 		<div id="dropdown">
 			{#each brush_textures as texture, i}
 				{#if texture !== selected_brush_texture}
-					<!-- svelte-ignore a11y-missing-attribute -->
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<img
 						src={texture.path}
 						on:click={() => {

@@ -4,9 +4,9 @@
 	<button on:click={async()=>await log_into_dropbox()} class:hide={authed} >
 		LOG INTO DB
 	</button>
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<div
 		class="knob"
+		role="button" tabindex="0" 
 		on:click={async () => {
 			gallery_open = !gallery_open
 			let [_canvas_image, blob] = await get_current_canvas_as_image()
@@ -22,9 +22,9 @@
 			<div id="gallery-container">
 				<div id="top-bar">
 					<div id="project-title">Project</div>
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<div
 						id="back-button"
+						role="button" tabindex="0" 
 						on:click={() => {
 							gallery_open = !gallery_open
 						}}>
@@ -34,14 +34,12 @@
 				<div id="current-project">
 					<img src={canvas_image_src} id="canvas-preview-img" alt="" />
 					<div id="project-options">
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<div id="project-save-button" on:click={save_to_dropbox}>
+						<div id="project-save-button" role="button" tabindex="0" on:click={save_to_dropbox}>
 							<div id="project-save-button-title">Save to dropbox</div>
 							<div class="icon" style="transform: translate(0px,0.2rem);">
 								{@html captureIcon}
 							</div>
 						</div>
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<!-- <div id="project-save-button" on:click={()=>{
 							localStorage.setItem('project', JSON.stringify(project))
 						}}>
@@ -50,8 +48,7 @@
 								{@html captureIcon}
 							</div>
 						</div> -->
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
-						<div id="project-save-button" on:click={download_image}>
+						<div id="project-save-button" on:click={download_image} role="button" tabindex="0" >
 							<div id="project-save-button-title">Download</div>
 							<div class="icon" style="transform: scale(1.34);">
 								{@html downloadIcon}
@@ -67,7 +64,6 @@
 					</div>
 				</div>
 				<div id="options-bar">
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<div id="button" on:click={async () => { 
 						let safe = await is_safe_to_switch_to_new_project()
 						safe = safe ? safe : confirm('Are you sure you want to create another project? This one is not saved.')
@@ -75,27 +71,30 @@
 							new_project()
 							gallery_open = false
 						}
-					}}>
+					}}
+						role="button" tabindex="0" 
+					>
 						<div>
 							New file
 						</div>
 						{@html launchIcon}
 					</div>
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<div id="button" on:click={async () => { 
 						size_modal_opened = true
 						resize_widget_canvas_size[0] = current_project.canvasRes[0]
 						resize_widget_canvas_size[1] = current_project.canvasRes[1]
-					}}>
+					}}
+					role="button" tabindex="0" 
+					>
 						<div>
 							Resize
 						</div>
 						{@html resizeIcon}
 					</div>
 					<div id="size-modal" style={size_modal_opened ? "" : "display: none;"}>
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<div
 							id="back-button"
+							role="button" tabindex="0" 
 							on:click={() => {
 								size_modal_opened = false
 							}}
@@ -115,8 +114,8 @@
 							aspect-ratio: 1/${resize_widget_canvas_size[1]/resize_widget_canvas_size[0]}
 						`} on:pointerdown={resize_widget_pointer_down} >
 						</div>
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<div
+							role="button" tabindex="0" 
 							id="back-button"
 							class="ok-button"
 							on:click={() => {
@@ -132,7 +131,6 @@
 				</div>
 				<div id="gallery-elements">
 					{#each gallery_elements as element, i}
-						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<div id="element" on:click={async ()=>{
 							let safe = await is_safe_to_switch_to_new_project()
 							safe = safe ? safe : confirm('Are you sure you want to switch to another project? This one is not saved.')
@@ -147,6 +145,7 @@
 								gallery_open = false
 							}
 						}} 
+						role="button" tabindex="0" 
 						style={ Number(element.name) === current_project.id ? "border: 0.1rem solid white;" : ""}
 						>
 							<!-- {element.name} -->
@@ -182,9 +181,7 @@
 	import {Dropbox, DropboxAuth} from 'dropbox'
 	import type {Project} from 'stuff'
 	import { onMount } from 'svelte'
-	import { type files } from "dropbox"
 	import { DropboxAuther } from 'dropbox_auth'
-	import { element } from 'svelte/internal'
 	import {floating_modal_message} from 'store'
 
 	export let current_project: Project

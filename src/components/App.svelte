@@ -4,7 +4,9 @@
 			<Knob bind:value={stroke_col[0]} title={'R'} />
 			<Knob bind:value={stroke_col[1]} title={'G'} />
 			<Knob bind:value={stroke_col[2]} title={'B'} />
-			<ColourDisplay bind:colour={stroke_col} bind:just_finished_pick={just_finished_pick} />
+			<ColourDisplay 
+				bind:colour={stroke_col} 
+				bind:update_display={trigger_colour_display_update} />
 
 			<Knob bind:this={chaosKnob} bind:value={curr_brush.chaos} title={'Chaos'} triggerModal={openModal} modal={chaosSemiModal} />
 			<BrushSizeWidget
@@ -90,7 +92,7 @@
 	import {onDestroy} from 'svelte'
 	import {floating_modal_message} from 'store'
 
-	import {resizeIfNeeded as resizeDefaultFramebufferIfNeeded, print_on_gl_error, init_gl_error_handling} from 'gl_utils'
+	import {resizeIfNeeded as resizeDefaultFramebufferIfNeeded, print_on_gl_error, init_gl_error_handling, copy_fb_to_texture, copy_fb_to_fb} from 'gl_utils'
 
 	import Knob from './Knob.svelte'
 	import BrushSizeWidget from './BrushSizeWidget.svelte'
@@ -119,6 +121,7 @@
 	import { Thing } from 'gl/Thing'
 
 	// Init
+	const undo_cache_steps = 5
 	let hash = new Hash()
 	let io: IO
 	let gl: WebGL2RenderingContext
@@ -175,10 +178,12 @@
 	let is_safe_to_switch_to_new_project
 	
 	let full_redraw_needed: boolean = false
+	let trigger_colour_display_update: (colour_r, colour_g, colour_b)=>void
 
-	let canvas_tex: Texture
 	let canvas_fb: Framebuffer
 	let canvas_read_tex: Texture
+
+	let temp_undo_fb: Framebuffer
 
 	let drawer: Drawer
 	let ubo: UBO
@@ -263,8 +268,13 @@
 
 		default_framebuffer.bind()
 
-		canvas_tex = new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, !isOnMobile) 
-		canvas_fb = new Framebuffer([canvas_tex], true)
+		canvas_fb = new Framebuffer([
+			new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, !isOnMobile) 
+		], true)
+
+		temp_undo_fb = new Framebuffer([
+			new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, false) 
+		], false)
 		
 
 		ubo = new UBO()
@@ -338,34 +348,31 @@
 		default_framebuffer.bind()
 		default_framebuffer.clear([0, 0, 0, 1])
  
-		// canvas_tex = new Texture([canvasRes[0], canvasRes[1]], gl.RGBA16F)
 		canvas_fb.clear([0, 0, 0, 0])
 		canvas_fb.pong()
 		canvas_fb.back_textures[0].bind_to_unit(1)
 		canvas_fb.clear([0, 0, 0, 0])
 
-		const temp_tex = new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, !isOnMobile)
-		const temp_stroke_fb = new Framebuffer([temp_tex])
+		const temp_stroke_fb = new Framebuffer([
+			new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, !isOnMobile)
+		])
 		temp_stroke_fb.clear([0, 0, 0, 0])
 
 		//! ------------------- SHADERS
 		const init_texture_uniforms = (program: ShaderProgram) =>{
-			program.setUniformTexture('temp_tex', temp_tex, 0)
+			program.setUniformTexture('temp_tex', temp_stroke_fb.textures[0], 0)
 			program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 1)
 			program.setUniformTexture('canvas_b', canvas_fb._textures[0], 2)
 			program.setUniformTexture('canvas_a', canvas_fb._back_textures[0], 3)
+			// program.setUniformTexture('canvas_a', canvas_fb._back_textures[0], 3)
 			
-			const start_idx = 4
-			const brush_tex_units: number[] = []
+			const brush_tex_start_idx = 5
 			brush_textures.forEach((brush_tex, i )=>{
-				// const name = `brush_texture_${i}`
 				const name = `brush_texture[${i}]`
 				console.log(name)
-				// const brush_textures_loc = gl.getUniformLocation(program.program, name)
 				const brush_textures_loc = gl.getUniformLocation(program.program, name)
-
-				brush_tex.gpu_tex.bind_to_unit(start_idx + i)				
-				gl.uniform1i(brush_textures_loc, start_idx + i);
+				brush_tex.gpu_tex.bind_to_unit(brush_tex_start_idx + i)				
+				gl.uniform1i(brush_textures_loc, brush_tex_start_idx + i);
 			})
 			gl.activeTexture(gl.TEXTURE0) // TODELETE
 		}
@@ -444,13 +451,13 @@
 
 		drawer = new Drawer(
 			gl,
-			canvas_tex,
+			canvas_fb.textures[0],
 			default_framebuffer,
 		)
 		const composite_stroke = () => {
 			// gl.disable(gl.BLEND)
 			canvas_fb.bind()
-			canvas_fb.clear([0,0,0,0])
+			canvas_fb.clear()
 
 			const comp_program = canvas_fb.pong_idx === 0 ? composite_stroke_to_canvas_program : composite_stroke_to_canvas_b_program
 			if(canvas_fb.pong_idx === 0){
@@ -464,30 +471,26 @@
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 			temp_stroke_fb.clear()
 		}
-
-		const redraw_whole_project = () => {
-			console.log('REDRAW EVERYTHING')
-			console.time("REDRAW ALL")
-			canvas_fb.clear()
-			canvas_fb.pong()
-			canvas_fb.back_textures[0].bind_to_unit(1)
-			canvas_fb.clear()
-			temp_stroke_fb.clear()
-
+		
+		const draw_n_strokes = (start_idx: number | undefined, end_idx: number | undefined, full_redraw: boolean = false)=>{
 			let k = 0
 			
 			drawer.brush_buffer = brush_buffer
 			drawer.reset()
-			for (let stroke of project.brush_strokes) {
-				if (k >= project.brush_strokes.length - redo_history_length) break
-				drawer.push_any_stroke(stroke)
-				k++
+			
+			start_idx = start_idx ?? 0
+			end_idx = end_idx ?? project.brush_strokes.length
+			
+
+			// const start_idx = project.brush_strokes.length - stroke_cnt
+			// const end_idx = project.brush_strokes.length - stroke_cnt
+			for(k = start_idx; k < end_idx; k++){
+				drawer.push_any_stroke(project.brush_strokes[k])
 			}
-			k = 0
+
 			drawer.brush_buffer.upload_all_buffs()
 			const brush_shader = drawer.brush_buffer.shader
 			brush_shader.use()
-			// composite_stroke_to_canvas_program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 1)
 
 			let prev_colour_space = -1
 			let prev_colour_space_b = -1
@@ -495,20 +498,19 @@
 			
 			let prev_hsv_dynamics = [0,0,0]
 			let prev_tex_stretch = [0,0]
-			// let prev_brush_tex_idx = -1
 
 			gl.useProgram(composite_stroke_to_canvas_program.program)
 
-			composite_stroke_to_canvas_program.setUniformTexture('canvas_b', canvas_fb._textures[0], 2)
-			composite_stroke_to_canvas_program.setUniformTexture('canvas_a', canvas_fb._back_textures[0], 3)
-			composite_stroke_to_canvas_b_program.setUniformTexture('canvas_b', canvas_fb._textures[0], 2)
-			composite_stroke_to_canvas_b_program.setUniformTexture('canvas_a', canvas_fb._back_textures[0], 3)
+			canvas_fb._textures[0].bind_to_unit(2)
+			canvas_fb._back_textures[0].bind_to_unit(3)
 
 			gl.activeTexture(gl.TEXTURE15)
 			let comp_program = composite_stroke_to_canvas_program
 			gl.clearColor(0,0,0,0)
 			gl.viewport(0, 0, project.canvasRes[0], project.canvasRes[1])
 
+			k = start_idx
+			let j = 0
 			for(let amogus of drawer.recorded_drawcalls){
 				const new_tex_stretch = project.brush_strokes[k].draw_params.tex_stretch
 				const new_hsv_dynamics = project.brush_strokes[k].draw_params.tex_lch_dynamics
@@ -541,7 +543,7 @@
 					gl.uniform2fv(brush_shader.tex_stretch_loc, project.brush_strokes[k].draw_params.tex_stretch )
 				}
 
-				drawer.draw_stroke_idx(k)
+				drawer.draw_stroke_idx(j)
 
 				gl.bindFramebuffer(gl.FRAMEBUFFER, canvas_fb.fb)
 
@@ -564,15 +566,44 @@
 
 				canvas_fb.pong()
 				
+				if(full_redraw && j === end_idx - (end_idx % undo_cache_steps) - 1){
+					copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb.fb, canvas_fb._textures[0].res)
+				}
+				
 				prev_hsv_dynamics[0] = new_hsv_dynamics[0]
 				prev_hsv_dynamics[1] = new_hsv_dynamics[1]
 				prev_hsv_dynamics[2] = new_hsv_dynamics[2] 
 				prev_tex_stretch[0] = new_tex_stretch[0]
 				prev_tex_stretch[1] = new_tex_stretch[1]
 				k++
+				j++
 			}
 			redraw_needed = true
 			temp_stroke_fb.clear()
+
+		}
+		
+		// const redraw_undo_strokes = ()=>{
+		// 	copy_fb_to_texture(temp_undo_fb, canvas_fb.back_textures[0])
+		// 	gl.bindFramebuffer(gl.FRAMEBUFFER, canvas_fb.fb)
+		// 	gl.clear(gl.COLOR_BUFFER_BIT)
+		// 	gl.bindFramebuffer(gl.FRAMEBUFFER, temp_stroke_fb.fb)
+		// 	gl.clear(gl.COLOR_BUFFER_BIT)
+
+			
+		// }
+
+		const redraw_whole_project = () => {
+			console.log('REDRAW EVERYTHING')
+			console.time("REDRAW ALL")
+			canvas_fb.clear()
+			canvas_fb.pong()
+			canvas_fb.back_textures[0].bind_to_unit(1)
+			canvas_fb.clear()
+			temp_stroke_fb.clear()
+
+
+			draw_n_strokes(0, project.brush_strokes.length - redo_history_length, true)
 
 			console.timeEnd("REDRAW ALL")
 		}
@@ -585,6 +616,8 @@
 			canvas_fb.back_textures[0].bind_to_unit(1)
 			temp_stroke_fb.recreate()
 			temp_stroke_fb.textures[0].bind_to_unit(0)
+			temp_undo_fb.textures[0].resize(new_sz)
+			temp_undo_fb.recreate()
 			set_shared_uniforms()
 			full_redraw_needed = true
 			project_has_been_modified = false
@@ -593,10 +626,6 @@
 		
 		let load_project = (new_project: Project) =>{
 			project = new Project()
-			// NOT NEEDED
-			// for (let key of Object.keys(project as Object)){
-			// 	delete project[key]
-			// } 
 			project_has_been_modified = false
 			redo_history_length = 0
 			for (let key of Object.keys(new_project as Object)) {
@@ -630,19 +659,12 @@
 			}
 
 			redraw_needed = true // TOREMOVE
-			
-			// const get_pinch_zoom = (pinch_zoom: number): number=>{
-
-			// }
 
 			if(io.just_finished_pinch){
 				zoom[0] = desired_zoom = pow(2, log2(desired_zoom) + io.pinch_zoom)
-				// panning[0] = panning_temp_pinch[0]
-				// panning[1] = panning_temp_pinch[1]
 			}
 			if(io.two_finger_pinch){
 				redraw_needed = true
-				// zoom = mix(zoom,desired_zoom + io.pinch_zoom,delta_t*20)
 				zoom[0] = pow(2,log2(desired_zoom)  + io.pinch_zoom)
 				if(io.just_started_pinch){
 					panning_temp_pinch[0] = panning[0]
@@ -665,21 +687,23 @@
 						panning,
 					)
 					if (coords[0] > 0 && coords[0] < 1 && coords[1] > 0 && coords[1] < 1) {
-						stroke_col = [...picked_col]
-						stroke_col = Utils.gamma_correct(stroke_col, true)
+						// stroke_col = [...picked_col]
+						stroke_col[0] = picked_col[0]
+						stroke_col[1] = picked_col[1]
+						stroke_col[2] = picked_col[2]
+						Utils.gamma_correct(stroke_col, true, true)
 						stroke_col[3] = 1
-						stroke_col = [...stroke_col]
+						// stroke_col = [...stroke_col]
 						just_finished_pick = false
+						trigger_colour_display_update(stroke_col[0], stroke_col[1], stroke_col[2])
 					}
 				}
 				if (io.mmb_down) {
 					panning[0] += io.delta_mouse_pos[0] / zoom[0]
 					panning[1] += io.delta_mouse_pos[1] / zoom[0]
-					// console.log(panning)
 				}
 				if (io.mouse_wheel) {
 					if (io.mouse_wheel > 0) {
-						// zoom *= 2
 						desired_zoom *= 1.2
 					} else {
 						desired_zoom /= 1.2
@@ -691,14 +715,53 @@
 			let l_ctrl_down = io.getKey('ControlLeft').down
 			let l_shift_down = io.getKey('ShiftLeft').down
 			let z_just_pressed = io.getKey('KeyZ').just_pressed
+			const idx_before = project.brush_strokes.length - redo_history_length
 			if (redo_pending || (l_shift_down && l_ctrl_down && z_just_pressed)) {
 				redo_history_length -= 1
-				if (redo_history_length >= 0) redraw_whole_project()
-				else redo_history_length = 0
+				const idx_now = idx_before + 1
+				if (redo_history_length >= 0) { 
+					if(idx_now % undo_cache_steps === 0){
+						// temp_undo_fb.clear()
+						temp_stroke_fb.clear()
+						draw_n_strokes(idx_before, idx_before + 1)
+						copy_fb_to_fb(canvas_fb.fb_back,temp_undo_fb.fb, canvas_fb.textures[0].res)
+						// draw_n_strokes( idx - undo_cache_steps - 1, project.brush_strokes.length - redo_history_length)
+						// temp_undo_fb.bind()
+					} else {
+						temp_stroke_fb.clear()
+						draw_n_strokes(idx_before, idx_before + 1)
+					}
+				} else { 
+					// clamp
+					redo_history_length = 0 
+				}
 			} else if (undo_pending || (l_ctrl_down && z_just_pressed)) {
 				redo_history_length += 1
-				if (redo_history_length <= project.brush_strokes.length) redraw_whole_project()
-				else redo_history_length -= 1
+				const idx_now = idx_before - 1
+				if (redo_history_length <= project.brush_strokes.length) { 
+					if(idx_before % undo_cache_steps === 0){
+						// redraw all
+						canvas_fb.clear()
+						canvas_fb.pong()
+						canvas_fb.back_textures[0].bind_to_unit(1)
+						canvas_fb.clear()
+						temp_stroke_fb.clear()
+						draw_n_strokes(0, idx_before - undo_cache_steps)
+						copy_fb_to_fb(canvas_fb.fb_back,temp_undo_fb.fb, canvas_fb.textures[0].res)
+						temp_stroke_fb.clear()
+						draw_n_strokes( idx_before - undo_cache_steps, project.brush_strokes.length - redo_history_length)
+					} else {
+						copy_fb_to_fb(temp_undo_fb.fb,canvas_fb.fb_back, canvas_fb.textures[0].res)
+						canvas_fb.back_textures[0].bind_to_unit(1)
+						temp_stroke_fb.clear()
+						const undo_mod_offs = idx_now % undo_cache_steps
+						draw_n_strokes( idx_now - undo_mod_offs, project.brush_strokes.length - redo_history_length)
+					}
+					gl.activeTexture(gl.TEXTURE15)
+				} else { 
+					// clamp
+					redo_history_length -= 1 
+				}
 			}
 		}
 		
@@ -712,8 +775,8 @@
 						project.brush_strokes.pop()
 					}
 					redo_history_length = 0
-					console.log(brush_stroke)
-					console.log('SET REDO HISTORY TO 0')
+					// console.log(brush_stroke)
+					// console.log('SET REDO HISTORY TO 0')
 				}
 
 				brush_rot = [...io.tilt]
@@ -829,18 +892,21 @@
 				gl.uniform2fv(brush_shader.tex_stretch_loc, curr_brush.tex_stretch )
 				drawer.draw_stroke_idx(0)
 			}
-			// ----- COMPOSITE
+			// ----- COMPOSITE NEW STROKE
 			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
 				if(frame % 25 === 0 || !isOnMobile){
 					localStorage.setItem('project', JSON.stringify(project))
 					// floating_modal_message.set("saved")
 				}
-				console.log(brush_stroke)
+				// console.log(brush_stroke)
 				project.push_stroke(brush_stroke)
 				redraw_needed = true
 				composite_stroke()
 				canvas_fb.pong()
 				canvas_fb.back_textures[0].bind_to_unit(1)
+				if(project.brush_strokes.length % undo_cache_steps === 0){
+					copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb.fb, canvas_fb.textures[0].res)
+				}
 			}
 
 			if (brushSizeWidgetDragging || brushSizeWidgetStoppedDragging) redraw_needed = true

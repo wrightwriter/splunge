@@ -42,11 +42,12 @@ module.exports.default = {
 		extensions: ['.js', '.ts', '.svelte'],
 		modules: [path.resolve('./src'), path.resolve('./node_modules')],
 		alias: {
-			svelte: path.resolve('node_modules', 'svelte'),
+			// svelte: path.resolve('node_modules', 'svelte'),
+			svelte: path.resolve('node_modules', 'svelte/src/runtime'),
 			src: path.resolve('src'),
 		},
 		mainFields: ['svelte', 'browser', 'module', 'main'],
-		conditionNames: ['svelte', 'browser'],
+		conditionNames: ['svelte', 'browser', 'import'],
 		fallback: {
 			os: false,
 			fs: false,
@@ -82,13 +83,8 @@ module.exports.default = {
 						// @ts-ignore
 						onwarn: (warning, handler) => {
 							const {code, frame} = warning
-							if (
-								code === 'css-unused-selector' ||
-								code === 'unused-export-let' ||
-								code === 'a11y-click-events-have-key-events' ||
-								code === 'a11y-missing-attribute'
-							)
-								return
+							if (code === 'css-unused-selector' || code === 'unused-export-let' || code.startsWith('a11y')) return
+							console.log(warning)
 							// console.log(code)
 							// console.log(warning)
 							// console.log(handler)

@@ -30,10 +30,10 @@
 
 <div class='knob-container-container'>
   {#each brush_presets as preset, i}
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
     <div 
       class="title menu-toggle" 
       bind:this={elements[i]}
+      role="button" tabindex="0" 
       on:click={()=>{
         selected_brush_preset = preset
         let k = 0

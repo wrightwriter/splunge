@@ -13,11 +13,9 @@
 </script>
 
 <div class='knob-container'>
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div class="knob" on:click={()=>undo()}>
     {@html undoIcon}
   </div>
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div class="knob" on:click={()=>redo()}>
     {@html redoIcon}
   </div>
