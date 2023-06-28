@@ -11,18 +11,6 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 const fs = require('fs')
 const WatchExternalFilesPlugin = require('webpack-watch-files-plugin')
 
-/**
- * Change this to `true` to run svelte-check during hot reloads. This will impact build speeds but will show more
- * thorough errors and warnings.
- */
-const svelteCheckInDevelopment = false
-
-/**
- * Change this to `false` to disable svelte-check during production builds. Build speeds will be faster, but error
- * and warning checks will be less thorough.
- */
-const svelteCheckInProduction = true
-
 const mode = process.env.NODE_ENV ?? 'development'
 const isProduction = mode === 'production'
 // const isProduction = false
@@ -178,7 +166,7 @@ if (isDevelopment) {
 }
 
 if (isProduction) {
-	module.exports.default.plugins.push(new BundleAnalyzerPlugin())
-	module.exports.default.plugins.push(new CompressionPlugin())
-	module.exports.default.optimization.minimize = true
+	// module.exports.default.plugins.push(new BundleAnalyzerPlugin())
+	// module.exports.default.plugins.push(new CompressionPlugin())
+	// module.exports.default.optimization.minimize = true
 }

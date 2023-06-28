@@ -68,8 +68,6 @@ export class DropboxAuther {
 				path: '',
 			})
 			this.authed = true
-
-			// console.log(files)
 		}
 	}
 
@@ -134,15 +132,12 @@ export class DropboxAuther {
 		const hasRedirectedFromAuth = () => {
 			return !!getCodeFromUrl()
 		}
-		// let codeVerifier = window.localStorage.getItem('codeVerifier')
-		// let accessToken = window.localStorage.getItem('accessToken')
 		let redirectedFromAuth = hasRedirectedFromAuth()
 		if (redirectedFromAuth) {
 			const url = new URL(window.location.href)
 
 			const body = {}
 
-			// capture all url search params (after the '?')
 			for (let key of url.searchParams.keys()) {
 				if (url.searchParams.getAll(key).length > 1) {
 					body[key] = url.searchParams.getAll(key)

@@ -1,23 +1,25 @@
 <svelte:options accessors />
 
 <div class="knob-container-container">
-	<div>{BlendingColourSpace[selected_colour_space]}</div>
+	{#if !dropdown_toggled}
+	<div on:click={()=>{
+		dropdown_toggled = true
+	}}>{BlendingColourSpace[selected_colour_space]}</div>
+	{/if}
 	{#if dropdown_toggled}
 		<div id="dropdown">
 			{#each Object.keys(BlendingColourSpace) as colour_space, i}
-				{#if BlendingColourSpace[colour_space]  !== selected_colour_space && isNaN(BlendingColourSpace[colour_space])}
+				{#if isNaN(BlendingColourSpace[colour_space])}
 					<div role="button" tabindex="0" on:click={()=>{
 						// @ts-ignore
 						selected_colour_space = colour_space
-					}}>
+						dropdown_toggled = false
+					}} style= {
+						// @ts-ignore
+						colour_space  === selected_colour_space ?  "background: black; filter: invert(1);" : ""
+					}>
 						{BlendingColourSpace[colour_space]}
 					</div>
-					<!-- <img
-						src={texture.path}
-						on:click={() => {
-							selected_brush_texture = texture
-							dropdown_toggled = false
-						}} /> -->
 				{/if}
 			{/each}
 		</div>
@@ -26,16 +28,10 @@
 
 <script lang="ts">
 	import {BlendingColourSpace, BrushType} from 'brush_stroke'
-	import type {BrushTexture} from 'stuff'
-	import {onMount} from 'svelte'
 
-	// export let brush_textures: Array<BrushTexture>
 	export let selected_colour_space: BlendingColourSpace
 
-	let dropdown_toggled = true
-
-	onMount(() => {
-	})
+	let dropdown_toggled = false
 </script>
 
 <style lang="scss">
@@ -52,8 +48,6 @@
 	}
 	.knob-container-container {
 		z-index: 9999999999999;
-		aspect-ratio: 1/1;
-		max-height: 50%;
 		margin-bottom: auto;
 		margin-top: auto;
 		margin-right: 1.5rem;
@@ -76,6 +70,7 @@
 			background: black;
 			// top: 88px;
 			> div {
+				border: 1px solid white;
 				z-index: 10000000;
 				// aspect-ratio: 1/1;
 				width: 100%;
