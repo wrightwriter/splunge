@@ -69,14 +69,6 @@ export class DropboxAuther {
 			})
 			this.authed = true
 
-			window.history.replaceState &&
-				window.history.replaceState(
-					null,
-					'',
-					window.location.pathname +
-						window.location.search.replace(/[?&]code=[^&]+/, '').replace(/^&/, '?') +
-						window.location.hash,
-				)
 			// console.log(files)
 		}
 	}
