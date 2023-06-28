@@ -61,6 +61,7 @@
     "dexie": "4.0.1-alpha.22",
     "dropbox": "^10.34.0",
     "earcut": "^2.2.4",
+    "firebase": "^9.23.0",
     "libtess": "^1.2.2",
     "spectorjs": "^0.9.29",
     "spectral.js": "^2.0.2",

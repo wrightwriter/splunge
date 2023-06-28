@@ -121,7 +121,7 @@
 	import { Thing } from 'gl/Thing'
 
 	// Init
-	const undo_cache_steps = 5
+	const undo_cache_steps = 25
 	let hash = new Hash()
 	let io: IO
 	let gl: WebGL2RenderingContext
@@ -439,6 +439,7 @@
 		let t: number = 0
 		let delta_t: number = 0
 		let redraw_needed = false
+		let redrawing = false
 
 		let redo_history_length = 0
 
@@ -894,7 +895,7 @@
 			}
 			// ----- COMPOSITE NEW STROKE
 			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
-				if(frame % 25 === 0 || !isOnMobile){
+				if(frame % 15 === 0 || !isOnMobile){
 					localStorage.setItem('project', JSON.stringify(project))
 					// floating_modal_message.set("saved")
 				}

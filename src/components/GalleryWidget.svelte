@@ -222,6 +222,7 @@
 	
 	let dbx: Dropbox
 	const dbx_auther = new DropboxAuther()
+	
 
 	let authed = false
 	let gallery_elements: Element[] = []
@@ -354,6 +355,7 @@
 	}
 
 	onMount(async () => {
+		await dbx_auther.init()
 		await dbx_auther.try_init_dropbox()
 		authed = dbx_auther.authed
 		dbx = dbx_auther.dbx

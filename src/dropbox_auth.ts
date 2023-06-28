@@ -1,22 +1,78 @@
 import {Dropbox, DropboxAuth} from 'dropbox'
 import {Utils} from 'stuff'
+import {type Auth, type User, getAuth, signInWithCustomToken} from 'firebase/auth'
+import {type FirebaseApp, initializeApp} from 'firebase/app'
+
+// const db = require('dropbox')
+const firebaseConfig = {
+	apiKey: 'AIzaSyDwtcPjQMj3JAy9d7wwjib19eywvGfdV3A',
+	authDomain: 'splunge-390110.firebaseapp.com',
+	projectId: 'splunge-390110',
+	storageBucket: 'splunge-390110.appspot.com',
+	messagingSenderId: '1041542736895',
+	appId: '1:1041542736895:web:663b9c5ab38f8295eb95ca',
+}
+
+let firebase_app: FirebaseApp
+let firebase_auth: Auth
+function getCurrentUser(auth: Auth): Promise<User | null> {
+	return new Promise((resolve, reject) => {
+		const unsubscribe = auth.onAuthStateChanged((user) => {
+			unsubscribe()
+			resolve(user)
+		}, reject)
+	})
+}
 
 export class DropboxAuther {
 	CLIENT_ID: string = 'jxpyhv2cqozub0c'
 	REDIRECT_URI: string = 'http://localhost:8080/'
 	// @ts-ignore
 	dbx: Dropbox
+	// @ts-ignore
 	dbxAuth: DropboxAuth
 	authed: boolean = false
+	// @ts-ignore
+	firebase_user: User | null
 
-	constructor() {
+	async init() {
 		if (process.env.NODE_ENV !== 'development') {
 			this.REDIRECT_URI = 'https://wrightwriter.github.io/splunge/'
 		}
+		// console.log(db)
+		firebase_app = initializeApp(firebaseConfig)
+		firebase_auth = getAuth(firebase_app)
+		this.firebase_user = await getCurrentUser(firebase_auth)
+		// firebase_auth.onAuthStateChanged(user =>{
+
+		// })
 		this.dbxAuth = new DropboxAuth({
 			clientId: this.CLIENT_ID,
 		})
+
+		if (this.firebase_user) {
+			const id_token = await firebase_auth.currentUser?.getIdToken(true)
+
+			let res = await (
+				await fetch('https://us-central1-splunge-390110.cloudfunctions.net/getDropboxCode' + `?id_token=${id_token}`)
+			).json()
+
+			const access_token = res.token
+			this.dbxAuth.setAccessToken(access_token)
+
+			// this.dbxAuth.setRefreshToken(res.token)
+			this.dbx = new Dropbox({
+				auth: this.dbxAuth,
+			})
+			let files = await this.dbx.filesListFolder({
+				path: '',
+			})
+			this.authed = true
+			// console.log(files)
+		}
 	}
+
+	constructor() {}
 
 	parseQueryString(str) {
 		const ret = Object.create(null)
@@ -57,112 +113,61 @@ export class DropboxAuther {
 	}
 	async doAuth() {
 		try {
-			const authUrl = await this.dbxAuth.getAuthenticationUrl(
-				this.REDIRECT_URI,
-				undefined,
-				'code',
-				'offline',
-				undefined,
-				undefined,
-				true,
+			const url_response = await fetch(
+				'https://us-central1-splunge-390110.cloudfunctions.net/getAuthenticationUrl' + `?url=${window.location.href}`,
 			)
-
-			// window.sessionStorage.clear()
-			// @ts-ignore
-			window.localStorage.setItem('codeVerifier', this.dbxAuth.codeVerifier)
-			// @ts-ignore
-			window.location.href = authUrl
+			let url = await url_response.json()
+			url = url['auth_url']
+			window.location.href = url
 		} catch (error) {
 			console.error(error)
 		}
 	}
 
 	async try_init_dropbox() {
+		let code: string | undefined = undefined
 		const getCodeFromUrl = () => {
-			return this.parseQueryString(window.location.search).code
+			code = this.parseQueryString(window.location.search).code
+			return code
 		}
 		const hasRedirectedFromAuth = () => {
 			return !!getCodeFromUrl()
 		}
-		let codeVerifier = window.localStorage.getItem('codeVerifier')
-		let accessToken = window.localStorage.getItem('accessToken')
+		// let codeVerifier = window.localStorage.getItem('codeVerifier')
+		// let accessToken = window.localStorage.getItem('accessToken')
 		let redirectedFromAuth = hasRedirectedFromAuth()
-		if (redirectedFromAuth || accessToken) {
-			// showPageSection('authed-section')
-			// alert("AUTH START")
-			const try_access_token = async (accessToken: string): Promise<boolean> => {
-				try {
-					this.dbxAuth.setAccessToken(accessToken)
-					this.dbx = new Dropbox({
-						auth: this.dbxAuth,
-					})
-					await this.dbx.filesListFolder({
-						path: '',
-					})
-					return true
-				} catch (e) {
-					alert('ERROR')
-					// throw e
-					return Promise.reject(e)
-				}
-			}
-			const try_url_code = async (codeVerifier: string) => {
-				try {
-					this.dbxAuth.setCodeVerifier(codeVerifier)
-					const response = await this.dbxAuth.getAccessTokenFromCode(this.REDIRECT_URI, getCodeFromUrl())
-					// @ts-ignore
-					window.localStorage.setItem('accessToken', response.result.access_token)
-					// @ts-ignore
-					this.dbxAuth.setAccessToken(response.result.access_token)
-					this.dbx = new Dropbox({
-						auth: this.dbxAuth,
-					})
-					// alert("AMOGUS")
-					return Promise.resolve()
-				} catch (e) {
-					return Promise.reject(e)
-				}
-			}
-			if (accessToken) {
-				try {
-					await try_access_token(accessToken)
-					// window.localStorage.getItem('accessToken', response.result.access_token)
-					// @ts-ignore
-					this.authed = true
-				} catch (e) {
-					if (redirectedFromAuth) {
-						try {
-							await try_url_code(codeVerifier as string)
-							this.authed = true
-							// alert("auth success")
-						} catch (e) {
-							// alert("AUTH ERROR")
-							console.error(e)
-						}
-					}
-				}
-			} else {
-				try {
-					await try_url_code(codeVerifier as string)
-					this.authed = true
-					// alert("auth success")
-					console.log(
-						await this.dbx.filesListFolder({
-							path: '',
-						}),
-					)
-				} catch (e) {
-					// alert("AUTH ERROR")
-					console.error(e)
-				}
-			}
+		if (redirectedFromAuth) {
+			const url = new URL(window.location.href)
 
-			// .catch((error) => {
-			// 	alert("error in db auth")
-			// 	console.error(error.error || error)
-			// })
-		} else {
-			// show log in button
+			const body = {}
+
+			// capture all url search params (after the '?')
+			for (let key of url.searchParams.keys()) {
+				if (url.searchParams.getAll(key).length > 1) {
+					body[key] = url.searchParams.getAll(key)
+				} else {
+					body[key] = url.searchParams.get(key)
+				}
+			}
+			window.history.replaceState &&
+				window.history.replaceState(
+					null,
+					'',
+					window.location.pathname +
+						window.location.search.replace(/[?&]code=[^&]+/, '').replace(/^&/, '?') +
+						window.location.hash,
+				)
+			body['redirect_url'] = window.location.href
+
+			const res = await fetch(
+				'https://us-central1-splunge-390110.cloudfunctions.net/exchangeDropboxCode' +
+					`?redirect_url=${window.location.href}` +
+					`&code=${body['code']}`,
+			)
+			const data = await res.json()
+			signInWithCustomToken(firebase_auth, data.token)
 		}
+
+		return
 	}
 }

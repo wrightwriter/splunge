@@ -12,8 +12,16 @@
 	
 	// $: valueRange = max - min;
 	// $: rotation = startRotation + (value - min) / valueRange * rotRange;
+  
+
+
+
   let container
 
+	// onMount(() => {
+  //   // @ts-ignore
+  //   window.container = container
+	// })
 
   const re_render_colour = (colour_r, colour_g, colour_b)=>{
     if(container){
