@@ -1,10 +1,9 @@
 <svelte:options accessors />
 
 <script lang="ts">
-	import { BrushPreset, BrushType } from 'brush_stroke'
+	import { BrushPreset} from 'brush_stroke'
 	import {onMount} from 'svelte'
 
-  // export let selected_brush_type: BrushType;
   export let brush_presets: BrushPreset[]
   export let selected_brush_preset: BrushPreset
 
@@ -65,37 +64,33 @@
     margin-right: 2rem;
 
     display: grid;
-    // height: 100%;
-    grid-template-columns: fit-content(8ch) fit-content(8ch) 1fr;
-    // grid-auto-rows: minmax(67px, auto);
-
-    /* justify-content: center; */
-    /* align-items: center; */
     pointer-events: all;
     user-select: none;
     cursor: pointer;
     width: fit-content;
-    /* min-width: 7rem; */
-  }
-  .knob-container-container>.title.menu-toggle{
-    background: white;
-    color: black;
-    width: 49%;
-    height: 70%;
-    // margin: 0.6rem;
-  }
-  .knob-container-container>.title {
+    grid-template-columns: 1fr 1fr 1fr;
     
-    padding: 0.2rem;
-    /* position: absolute; */
-    font-size: 0.8rem !important;
-    /* position: absolute; */
-    margin: 0.3rem;
-    color: white;
-    // width: 100%;
-    text-align: center;
-    font-weight: bolder;
-    // top: 5.5rem;
-    user-select: none;
+    overflow: hidden;
+    height: 100%;
+    max-height: unset !important;
+    margin: 0;
+    max-width: unset;
+    width: fit-content;
+    margin-right: 1rem;
+    >.title.menu-toggle{
+      background: white;
+      color: black;
+      width: 49%;
+      height: 70%;
+    }
+    >.title {
+      padding: 0.2rem;
+      font-size: 0.8rem !important;
+      margin: 0.3rem;
+      color: white;
+      text-align: center;
+      font-weight: bolder;
+      user-select: none;
+    }
   }
 </style>

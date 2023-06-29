@@ -16,7 +16,7 @@
 		{@html solveIcon}
 	</div>
 	{#if $gallery_open}
-		<div id="gallery-container-outer">
+		<div id="gallery-container-outer" in:fade={{duration: 200}}>
 			<div id="gallery-container">
 				<div id="top-bar">
 					<div id="project-title">Project</div>
@@ -190,6 +190,9 @@
 	import { DropboxAuther } from 'dropbox_auth'
 	import {floating_modal_message} from 'store'
 	import {gallery_open} from 'store'
+	
+	import { fade } from 'svelte/transition';
+
 
 	export let current_project: Project
 	export let get_current_canvas_as_image: () => Promise<[HTMLImageElement, Blob]>

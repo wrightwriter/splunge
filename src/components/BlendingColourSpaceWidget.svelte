@@ -45,7 +45,6 @@
 			filter: invert(1);
 			background: black;
 		}
-		// pointer-events: none;
 	}
 	.knob-container-container {
 		z-index: 99;
@@ -69,16 +68,11 @@
 			position: static;
 			height: unset;
 			background: black;
-			// top: 88px;
 			> div {
 				border: 1px solid white;
 				z-index: 10000000;
-				// aspect-ratio: 1/1;
 				width: 100%;
-				// position: static;
 			}
-		}
-		> div {
 		}
 	}
 </style>

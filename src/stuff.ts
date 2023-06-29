@@ -15,7 +15,7 @@ export class BrushTexture {
 	idx: number
 
 	static async create(path, idx: number): Promise<BrushTexture> {
-		let gpu_tex = await Texture.from_image_path(path)
+		const gpu_tex = await Texture.from_image_path(path)
 
 		return {
 			gpu_tex,
@@ -63,12 +63,12 @@ export class Utils {
 		return u
 	}
 	static css_contain(u: number[], input_res: number[], tex_res: number[]): number[] {
-		let user_res = input_res
-		let canvas_res = tex_res
+		const user_res = input_res
+		const canvas_res = tex_res
 
-		let input_ratio = user_res[0] / user_res[1]
-		let tex_ratio = canvas_res[0] / canvas_res[1]
-		let ratio = input_ratio / tex_ratio
+		const input_ratio = user_res[0] / user_res[1]
+		const tex_ratio = canvas_res[0] / canvas_res[1]
+		const ratio = input_ratio / tex_ratio
 
 		if (ratio > 1) {
 			return [u[0] * ratio, u[1]]
@@ -77,20 +77,20 @@ export class Utils {
 		}
 	}
 	static screen_NDC_to_canvas_NDC(u: number[], user_tex: Texture, canvas_tex: Texture, zoom: number, pan: number[]): number[] {
-		let user_res = user_tex.res
-		let canvas_res = canvas_tex.res
+		const user_res = user_tex.res
+		const canvas_res = canvas_tex.res
 
 		u = [...u]
 
-		let input_ratio = user_res[0] / user_res[1]
-		let tex_ratio = canvas_res[0] / canvas_res[1]
-		let ratio = input_ratio / tex_ratio
+		const input_ratio = user_res[0] / user_res[1]
+		const tex_ratio = canvas_res[0] / canvas_res[1]
+		const ratio = input_ratio / tex_ratio
 
 		if (ratio > 1) {
 			u[0] *= ratio / zoom
 			u[1] /= zoom
 
-			let cont = Utils.css_contain([1, 1], user_res, canvas_res)
+			const cont = Utils.css_contain([1, 1], user_res, canvas_res)
 
 			u[0] -= pan[0] * cont[0]
 			u[1] -= pan[1] * cont[1]
@@ -99,7 +99,7 @@ export class Utils {
 			u[0] /= zoom
 			u[1] /= ratio * zoom
 
-			let cont = Utils.css_contain([1, 1], user_res, canvas_res)
+			const cont = Utils.css_contain([1, 1], user_res, canvas_res)
 
 			u[0] -= pan[0] * cont[0]
 			u[1] -= pan[1] * cont[1]

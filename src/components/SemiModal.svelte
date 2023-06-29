@@ -2,6 +2,7 @@
 
 <script lang="ts">
 	import Knob from "./Knob.svelte"
+	import { fade, slide } from 'svelte/transition';
 
 	// export let child
   export let hidden: boolean = true
@@ -9,9 +10,11 @@
 </script>
 
 
-<div id='bar' style='{hidden ? "display: none;" : ""}'>
+{#if !hidden}
+<div id='bar' transition:slide={{duration: 200}}>
   <slot></slot>
 </div>
+{/if}
 
 <style lang="scss">
   #bar {

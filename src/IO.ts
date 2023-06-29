@@ -127,10 +127,8 @@ export class IO {
 
 		if (this.mouse_down !== this.mouse_down_prev) {
 			if (this.mouse_down) {
-				// this.mouse_pressed = true
 				this.mouse_just_pressed = true
 			} else {
-				// this.mouse_pressed = false
 				this.mouse_just_unpressed = true
 			}
 		}
@@ -152,7 +150,7 @@ export class IO {
 		})
 	}
 	public getKey(code: BtnCode): keyState {
-		let key = this.keys[code]
+		const key = this.keys[code]
 		if (key) {
 			return key
 		} else {
@@ -187,28 +185,26 @@ export class IO {
 			}
 		})
 		window.addEventListener('focus', () => {
-			let l_alt = this.getKey('AltLeft')
+			const l_alt = this.getKey('AltLeft')
 			if (l_alt.down) {
 				l_alt.just_unpressed = true
 				l_alt.down = false
 			}
 		})
 
-		// window.addEventListener('pointermove', (e) => {
-		// @ts-ignore
 		window.addEventListener('pointermove', (e) => {
-			function getRelativeMousePosition(event, target) {
+			const getRelativeMousePosition = (event: PointerEvent, target) => {
 				target = target || event.target
-				var rect = target.getBoundingClientRect()
+				const rect = target.getBoundingClientRect()
 
 				return {
 					x: event.clientX - rect.left,
 					y: event.clientY - rect.top,
 				}
 			}
-			function getNoPaddingNoBorderCanvasRelativeMousePosition(event, target) {
+			const getNoPaddingNoBorderCanvasRelativeMousePosition = (event: PointerEvent, target) => {
 				target = target || event.target
-				var pos = getRelativeMousePosition(event, target)
+				const pos = getRelativeMousePosition(event, target)
 
 				pos.x = (pos.x * target.width) / target.clientWidth
 				pos.y = (pos.y * target.height) / target.clientHeight
@@ -217,7 +213,7 @@ export class IO {
 			}
 			// if (e.pointerType === 'pen') {
 			// console.log(e)
-			let gl = window.gl
+			const gl = window.gl
 			const pos = getNoPaddingNoBorderCanvasRelativeMousePosition(e, gl.canvas)
 
 			const x = (pos.x / gl.canvas.width) * 2 - 1
@@ -240,11 +236,10 @@ export class IO {
 
 			this.tilt[0] = e.pointerType === 'mouse' ? 0 : e.altitudeAngle ?? this.tilt[0]
 			this.tilt[1] = e.pointerType === 'mouse' ? 0 : e.azimuthAngle ?? this.tilt[1]
-			// }
 		})
 
-		// @ts-ignore
-		document.querySelector('canvas').addEventListener('touchstart', (e) => {
+		const canvas_element = document.querySelector('canvas') as HTMLCanvasElement
+		canvas_element.addEventListener('touchstart', (e) => {
 			for (let i = 0; i < e.targetTouches.length; i++) {
 				const touch = e.targetTouches[i]
 				const touch_id = touch.identifier
@@ -256,8 +251,7 @@ export class IO {
 			return sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by))
 		}
 
-		// @ts-ignore
-		document.querySelector('canvas').addEventListener('touchmove', (e) => {
+		canvas_element.addEventListener('touchmove', (e) => {
 			if (e.targetTouches.length === 2) {
 				if (this.two_finger_pinch === false) {
 					// begin pinch
@@ -310,22 +304,18 @@ export class IO {
 			this.two_finger_pinch = false
 		}
 
-		// @ts-ignore
-		document.querySelector('canvas').addEventListener('touchcancel', (e) => {
+		canvas_element.addEventListener('touchcancel', (e) => {
 			touch_end(e)
 		})
-		// @ts-ignore
-		document.querySelector('canvas').addEventListener('touchend', (e) => {
+		canvas_element.addEventListener('touchend', (e) => {
 			touch_end(e)
 		})
 
-		// @ts-ignore
-		document.querySelector('canvas').addEventListener('pointerdown', (e) => {
+		canvas_element.addEventListener('pointerdown', (e) => {
 			this.pointerType = e.pointerType
 			if (e.pointerType === 'mouse' && e.button !== 0) return
 			this.mouse_down = true
 		})
-		// @ts-ignore
 		window.addEventListener('pointerup', () => {
 			this.mouse_down = false
 		})

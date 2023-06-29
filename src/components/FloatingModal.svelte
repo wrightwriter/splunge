@@ -2,8 +2,6 @@
 
 <script lang="ts">
   import {floating_modal_message} from "store"
-  let seconds_since_modal: number = 0
-
   let displayed_message: string | undefined = undefined
   
   const display_time = 1
@@ -46,9 +44,6 @@
 <style lang="scss">
   *{
     pointer-events: none;
-  }
-  .fade-in {
-    
   }
   #floating-modal {
 		position: fixed;

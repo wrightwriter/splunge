@@ -15,19 +15,10 @@
   let pickerElement: HTMLElement
   
   export let picking = false
-  let picked_col = [0,0,0]
   export let just_finished_pick = false
 
 	function pointerMove({ clientX, clientY }) {
    pick_from_canvas()
-
-    // picked_col = [...c]
-    // picked_col[0] = c[0]/255
-    // picked_col[1] = c[1]/255
-    // picked_col[2] = c[2]/255
-		// let valueDiff = valueRange * (startY - clientY) / pixelRange;
-		// valueDiff -= valueRange * (startX - clientX) / pixelRange;
-		// value = clamp(startValue + valueDiff, min, max)
 	}
 	const pointerUp = () => {
     picking = false
@@ -45,9 +36,9 @@
 	
 </script>
 
-<style>
+<style lang="scss">
 	.picking{
-		filter: invert();
+		filter: invert(1);
 		background: black;
 	}
 	* {

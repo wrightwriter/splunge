@@ -1,10 +1,6 @@
 <main>
 	<div id="bar-container">
 		<div id="bar">
-			<!-- <Knob bind:value={stroke_col[0]} title={'R'} />
-			<Knob bind:value={stroke_col[1]} title={'G'} />
-			<Knob bind:value={stroke_col[2]} title={'B'} /> -->
-
 			<RGBSliders bind:colour={stroke_col} />
 			<ColourDisplay 
 				bind:colour={stroke_col} 
@@ -30,11 +26,10 @@
 			<!-- <BrushTypeWidget bind:selected_brush_type={curr_brush.selected_brush_type} /> -->
 			<BrushTypeWidget bind:curr_brush={curr_brush} />
 			<BrushPresetWidget bind:brush_presets={brush_presets} bind:selected_brush_preset={curr_brush} />
-			<FourIconsWidget>
+			<!-- <FourIconsWidget> -->
 				<UndoRedoWidget
 					undo={() => {
 						undo_pending = true
-						floating_modal_message.set("undo")
 					}}
 					redo={() => {
 						redo_pending = true
@@ -59,7 +54,7 @@
 					pick_from_canvas={() => pick_from_canvas()}
 					bind:picking={picking}
 					bind:just_finished_pick={just_finished_pick} />
-			</FourIconsWidget>
+			<!-- </FourIconsWidget> -->
 			<BlendingColourSpaceWidget bind:selected_colour_space={blending_colour_space}/>
 			<FloatingModal />
 		</div>
@@ -91,7 +86,6 @@
 
 
 <script lang="ts">
-	// import type monaco from 'monaco-editor';
 	import {onMount} from 'svelte'
 	import {onDestroy} from 'svelte'
 	import {floating_modal_message} from 'store'
@@ -115,10 +109,10 @@
 	import FourIconsWidget from './FourIconsWidget.svelte'
 	import {IO} from 'IO'
 	import chroma from 'chroma-js'
-	import {Hash, abs, cos, floor, pow, sin, tau, tri, mix, max, log2} from 'wmath'
-	import {clamp, lerp, mod, smootheststep, smoothstep} from '@0b5vr/experimental'
+	import {Hash, abs, pow, tau, mix, max, log2} from 'wmath'
+	import {clamp, lerp, mod, smoothstep} from '@0b5vr/experimental'
 	import {BrushTexture, Project, Utils} from 'stuff'
-	import {BlendingColourSpace, BrushPreset, BrushStroke, BrushType, DrawParams} from 'brush_stroke'
+	import {BlendingColourSpace, BrushPreset, BrushStroke, DrawParams} from 'brush_stroke'
 	import {Drawer} from 'drawer'
 	import { Framebuffer } from 'gl/Framebuffer'
 	import { VertexBuffer, UBO } from 'gl/Buffer'
@@ -126,30 +120,53 @@
 	import { ShaderProgram } from 'gl/ShaderProgram'
 	import { Thing } from 'gl/Thing'
 
-	// Init
-	const undo_cache_steps = 25
-	let hash = new Hash()
-	let io: IO
-	let gl: WebGL2RenderingContext
-	let zoom = Float32Array.from([1])
-	window.zoom = zoom
-	let desired_zoom = 1
-	let panning_temp_pinch: number[] = [0, 0]
-	let panning: number[] = [0, 0]
-	let userAgentRes: Array<number> = [0, 0]
-	let default_framebuffer: Framebuffer
-
 	// Elements
 	let canvasElement: HTMLCanvasElement
 	let chaosSemiModal: SemiModal
 	let dynamicsSemiModal: SemiModal
 	let texDynamicsSemiModal: SemiModal
 	let modals: SemiModal[] = []
-	let brushSizeWidgetDragging: boolean
-	let brushSizeWidgetStoppedDragging: boolean
 	let chaosKnob: Knob
 	let dynamicsKnob: Knob
 	let texDynamicsKnob: Knob
+
+	// UI State
+	let brushSizeWidgetDragging: boolean
+	let brushSizeWidgetStoppedDragging: boolean
+	let new_project_pending: boolean = false
+	let undo_pending: boolean = false
+	let redo_pending: boolean = false
+	let picking: boolean
+	let just_finished_pick: boolean
+	let picked_col: number[] = [0, 0, 0]
+	let project_has_been_modified = false
+	let is_safe_to_switch_to_new_project
+	let full_redraw_needed: boolean = false
+	const zoom = window.zoom = Float32Array.from([1])
+	let desired_zoom = 1
+	const panning_temp_pinch = new Float32Array(2)
+	let panning = new Float32Array(2)
+	let brush_presets: BrushPreset[] = []
+	for(let i = 0; i < 6; i++){
+		brush_presets.push(new BrushPreset())
+	}
+	let brush_textures: Array<BrushTexture> = []
+
+	// Internals
+	const undo_cache_steps = 25
+	const hash = new Hash()
+	let io: IO
+	let gl: WebGL2RenderingContext
+	let project = new Project()
+	let project_pending_load: Project
+
+	// GL stuff
+	let default_framebuffer: Framebuffer
+	let canvas_fb: Framebuffer
+	let canvas_read_tex: Texture
+	let temp_undo_fb: Framebuffer
+	let drawer: Drawer
+	let ubo: UBO
 
 	// Drawing params
 	let stroke_col: Array<number> = [0.5, 0.4, 0.3, 1]
@@ -159,40 +176,12 @@
 	let brush_pos_ndc_canvas: number[] = [0, 0]
 	let brush_sz: number[] = [1, 0.2]
 	
-	
-	let brush_presets: BrushPreset[] = []
-	for(let i = 0; i < 6; i++){
-		brush_presets.push(new BrushPreset())
-	}
 	let curr_brush: BrushPreset = brush_presets[0]
-
 	let blending_colour_space = BlendingColourSpace.OkLCH
 
-	let brush_textures: Array<BrushTexture> = []
-
-	let new_project_pending: boolean = false
-	let undo_pending: boolean = false
-	let redo_pending: boolean = false
-	let picking: boolean
-	let just_finished_pick: boolean
-	let picked_col: number[] = [0, 0, 0]
-
-	let project = new Project()
-	let project_pending_load: Project
-	let project_has_been_modified = false
+	// Funcs
 	let resize_project: (sz: number[])=>void
-	let is_safe_to_switch_to_new_project
-	
-	let full_redraw_needed: boolean = false
 	let trigger_colour_display_update: (colour_r, colour_g, colour_b)=>void
-
-	let canvas_fb: Framebuffer
-	let canvas_read_tex: Texture
-
-	let temp_undo_fb: Framebuffer
-
-	let drawer: Drawer
-	let ubo: UBO
 
 	const set_shared_uniforms = () => {
 		ubo.buff.sz = 0
@@ -259,7 +248,7 @@
 		gl.debugEnabled = false
 		init_gl_error_handling()
 
-		userAgentRes = [canvasElement.clientWidth, canvasElement.clientWidth]
+		const userAgentRes = [canvasElement.clientWidth, canvasElement.clientWidth]
 
 		default_framebuffer = Object.create(Framebuffer.prototype)
 		default_framebuffer.default = true
@@ -294,7 +283,6 @@
 		gl.disable(gl.DEPTH_TEST)
 		gl.enable(gl.BLEND)
 		
-		// gl.blend
 		gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA,);
 		gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD) 
 	}
@@ -303,9 +291,11 @@
 			event.preventDefault();
 		})
 		if ("wakeLock" in navigator) {
-			// isSupported = true;
-			const wakeLock = await navigator.wakeLock.request("screen");
-			// alert("wake lock")
+			try{
+				const wakeLock = await navigator.wakeLock.request("screen");
+			} catch(_){
+
+			}
 		} 
 		io = new IO()
 		document.addEventListener('contextmenu', (event) => event.preventDefault())
@@ -342,16 +332,6 @@
 		for(let brush of brush_presets){
 			brush.selected_brush_texture = brush_textures[0]
 		}
-		
-		// window.onbeforeunload = async ()=> {
-		// 	const is_safe = await is_safe_to_switch_to_new_project()
-		// 	console.log(is_safe)
-		// 	// if(!){
-		// 		return 'Do you want to leave this page?';
-		// 	// } else {
-		// 	return "amog"
-		// 	// }
-		// }
 		modals = [chaosSemiModal, dynamicsSemiModal, texDynamicsSemiModal]
 	}
 
@@ -378,7 +358,6 @@
 			program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 1)
 			program.setUniformTexture('canvas_b', canvas_fb._textures[0], 2)
 			program.setUniformTexture('canvas_a', canvas_fb._back_textures[0], 3)
-			// program.setUniformTexture('canvas_a', canvas_fb._back_textures[0], 3)
 			
 			const brush_tex_start_idx = 5
 			brush_textures.forEach((brush_tex, i )=>{
@@ -453,7 +432,7 @@
 		let t: number = 0
 		let delta_t: number = 0
 		let redraw_needed = false
-		let redrawing = false
+		// let redrawing = false
 
 		let redo_history_length = 0
 
@@ -739,12 +718,9 @@
 				const idx_now = idx_before + 1
 				if (redo_history_length >= 0) { 
 					if(idx_now % undo_cache_steps === 0){
-						// temp_undo_fb.clear()
 						temp_stroke_fb.clear()
 						draw_n_strokes(idx_before, idx_before + 1)
 						copy_fb_to_fb(canvas_fb.fb_back,temp_undo_fb.fb, canvas_fb.textures[0].res)
-						// draw_n_strokes( idx - undo_cache_steps - 1, project.brush_strokes.length - redo_history_length)
-						// temp_undo_fb.bind()
 					} else {
 						temp_stroke_fb.clear()
 						draw_n_strokes(idx_before, idx_before + 1)
@@ -752,6 +728,7 @@
 				} else { 
 					// clamp
 					redo_history_length = 0 
+					floating_modal_message.set("Last redo")
 				}
 			} else if (undo_pending || (l_ctrl_down && z_just_pressed)) {
 				redo_history_length += 1
@@ -779,6 +756,7 @@
 				} else { 
 					// clamp
 					redo_history_length -= 1 
+					floating_modal_message.set("Last undo")
 				}
 			}
 		}
@@ -866,7 +844,11 @@
 			const new_t = _t / 1000
 			delta_t = new_t - t
 			t = new_t
-			resizeDefaultFramebufferIfNeeded(canvasElement, default_framebuffer, userAgentRes, (v: boolean) => {
+			resizeDefaultFramebufferIfNeeded(
+				canvasElement, 
+				default_framebuffer, 
+				default_framebuffer._textures[0].res, 
+				(v: boolean) => {
 				redraw_needed = v
 			},()=>{set_shared_uniforms()})
 			io.tick()
@@ -892,10 +874,8 @@
 				project_has_been_modified = true
 				redraw_needed = true
 				record_stroke()
-				// gl.enable(gl.BLEND)
 				temp_stroke_fb.clear()
 				temp_stroke_fb.bind()
-				// drawer.draw_any_stroke(brush_stroke, t, brush_buffer, zoom, panning)
 				drawer.brush_buffer = brush_buffer
 				drawer.reset()
 				drawer.push_any_stroke(brush_stroke)
@@ -914,9 +894,7 @@
 			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
 				if(frame % 15 === 0 || !isOnMobile){
 					localStorage.setItem('project', JSON.stringify(project))
-					// floating_modal_message.set("saved")
 				}
-				// console.log(brush_stroke)
 				project.push_stroke(brush_stroke)
 				redraw_needed = true
 				composite_stroke()

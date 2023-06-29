@@ -170,8 +170,8 @@ export function wrap(a: number, from: number, to: number) {
 }
 
 export const lerp = (a, b, x) => a + (b - a) * x
-export const clamp = (x, l, h) => Math.min(Math.max(x, l), h)
-export const saturate = (x) => Math.min(Math.max(x, 0.0), 1.0)
+export const clamp = (x: number, l: number, h: number) => Math.min(Math.max(x, l), h)
+export const saturate = (x: number) => Math.min(Math.max(x, 0.0), 1.0)
 export const linearstep = (a, b, x) => saturate((x - a) / (b - a))
 export const smoothstep = (a, b, x) => {
 	const t = linearstep(a, b, x)

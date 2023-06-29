@@ -114,15 +114,6 @@ export class Drawer {
 	fill_buff_for_blob_brush(stroke: BrushStroke) {
 		const brush_buffer = this.brush_buffer
 		const iters = stroke.positions.length / 2 - 1
-		// let aspect_correction = Utils.screen_NDC_to_canvas_NDC(
-		// 	[1, 1],
-		// 	this.default_framebuffer.textures[0],
-		// 	this.canvas_tex,
-		// 	1,
-		// 	[0, 0],
-		// )
-		// aspect_correction[0] = aspect_correction[0]
-		// aspect_correction[1] = aspect_correction[1]
 
 		let aspect_correction = [0, 0]
 		if (this.canvas_tex.res[0] > this.canvas_tex.res[1]) {
@@ -463,8 +454,6 @@ export class Drawer {
 	}
 
 	push_any_stroke(stroke: BrushStroke) {
-		// console.log('START PUSHING')
-		// console.time('SINGLE STROKE')
 		if (stroke.brush_type === BrushType.Blobs) {
 			this.fill_buff_for_blob_brush(stroke)
 		} else if (stroke.brush_type === BrushType.Long) {
@@ -472,59 +461,20 @@ export class Drawer {
 		} else if (stroke.brush_type === BrushType.Tri) {
 			this.fill_buff_for_triangulated_brush(stroke)
 		}
-		// console.timeEnd('SINGLE STROKE')
 	}
 	draw_stroke_idx(idx: number) {
-		let draw_start = idx === 0 ? 0 : this.recorded_drawcalls[idx - 1]
-		let draw_cnt = idx === 0 ? this.recorded_drawcalls[0] : this.recorded_drawcalls[idx] - this.recorded_drawcalls[idx - 1]
+		const draw_start = idx === 0 ? 0 : this.recorded_drawcalls[idx - 1]
+		const draw_cnt = idx === 0 ? this.recorded_drawcalls[0] : this.recorded_drawcalls[idx] - this.recorded_drawcalls[idx - 1]
 		gl.drawArrays(gl.TRIANGLES, draw_start / 4, draw_cnt / 4)
 	}
 
-	draw_any_stroke(stroke: BrushStroke, t: number, brush_buffer: Thing, zoom: number, panning: number[]) {
-		this.brush_buffer = brush_buffer
-		console.log('START DRAWING')
-		this.t = t
-		this.zoom = zoom
-		this.panning = [...panning]
+	// draw_any_stroke(stroke: BrushStroke, t: number, brush_buffer: Thing, zoom: number, panning: number[]) {
+	// 	this.brush_buffer = brush_buffer
+	// 	this.t = t
+	// 	this.zoom = zoom
+	// 	this.panning[0] = panning[0]
+	// 	this.panning[1] = panning[1]
 
-		brush_buffer.draw()
-	}
+	// 	brush_buffer.draw()
+	// }
 }
-
-// draw_blobs_stroke(
-// 	_col: number[],
-// 	_opacity: number,
-// 	_pos: number[],
-// 	_rot: number[],
-// 	_sz: number[],
-// 	_tex_lch_dynamics: number[],
-// 	_tex_stretch: number[],
-// ) {
-// 	let draw_blobs_stroke_program = this.draw_blobs_stroke_program
-// 	let set_shared_uniforms = this.set_shared_uniforms
-// 	draw_blobs_stroke_program.use()
-// 	set_shared_uniforms(draw_blobs_stroke_program, _col, this.t)
-
-// 	draw_blobs_stroke_program.setUniformFloat('stroke_opacity', _opacity)
-// 	draw_blobs_stroke_program.setUniformVec('tex_lch_dynamics', [
-// 		_tex_lch_dynamics[0],
-// 		_tex_lch_dynamics[1],
-// 		_tex_lch_dynamics[2],
-// 	])
-// 	draw_blobs_stroke_program.setUniformVec('tex_stretch', [_tex_stretch[0], _tex_stretch[1]])
-
-// 	const push_with_offs = (vals: number[], offs: number) => {
-// 		vals.forEach((v, i) => {
-// 			window.ubo.buff.cpu_buff[offs + i] = v
-// 		})
-// 	}
-
-// 	push_with_offs(_col, 0)
-// 	push_with_offs(_pos, 8)
-// 	push_with_offs(_sz, 14)
-// 	push_with_offs(_rot, 16)
-// 	push_with_offs([_opacity], 21)
-
-// 	window.ubo.buff.upload()
-// 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-// }

@@ -1,14 +1,11 @@
 <svelte:options accessors />
 
 <script lang="ts">
-	import { min } from 'wmath'
-	import SemiModal from './SemiModal.svelte'
 	import {onMount} from 'svelte'
 
 	export let colour: number[]
 
   let colour_idx = 0
-
 
   // @ts-ignore
   let elements: HTMLDivElement[] = [0,0,0]
@@ -23,15 +20,19 @@
 		return Math.max(min, Math.min(num, max));
 	}
 
+  // @ts-ignore
+  $: { if(colour[0] && isNaN(elements[0])) update_style(0) }
+  // @ts-ignore
+  $: { if(colour[1] && isNaN(elements[1])) update_style(1) }
+  // @ts-ignore
+  $: { if(colour[2] && isNaN(elements[2])) update_style(2) }
   
   const update_style = (idx: number) =>{
     inners[idx].style.transform = `scaleX(${colour[idx]})`
   }
 	
 	const pointerMove = ({ clientX, clientY }) => {
-		// let scale = 2./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
 		let scale = 1./elements[colour_idx].clientWidth
-
 
 		let valueDiff = -(startX - clientX) *scale;
 		colour[colour_idx] = clamp(startValue + valueDiff, 0, 1)
