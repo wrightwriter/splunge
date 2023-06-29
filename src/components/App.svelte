@@ -1,16 +1,22 @@
 <main>
 	<div id="bar-container">
 		<div id="bar">
+			<div 
+				style='height: 100%; max-height: unset; display: flex;'
+				on:pointerenter={()=>{mouse_over_colour_picker = true}}
+				on:pointerleave={()=>{mouse_over_colour_picker = false; mouse_over_colour_picker_finished = true}}
+			>
 			<RGBSliders bind:colour={stroke_col} />
 			<ColourDisplay 
 				bind:colour={stroke_col} 
 				bind:update_display={trigger_colour_display_update} />
+			</div>
 
 			<Knob bind:this={chaosKnob} bind:value={curr_brush.chaos} title={'Chaos'} triggerModal={openModal} modal={chaosSemiModal} />
 			<BrushSizeWidget
 				bind:brush_sz={brush_sz}
-				bind:dragging={brushSizeWidgetDragging}
-				bind:stopped_dragging={brushSizeWidgetStoppedDragging} />
+				bind:dragging={brush_size_widget_dragging}
+				bind:stopped_dragging={brush_size_widget_stopped_dragging} />
 			<Knob
 				bind:this={dynamicsKnob}
 				bind:value={curr_brush.dynamics}
@@ -131,11 +137,13 @@
 	let texDynamicsKnob: Knob
 
 	// UI State
-	let brushSizeWidgetDragging: boolean
-	let brushSizeWidgetStoppedDragging: boolean
+	let brush_size_widget_dragging: boolean
+	let brush_size_widget_stopped_dragging: boolean
 	let new_project_pending: boolean = false
 	let undo_pending: boolean = false
 	let redo_pending: boolean = false
+	let mouse_over_colour_picker = false
+	let mouse_over_colour_picker_finished = false
 	let picking: boolean
 	let just_finished_pick: boolean
 	let picked_col: number[] = [0, 0, 0]
@@ -370,6 +378,7 @@
 			gl.activeTexture(gl.TEXTURE0) // TODELETE
 		}
 		const brush_preview_program = new ShaderProgram(require('shaders/brush_preview.vert'), require('shaders/brush_preview.frag'))
+		const colour_preview_program = new ShaderProgram(require('shaders/colour_preview.vert'), require('shaders/colour_preview.frag'))
 		const picker_program = new ShaderProgram(require('shaders/picker.vert'), require('shaders/picker.frag'))
 		const composite_stroke_to_canvas_program = new ShaderProgram(
 			require('shaders/composite_temp_stroke_to_canvas.vert'),
@@ -391,6 +400,8 @@
 
 		brush_preview_program.use()
 		init_texture_uniforms(brush_preview_program)
+		colour_preview_program.use()
+		init_texture_uniforms(colour_preview_program)
 		picker_program.use()
 		init_texture_uniforms(picker_program)
 		composite_stroke_to_canvas_program.use()
@@ -432,7 +443,6 @@
 		let t: number = 0
 		let delta_t: number = 0
 		let redraw_needed = false
-		// let redrawing = false
 
 		let redo_history_length = 0
 
@@ -449,7 +459,6 @@
 			default_framebuffer,
 		)
 		const composite_stroke = () => {
-			// gl.disable(gl.BLEND)
 			canvas_fb.bind()
 			canvas_fb.clear()
 
@@ -458,7 +467,6 @@
 				
 			}
 			comp_program.use()
-			// composite_stroke_to_canvas_program.setUniformFloat("pong_idx", canvas_fb.pong_idx)
 			// @ts-ignore
 			gl.uniform1i(comp_program.blending_colour_space_loc, blending_colour_space)
 			canvas_fb.back_textures[0].bind_to_unit(1)
@@ -475,9 +483,6 @@
 			start_idx = start_idx ?? 0
 			end_idx = end_idx ?? project.brush_strokes.length
 			
-
-			// const start_idx = project.brush_strokes.length - stroke_cnt
-			// const end_idx = project.brush_strokes.length - stroke_cnt
 			for(k = start_idx; k < end_idx; k++){
 				drawer.push_any_stroke(project.brush_strokes[k])
 			}
@@ -576,16 +581,6 @@
 			temp_stroke_fb.clear()
 
 		}
-		
-		// const redraw_undo_strokes = ()=>{
-		// 	copy_fb_to_texture(temp_undo_fb, canvas_fb.back_textures[0])
-		// 	gl.bindFramebuffer(gl.FRAMEBUFFER, canvas_fb.fb)
-		// 	gl.clear(gl.COLOR_BUFFER_BIT)
-		// 	gl.bindFramebuffer(gl.FRAMEBUFFER, temp_stroke_fb.fb)
-		// 	gl.clear(gl.COLOR_BUFFER_BIT)
-
-			
-		// }
 
 		const redraw_whole_project = () => {
 			console.log('REDRAW EVERYTHING')
@@ -652,7 +647,9 @@
 				picking = false
 			}
 
-			redraw_needed = true // TOREMOVE
+			if(mouse_over_colour_picker || mouse_over_colour_picker_finished){
+				redraw_needed = true
+			}
 
 			if(io.just_finished_pinch){
 				zoom[0] = desired_zoom = pow(2, log2(desired_zoom) + io.pinch_zoom)
@@ -666,7 +663,7 @@
 				}
 				panning[0] = panning_temp_pinch[0] + io.pinch_pos[0]
 				panning[1] = panning_temp_pinch[1] - io.pinch_pos[1]
-			} else if(abs(desired_zoom - zoom[0]) > 0.00000001 ){
+			} else if(abs(desired_zoom - zoom[0]) > 0.001 ){
 				redraw_needed = true
 				zoom[0] = mix(zoom[0],desired_zoom,delta_t*20)
 			}
@@ -905,10 +902,11 @@
 				}
 			}
 
-			if (brushSizeWidgetDragging || brushSizeWidgetStoppedDragging) redraw_needed = true
+			if (brush_size_widget_dragging || brush_size_widget_stopped_dragging) redraw_needed = true
 
 			// ----- REDRAW
 			if (redraw_needed) {
+				console.log("post redraw")
 				// gl.disable(gl.BLEND)
 				if(canvas_fb._textures[0].mipmapped){
 					gl.bindTexture(gl.TEXTURE_2D, canvas_fb._textures[0].tex)
@@ -936,8 +934,15 @@
 				gl.uniform1i(post_canvas_program.blending_colour_space_loc, blending_colour_space)
 				canvas_fb.back_textures[0].bind_to_unit(1)
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+				
+				if(mouse_over_colour_picker){
+					colour_preview_program.use()
+					colour_preview_program.setUniformVec("brush_sz", brush_sz)
+					colour_preview_program.setUniformVec("colour", stroke_col)
+					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+				}
 
-				if (brushSizeWidgetDragging) {
+				if (brush_size_widget_dragging) {
 					brush_preview_program.use()
 					brush_preview_program.setUniformFloat("zoom", zoom[0])
 					brush_preview_program.setUniformVec("brush_sz", brush_sz)
@@ -952,10 +957,11 @@
 				}
 			}
 			print_on_gl_error()
-			brushSizeWidgetStoppedDragging = false
+			brush_size_widget_stopped_dragging = false
 			redo_pending = false
 			undo_pending = false
 			full_redraw_needed = false
+			mouse_over_colour_picker_finished = false
 			io.tick_end()
 			frame++
 			for (let framebuffer of Framebuffer.framebuffers) {
@@ -996,14 +1002,15 @@
 			#bar {
 				>:global(div) {
 					max-height: 2.5rem;	
+					z-index: 1;
 				}
 				flex-wrap: wrap;
 				background: black;
 				// position: absolute;
 				width: 100%;
-				height: 100px;
+				height: 6rem;
 				display: flex;
-				padding: 0rem 1rem;
+				// padding: 0rem 1rem;
 				align-items: center;
 				> *:last-of-type {
 					margin-left: auto;

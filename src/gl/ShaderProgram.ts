@@ -38,7 +38,7 @@ export class ShaderProgram {
 		}
 		return shader
 	}
-	constructor(vs, fs) {
+	constructor(vs: string, fs: string) {
 		const vertexShader = this.loadShader(gl.VERTEX_SHADER, vs)
 		const fragmentShader = this.loadShader(gl.FRAGMENT_SHADER, fs)
 

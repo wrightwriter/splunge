@@ -21,7 +21,7 @@
     background: black;
     // position: absolute;
     width: 100%;
-    height: 100px;
+    height: 6rem;
     display: flex;
     padding: 0rem 1rem;
     align-items: center;

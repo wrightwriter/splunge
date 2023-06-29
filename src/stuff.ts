@@ -76,7 +76,13 @@ export class Utils {
 			return [u[0], u[1] / ratio]
 		}
 	}
-	static screen_NDC_to_canvas_NDC(u: number[], user_tex: Texture, canvas_tex: Texture, zoom: number, pan: number[]): number[] {
+	static screen_NDC_to_canvas_NDC(
+		u: number[],
+		user_tex: Texture,
+		canvas_tex: Texture,
+		zoom: number,
+		pan: number[] | Float32Array,
+	): number[] {
 		const user_res = user_tex.res
 		const canvas_res = canvas_tex.res
 
@@ -106,7 +112,7 @@ export class Utils {
 		}
 		return u
 	}
-	static texture_NDC_to_texture_pixel_coords(u: number[], tex: Texture): number[] {
+	static texture_NDC_to_texture_pixel_coords(u: number[] | Float32Array, tex: Texture): number[] {
 		return [(u[0] * 0.5 + 0.5) * tex.res[0], (u[1] * 0.5 + 0.5) * tex.res[1]]
 	}
 }
