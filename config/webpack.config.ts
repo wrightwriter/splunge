@@ -2,6 +2,7 @@ let path = require('path')
 let webpack = require('webpack')
 let HtmlWebpackPlugin = require('html-webpack-plugin')
 let CompressionPlugin = require('compression-webpack-plugin')
+let CopyWebpackPlugin = require('copy-webpack-plugin')
 
 let SveltePreprocess = require('svelte-preprocess')
 let Webpack = require('webpack')
@@ -14,9 +15,12 @@ const WatchExternalFilesPlugin = require('webpack-watch-files-plugin')
 const fs_ = require('node:fs/promises')
 
 const mode = process.env.NODE_ENV ?? 'development'
-const isProduction = mode === 'production'
+let isProduction = mode === 'production'
 // const isProduction = false
-const isDevelopment = !isProduction
+let isDevelopment = !isProduction
+
+// isDevelopment = true
+// isProduction = false
 
 const MagicString = require('magic-string').default
 const Bundle = require('magic-string').Bundle
@@ -91,14 +95,14 @@ module.exports.default = {
 	output: {
 		path: path.resolve(__dirname, '../dist'),
 		filename: 'bundle.js',
+		publicPath: '/',
 	},
 	devtool: 'inline-source-map',
 	resolve: {
-		roots: [path.resolve('./src')],
+		roots: [path.resolve(__dirname, '../src')],
 		extensions: ['.js', '.ts', '.svelte'],
 		modules: [path.resolve('./src'), path.resolve('./node_modules')],
 		alias: {
-			// svelte: path.resolve('node_modules', 'svelte'),
 			svelte: path.resolve('node_modules', 'svelte/src/runtime'),
 			src: path.resolve('src'),
 		},
@@ -114,11 +118,7 @@ module.exports.default = {
 	},
 	ignoreWarnings: [/Failed to parse source map/],
 	module: {
-		noParse: [
-			// require.resolve('typescript/lib/typescript.js'),
-			/typescript/,
-			/eslint/,
-		],
+		noParse: [/typescript/, /eslint/],
 		rules: [
 			{
 				test: /\.svelte$/,
@@ -126,29 +126,22 @@ module.exports.default = {
 					loader: 'svelte-loader',
 					options: {
 						compilerOptions: {
-							// Dev mode must be enabled for HMR to work!
 							dev: isDevelopment,
 						},
-						emitCss: isProduction,
-						// hotReload: isDevelopment,
+						// emitCss: isProduction,
+						emitCss: true,
 						hotReload: false,
 						preprocess: [
 							// @ts-ignore
 							importCSSPreprocess(),
 							SveltePreprocess({
 								sass: true,
-								// scss: true, importCSSPreprocess(), // <--
 								scss: true, // <--
 							}),
 						],
-						// @ts-ignore
 						onwarn: (warning, handler) => {
 							const {code, frame} = warning
 							if (code === 'css-unused-selector' || code === 'unused-export-let' || code.startsWith('a11y')) return
-							console.log(warning)
-							// console.log(code)
-							// console.log(warning)
-							// console.log(handler)
 							handler(warning)
 						},
 					},
@@ -158,8 +151,6 @@ module.exports.default = {
 				test: /\.svg$/,
 				loader: 'svg-inline-loader',
 			},
-			// Required to prevent errors from Svelte on Webpack 5+, omit on Webpack 4
-			// See: https://github.com/sveltejs/svelte-loader#usage
 			{
 				test: /node_modules\/svelte\/.*\.mjs$/,
 				resolve: {
@@ -174,12 +165,12 @@ module.exports.default = {
 				test: /\.webp$/,
 				use: [
 					{
-						loader: 'url-loader',
+						loader: 'file-loader',
 						options: {
 							limit: false, // Disable base64 encoding
 							fallback: 'file-loader',
 							outputPath: 'images', // Output directory for the images
-							publicPath: '/images', // Public URL path for the images
+							publicPath: './images', // Public URL path for the images
 						},
 					},
 				],
@@ -212,21 +203,13 @@ module.exports.default = {
 			publicPath: './',
 			minify: false,
 		}),
-		// new webpack.DefinePlugin({
-		// 	'process.env.NODE_ENV': isDevelopment ? JSON.stringify('development') : JSON.stringify('production'), // Set your desired environment here
-		// }),
+		// new CopyWebpackPlugin({
+
+		// })
 	],
 	optimization: {
 		minimize: false,
 	},
-	// devServer: {
-	// 	http2: true,
-	// 	https: {
-	// 		key: fs.readFileSync('./MY_FILENAME.key'),
-	// 		cert: fs.readFileSync('./MY_FILENAME.crt'),
-	// 		ca: fs.readFileSync('./MY_FILENAME.pem'),
-	// 	},
-	// },
 }
 if (isDevelopment) {
 	// console.log('AMOGUS')

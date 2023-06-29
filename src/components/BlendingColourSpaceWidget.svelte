@@ -1,8 +1,9 @@
 <svelte:options accessors />
 
-<div class="knob-container-container">
+<div class="knob-container-container" style="border: none;" >
 	{#if !dropdown_toggled}
-	<div on:click={()=>{
+	<div style="border: none;">Blend space</div>
+	<div style="border: 1px solid white;" on:click={()=>{
 		dropdown_toggled = true
 	}}>{BlendingColourSpace[selected_colour_space]}</div>
 	{/if}

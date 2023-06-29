@@ -317,25 +317,25 @@
 		});
 
 		brush_textures.push(
-			await BrushTexture.create(require("/../public/images/brow.webp").default, 0)
+			await BrushTexture.create(require("../../public/images/brow.webp").default, 0)
 		)
 		brush_textures.push(
-			await BrushTexture.create(require("/../public/images/charcoal.webp").default, 1)
+			await BrushTexture.create(require("../../public/images/charcoal.webp").default, 1)
 		)
 		brush_textures.push(
-			await BrushTexture.create(require("/../public/images/circle.webp").default, 2)
+			await BrushTexture.create(require("../../public/images/circle.webp").default, 2)
 		)
 		brush_textures.push(
-			await BrushTexture.create(require("/../public/images/gradient_bottom_to_top.webp").default, 3)
+			await BrushTexture.create(require("../../public/images/gradient_bottom_to_top.webp").default, 3)
 		)
 		brush_textures.push(
-			await BrushTexture.create(require("/../public/images/oil_01.webp").default, 4)
+			await BrushTexture.create(require("../../public/images/oil_01.webp").default, 4)
 		)
 		brush_textures.push(
-			await BrushTexture.create(require("/../public/images/oil_taper.webp").default, 5)
+			await BrushTexture.create(require("../../public/images/oil_taper.webp").default, 5)
 		)
 		brush_textures.push(
-			await BrushTexture.create(require("/../public/images/square.webp").default, 6)
+			await BrushTexture.create(require("../../public/images/square.webp").default, 6)
 		)
 		brush_textures = [...brush_textures]
 
