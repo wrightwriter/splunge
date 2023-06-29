@@ -1,28 +1,27 @@
 <svelte:options accessors />
 
-<div class="knob-container">
-	<div class="brush-preview" />
-	<div class="knob" class:knob-selected={dragging} on:pointerdown={pointerDown}>
-		<!-- { if (paused) @html pause} -->
-		<!-- {#if paused}
-    {@html playingIcon}
-    {/if} -->
+<div class="knob-container-container" class:knob-selected={dragging} on:pointerdown={pointerDown}>
+	<div class="knob-container">
+		<div class="knob">
+			<!-- { if (paused) @html pause} -->
+			<!-- {#if paused}
+			{@html playingIcon}
+			{/if} -->
 
-		{@html brushSizeIcon}
+			{@html brushSizeIcon}
 
-		<!-- <svg width='100%' height='100%' viewBox="0 0 100 100">
-      <g fill="none" stroke="currentColor">
-        <path stroke-width="10" d="M50 40 l0 -50" />
-      </g>
-    </svg> -->
+			<!-- <svg width='100%' height='100%' viewBox="0 0 100 100">
+				<g fill="none" stroke="currentColor">
+					<path stroke-width="10" d="M50 40 l0 -50" />
+				</g>
+			</svg> -->
+		</div>
 	</div>
 </div>
 
 <script lang="ts">
 	// @ts-ignore
 	import brushSizeIcon from '/../public/copy.svg'
-	// @ts-ignore
-	import playingIcon from '/../public/play.svg'
 
 	export let brush_sz: number[] = [0.2, 0.2]
 	// export let canvas_res: number[]
@@ -76,68 +75,31 @@
 	}
 </script>
 
-<style>
+<style lang="scss">
 	* {
 		user-select: none;
 		-webkit-tap-highlight-color: transparent;
 	}
-	.brush-preview {
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-	}
-  .knob-selected{
-    & :global(svg){
-      filter: invert(1);
-      background: black;
-    }
-  }
-	.knob-container {
+  @import "/../styles/icon.scss" scoped; 
+
+	// .knob-selected {
+		// filter: invert(1);
+		// :global(svg) {
+		// 	background: black;
+		// }
+	// }
+	.knob-container-container {
+		
+    max-height: unset !important;
+    display: flex;
+    align-items: center;
 		&:hover {
 			cursor: pointer;
 		}
-		box-sizing: border-box;
-		-webkit-box-sizing: border-box;
-		/* width: 40px;
-    height: 40px; */
-		aspect-ratio: 1/1;
-		max-height: 50%;
 		height: 100%;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		background-image: conic-gradient(
-			from 45deg,
-			var(--secondary-color) 0deg 15deg,
-			var(--tertiary-color) 60deg 60deg,
-			var(--darken-color) 120deg 240deg,
-			var(--tertiary-color) 300deg 300deg,
-			var(--secondary-color) 345deg 360deg
-		);
-		box-shadow: -0.15em 0.15em 0.05em 0.02em rgba(0, 0, 0, 0.3);
-		border-radius: 50%;
-		margin-bottom: 1.25rem;
-		margin-right: 1rem;
-		pointer-events: all;
-		user-select: none;
 	}
 
-	.knob {
-		display: block;
-		aspect-ratio: 1/1;
-		height: 100%;
-		/* height: 80%; */
-		padding: 0;
-		color: var(--text-color);
-		background-color: var(--tertiary-color);
-		fill: white;
-		transform-origin: 50% 50%;
-	}
-
-	.knob :global(svg) {
-		width: 100%;
-		height: 100%;
-		fill: white;
+	.knob-container{
+		padding: 0.3rem;
 	}
 </style>

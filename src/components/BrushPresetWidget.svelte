@@ -59,10 +59,10 @@
   }
   .knob-container-container{
     aspect-ratio: 1/1;
-    max-height: 50%;
+    max-height: 75%;
     margin-top: 0.7rem;
     margin-bottom: auto;
-    margin-right: 3.25rem;
+    margin-right: 2rem;
 
     display: grid;
     // height: 100%;
@@ -80,6 +80,9 @@
   .knob-container-container>.title.menu-toggle{
     background: white;
     color: black;
+    width: 49%;
+    height: 70%;
+    // margin: 0.6rem;
   }
   .knob-container-container>.title {
     

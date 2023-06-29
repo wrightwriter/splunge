@@ -1,14 +1,12 @@
 <svelte:options accessors />
 
 <div class="knob-container">
-	<button on:click={async()=>await log_into_dropbox()} class:hide={authed} >
-		LOG INTO DB
-	</button>
 	<div
 		class="knob"
 		role="button" tabindex="0" 
 		on:click={async () => {
-			gallery_open = !gallery_open
+			// gallery_open = !gallery_open
+			gallery_open.set(true)
 			let [_canvas_image, blob] = await get_current_canvas_as_image()
 			canvas_image = _canvas_image
 			canvas_image_src = canvas_image.src
@@ -17,7 +15,7 @@
 		}}>
 		{@html solveIcon}
 	</div>
-	{#if gallery_open}
+	{#if $gallery_open}
 		<div id="gallery-container-outer">
 			<div id="gallery-container">
 				<div id="top-bar">
@@ -26,7 +24,8 @@
 						id="back-button"
 						role="button" tabindex="0" 
 						on:click={() => {
-							gallery_open = !gallery_open
+							// gallery_open = !gallery_open
+							gallery_open.set(false)
 						}}>
 						{@html forbidIcon}
 					</div>
@@ -69,7 +68,8 @@
 						safe = safe ? safe : confirm('Are you sure you want to create another project? This one is not saved.')
 						if(safe){
 							new_project()
-							gallery_open = false
+							// gallery_open = false
+							gallery_open.set(false)
 						}
 					}}
 						role="button" tabindex="0" 
@@ -86,7 +86,7 @@
 					}}
 					role="button" tabindex="0" 
 					>
-						<div>
+						<div draggable="false">
 							Resize
 						</div>
 						{@html resizeIcon}
@@ -121,7 +121,8 @@
 							on:click={() => {
 								resize_project(resize_widget_canvas_size)
 								size_modal_opened = false
-								gallery_open = false
+								// gallery_open = false
+								gallery_open.set(false)
 							}}
 							style='margin-top: 1.14rem;'
 							 >
@@ -129,6 +130,10 @@
 						</div>
 					</div>
 				</div>
+				<!-- <button on:click={async()=>await log_into_dropbox()} class:hide={authed} > -->
+				<button id="db-login-button" on:click={async()=>await log_into_dropbox()} class:hide={authed} >
+					LOG INTO DROPBOX
+				</button>
 				<div id="gallery-elements">
 					{#each gallery_elements as element, i}
 						<div id="element" on:click={async ()=>{
@@ -142,7 +147,8 @@
 								let binary = await proj.result.fileBlob.text()
 								let binary_json = JSON.parse(binary)
 								load_project(binary_json)
-								gallery_open = false
+								// gallery_open = false
+								gallery_open.set(false)
 							}
 						}} 
 						role="button" tabindex="0" 
@@ -183,6 +189,7 @@
 	import { onMount } from 'svelte'
 	import { DropboxAuther } from 'dropbox_auth'
 	import {floating_modal_message} from 'store'
+	import {gallery_open} from 'store'
 
 	export let current_project: Project
 	export let get_current_canvas_as_image: () => Promise<[HTMLImageElement, Blob]>
@@ -202,7 +209,7 @@
 		}).replace(',','')
 	}
 
-	let gallery_open = false
+	// let gallery_open = false
 	let size_modal_opened = false
 
 	let canvas_image: HTMLImageElement | undefined = undefined
@@ -390,6 +397,15 @@
 	:global(#gallery-container::-webkit-scrollbar-thumb){
 		background: white; 
 	}
+	#db-login-button{
+    font-size: 3rem;
+    border-radius: 0px;
+    margin-bottom: 2rem;
+		cursor: pointer;
+		&:active{
+			filter: invert(1);
+		}
+	}
 	#size-modal {
 		position: fixed;
 		display: flex;
@@ -551,6 +567,7 @@
 			}
 		}
 	}
+  // @import "/../styles/icon.scss" scoped; 
 	.knob-container {
 		box-sizing: border-box;
 		-webkit-box-sizing: border-box;

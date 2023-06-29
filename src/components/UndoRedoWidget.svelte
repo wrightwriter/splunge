@@ -22,52 +22,13 @@
 </div>
 
 
-<style>
+<!-- <style src='/../styles/icon.scss'> </style> -->
+<style lang="scss">
   *{
     user-select: none;
     -webkit-tap-highlight-color:transparent;
-  }
-  .knob-container{
-    cursor: pointer;
-    &:hover{
-      cursor: pointer;
-    }
-    box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-    /* width: 40px;
-    height: 40px; */
-    aspect-ratio: 1/1;
-    max-height: 50%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    margin-right: 1rem;
-    margin-bottom: auto;
-    margin-top: auto;
-    pointer-events: all;
-    user-select: none;
-  }  
+  } 
 
-  .knob {
-    &:active{
-      filter: invert(1);
-      background: black;
-    }
-    display: block;
-    aspect-ratio: 1/1;
-    height: 100%;
-    /* height: 80%; */
-    padding: 0;
-    color: var(--text-color);
-    fill: white;
-    transform-origin: 50% 50%;
-  }
+  @import "/../styles/icon.scss" scoped; 
 
-  .knob :global(svg){
-    fill: white;
-    width: 100%;
-    height: 100%;
-  }
 </style>

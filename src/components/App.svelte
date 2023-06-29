@@ -1,9 +1,11 @@
 <main>
 	<div id="bar-container">
 		<div id="bar">
-			<Knob bind:value={stroke_col[0]} title={'R'} />
+			<!-- <Knob bind:value={stroke_col[0]} title={'R'} />
 			<Knob bind:value={stroke_col[1]} title={'G'} />
-			<Knob bind:value={stroke_col[2]} title={'B'} />
+			<Knob bind:value={stroke_col[2]} title={'B'} /> -->
+
+			<RGBSliders bind:colour={stroke_col} />
 			<ColourDisplay 
 				bind:colour={stroke_col} 
 				bind:update_display={trigger_colour_display_update} />
@@ -28,36 +30,38 @@
 			<!-- <BrushTypeWidget bind:selected_brush_type={curr_brush.selected_brush_type} /> -->
 			<BrushTypeWidget bind:curr_brush={curr_brush} />
 			<BrushPresetWidget bind:brush_presets={brush_presets} bind:selected_brush_preset={curr_brush} />
-			<UndoRedoWidget
-				undo={() => {
-					undo_pending = true
-					floating_modal_message.set("undo")
-				}}
-				redo={() => {
-					redo_pending = true
-				}} />
-			<GalleryWidget
-				bind:current_project={project}
-				get_current_canvas_as_image={async () => {
-					let [img, blob] = await canvas_read_tex.read_back_image(true)
-					return [img, blob]
-				}} 
-				new_project={()=>{ 
-					new_project_pending = true 
-				}}
-				load_project={(project)=>{ 
-					project_pending_load = project
-				}}
-				bind:resize_project={resize_project}
-				bind:project_has_been_modified={project_has_been_modified}
-				bind:is_safe_to_switch_to_new_project={is_safe_to_switch_to_new_project}
-				/>
-			<FloatingModal />
-			<PickColourWidget
-				pick_from_canvas={() => pick_from_canvas()}
-				bind:picking={picking}
-				bind:just_finished_pick={just_finished_pick} />
+			<FourIconsWidget>
+				<UndoRedoWidget
+					undo={() => {
+						undo_pending = true
+						floating_modal_message.set("undo")
+					}}
+					redo={() => {
+						redo_pending = true
+					}} />
+				<GalleryWidget
+					bind:current_project={project}
+					get_current_canvas_as_image={async () => {
+						let [img, blob] = await canvas_read_tex.read_back_image(true)
+						return [img, blob]
+					}} 
+					new_project={()=>{ 
+						new_project_pending = true 
+					}}
+					load_project={(project)=>{ 
+						project_pending_load = project
+					}}
+					bind:resize_project={resize_project}
+					bind:project_has_been_modified={project_has_been_modified}
+					bind:is_safe_to_switch_to_new_project={is_safe_to_switch_to_new_project}
+					/>
+				<PickColourWidget
+					pick_from_canvas={() => pick_from_canvas()}
+					bind:picking={picking}
+					bind:just_finished_pick={just_finished_pick} />
+			</FourIconsWidget>
 			<BlendingColourSpaceWidget bind:selected_colour_space={blending_colour_space}/>
+			<FloatingModal />
 		</div>
 		<SemiModal bind:this={chaosSemiModal} knob={chaosKnob}>
 			<Knob bind:value={curr_brush.chaos_lch[0]} title={'Chaos L'} />
@@ -105,8 +109,10 @@
 	import TextureWidget from './TextureWidget.svelte'
 	import BlendingColourSpaceWidget from './BlendingColourSpaceWidget.svelte'
 
+	import RGBSliders from './RGBSliders.svelte'
 	import ColourDisplay from './ColourDisplay.svelte'
 	import SemiModal from './SemiModal.svelte'
+	import FourIconsWidget from './FourIconsWidget.svelte'
 	import {IO} from 'IO'
 	import chroma from 'chroma-js'
 	import {Hash, abs, cos, floor, pow, sin, tau, tri, mix, max, log2} from 'wmath'
@@ -293,6 +299,14 @@
 		gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD) 
 	}
 	const init_other_stuff = async () => {
+		window.addEventListener("dragstart",(event)=>{
+			event.preventDefault();
+		})
+		if ("wakeLock" in navigator) {
+			// isSupported = true;
+			const wakeLock = await navigator.wakeLock.request("screen");
+			// alert("wake lock")
+		} 
 		io = new IO()
 		document.addEventListener('contextmenu', (event) => event.preventDefault())
 		// @ts-ignore
@@ -687,7 +701,7 @@
 						zoom[0],
 						panning,
 					)
-					if (coords[0] > 0 && coords[0] < 1 && coords[1] > 0 && coords[1] < 1) {
+					if (coords[0] > -1 && coords[0] < 1 && coords[1] > -1 && coords[1] < 1) {
 						// stroke_col = [...picked_col]
 						stroke_col[0] = picked_col[0]
 						stroke_col[1] = picked_col[1]
@@ -695,9 +709,12 @@
 						Utils.gamma_correct(stroke_col, true, true)
 						stroke_col[3] = 1
 						// stroke_col = [...stroke_col]
-						just_finished_pick = false
 						trigger_colour_display_update(stroke_col[0], stroke_col[1], stroke_col[2])
 					}
+					console.log(coords)
+					just_finished_pick = false
+					picking = false
+					console.log("finished pick")
 				}
 				if (io.mmb_down) {
 					panning[0] += io.delta_mouse_pos[0] / zoom[0]

@@ -3,6 +3,15 @@
 <script lang="ts">
 	import { BrushPreset, BrushType } from 'brush_stroke'
 	import {onMount} from 'svelte'
+  
+
+	// @ts-ignore
+	import brush_blobs_icon from '/../public/brush-blobs.svg'
+	// @ts-ignore
+	import brush_long_icon from '/../public/brush-long.svg'
+	// @ts-ignore
+	import brush_triangles_icon from '/../public/brush-triangles.svg'
+
 
   export let curr_brush: BrushPreset;
   let selected_brush_type: BrushType;
@@ -66,11 +75,15 @@
         }
       }}
       style='cursor: pointer;'
-      >{brush_type}</div>
+      >
+      
+      {@html i === 0 ? brush_blobs_icon : i === 1 ? brush_long_icon : brush_triangles_icon}
+
+    </div>
   {/each}
 </div>
   
-<style>
+<style lang="scss">
   *{
     user-select: none;
     -webkit-tap-highlight-color:transparent;
@@ -89,10 +102,26 @@
     user-select: none;
     cursor: pointer;
     min-width: 7rem;
+    
+    height: 100%;
+    display: flex;
+    margin: 0;
+    margin-right: 0.5rem;
+    min-height: unset;
+    min-width: unset;
+    max-height: 1.6rem !important;
   }
   .knob-container-container>.title.menu-toggle{
-    background: white;
-    color: black;
+    :global(svg){
+      fill: white;
+      &:active{
+        filter: invert(1);
+        background: black;
+      }
+    }
+
+/* background: white; */
+    /* color: black; */
   }
   .knob-container-container>.title {
     

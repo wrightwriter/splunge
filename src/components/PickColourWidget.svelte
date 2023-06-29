@@ -54,44 +54,6 @@
 		user-select: none;
 		-webkit-tap-highlight-color: transparent;
 	}
-	.knob-container {
-		cursor: pointer;
-		&:hover {
-			cursor: pointer;
-		}
-		box-sizing: border-box;
-		-webkit-box-sizing: border-box;
-		/* width: 40px;
-    height: 40px; */
-		aspect-ratio: 1/1;
-		max-height: 50%;
-		height: 100%;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		/* border-radius: 50%; */
-    margin-bottom: auto;
-    margin-top: auto;
-		margin-right: 1rem;
-		pointer-events: all;
-		user-select: none;
-	}
 
-	.knob {
-		display: block;
-		aspect-ratio: 1/1;
-		height: 100%;
-		/* height: 80%; */
-		padding: 0;
-		/* border-radius: 50%; */
-		color: var(--text-color);
-		fill: white;
-		transform-origin: 50% 50%;
-	}
-
-	.knob :global(svg) {
-		fill: white;
-		width: 100%;
-		height: 100%;
-	}
+  @import "/../styles/icon.scss" scoped; 
 </style>

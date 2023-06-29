@@ -3,6 +3,7 @@
 <script lang="ts">
 	import { mod } from "@0b5vr/experimental"
 	import chroma from "chroma-js"
+	import { min } from "wmath"
 
 	export let colour: Array<number>;
 	// export let colour_r: number;
@@ -39,41 +40,48 @@
 	$: re_render_colour(colour[0], colour[1], colour[2]);
 	// $: if(update_display) {re_render_colour(colour_r, colour_g, colour_b); update_display = false}
 
-	const pixelRange = 200
-	let value = [0, 0]
-	const min = 0
-	const max = 4
+	// const pixelRange = 200
+	// let value = [0, 0]
+	// const min = 0
+	// const max = 4
 
 	export let dragging: boolean = false
 	export let stopped_dragging: boolean = false
 
-	let startY = 0,
-		startValue = [0, 0],
-		startX = 0
+	// let startY = 0
+	let startValue = [0, 0]
+	// let startX = 0
+	
+	let prevX = 0
+	let prevY = 0
 
-	$: valueRange = max - min
+	const valueRange = 4
 	// $: rotation = startRotation + (value - min) / valueRange * rotRange;
 
 	function clamp(num, min, max) {
 		return Math.max(min, Math.min(num, max))
 	}
+	const chroma_gl = (col: number[]) => {
+		return chroma.gl(col[0], col[1], col[2])
+	}
+	const chroma_oklch = (col: number[]) => {
+		return chroma.oklch(col[0], col[1], col[2])
+	}
 
-	function pointerMove({clientX, clientY}) {
-		const valueDiffY = (valueRange * (startY - clientY)) / pixelRange
-		const  valueDiffX = (valueRange * (startX - clientX)) / pixelRange
+	const pointerMove = ({clientX, clientY}) => {
+		const valueDiffY = -(clientY - prevY)
+		const valueDiffX = clientX - prevX
+		
+		prevX = clientX
+		prevY = clientY
 
-    const chroma_gl = (col: number[]) => {
-      return chroma.gl(col[0], col[1], col[2])
-    }
-    const chroma_oklch = (col: number[]) => {
-      return chroma.oklch(col[0], col[1], col[2])
-    }
 
-    
-    let col = chroma_gl(startValue).oklch()
+    let col = chroma_gl(colour).oklch()
+		
+		let scale = 1./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
 
-    col[0] += valueDiffY*0.3
-    col[2] += valueDiffX*360*0.3
+    col[0] += valueDiffY*3.0*scale
+    col[2] += valueDiffX*360*3.0*scale
     col[0] = clamp(col[0], 0, 1)
     col[1] = clamp(col[1], 0, 1)
     col[2] = mod(col[2], 360)
@@ -88,8 +96,8 @@
 	function pointerDown(e: PointerEvent) {
 		dragging = true
 		const {clientX, clientY} = e
-		startY = clientY
-		startX = clientX
+		prevY = clientY
+		prevX = clientX
 		startValue = [colour[0], colour[1], colour[2], 1]
 
 		window.addEventListener('pointermove', pointerMove)
@@ -119,9 +127,12 @@
     }
     margin-right: 0.5rem;
     aspect-ratio: 2/1;
-    max-height: 100%;
-    height: 100%;
+    /* max-height: 100%; */
+    /* height: 100%; */
     display: flex;
     background-color: var(--color);
+		width: 14rem;
+    height: 100%;
+    max-height: 100% !important;
   }  
 </style>

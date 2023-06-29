@@ -1,0 +1,122 @@
+<svelte:options accessors />
+
+<script lang="ts">
+	import { min } from 'wmath'
+	import SemiModal from './SemiModal.svelte'
+	import {onMount} from 'svelte'
+
+	export let colour: number[]
+
+  let colour_idx = 0
+
+
+  // @ts-ignore
+  let elements: HTMLDivElement[] = [0,0,0]
+  // @ts-ignore
+  let inners: HTMLDivElement[] = [0,0,0]
+
+	let startY = 0
+  let startX = 0;
+  let startValue = 0
+	
+	const clamp = (num, min, max) => {
+		return Math.max(min, Math.min(num, max));
+	}
+
+  
+  const update_style = (idx: number) =>{
+    inners[idx].style.transform = `scaleX(${colour[idx]})`
+  }
+	
+	const pointerMove = ({ clientX, clientY }) => {
+		// let scale = 2./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
+		let scale = 1./elements[colour_idx].clientWidth
+
+
+		let valueDiff = -(startX - clientX) *scale;
+		colour[colour_idx] = clamp(startValue + valueDiff, 0, 1)
+    update_style(colour_idx)
+	}
+	
+	const pointerDown = (e: PointerEvent) => {
+    let { clientX, clientY } = e
+		startY = clientY;
+		startX = clientX;
+		startValue = colour[colour_idx];
+    update_style(colour_idx)
+
+		window.addEventListener('pointermove', pointerMove);
+		window.addEventListener('pointerup', pointerUp);
+	}
+	
+	const pointerUp = () => {
+		window.removeEventListener('pointermove', pointerMove);
+		window.removeEventListener('pointerup', pointerUp);
+	}
+  
+  onMount(()=>{
+    update_style(0)
+    update_style(1)
+    update_style(2)
+  })
+  
+</script>
+
+
+<div draggable="false" class='knob-container-container'>
+
+  <!-- {#} -->
+  {#each colour as col_element, i}
+    {#if i !== 3}
+      <div class='knob-container'
+        on:pointerdown={(e)=>{
+          colour_idx = i
+          pointerDown(e)
+          e.stopPropagation() 
+        }}
+        bind:this={elements[i]}
+      >
+         <div class='inner' 
+          style={
+            i === 0 ? "background: rgba(255,0,0,1);" : i === 1 ? "background: rgba(0,255,0,1);" : "background: rgba(0,0,255,1);"
+           }
+           bind:this={inners[i]}
+         />
+      </div>
+    {/if}
+  {/each}
+</div>
+
+<style lang="scss">
+  *{
+    user-select: none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .knob-container-container{
+    max-height: 100% !important;
+    margin-left: 0px;
+    margin-right: 0px;
+    aspect-ratio: 2/1;
+    /* max-height: 50%; */
+    height: 100%;
+    /* margin-top: 0.5rem; */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    pointer-events: all;
+    user-select: none;
+  }
+  .knob-container{
+    height: 100%;
+    width: 100%;
+    margin-right: auto;
+    .inner{
+      transform-origin: left;
+      height: 100%;
+      width: 100%;
+      
+    }
+    
+  }
+</style>

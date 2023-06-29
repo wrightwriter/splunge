@@ -22,7 +22,8 @@
     display: flex;
     padding: 0rem 1rem;
     align-items: center;
-    > *:last-of-type {
+    justify-content: flex-end;
+    >*:last-of-type {
       margin-left: auto;
       margin-right: 0px;
     }

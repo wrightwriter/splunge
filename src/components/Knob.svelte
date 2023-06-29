@@ -1,36 +1,38 @@
 <svelte:options accessors />
 
 <script lang="ts">
+	import { min } from 'wmath'
 	import SemiModal from './SemiModal.svelte'
 	import {onMount} from 'svelte'
 
-	export let value, min = 0, max = 1;
-	export let rotRange = 2 * Math.PI * 0.83;
-	export let pixelRange = 200;
-	export let startRotation = -Math.PI * 0.83;
+	export let value
   
   export let triggerModal: undefined | ((modal: SemiModal)=>void) = undefined
   export let modal: SemiModal | undefined = undefined
-
   let knobElement: HTMLElement
-  // $: modalHidden = modal ? modal.hidden : false
   
   export let modalHidden = true
-
   export let title = ""
-	
-	let startY = 0, startValue = 0, startX = 0;
-	$: valueRange = max - min;
-	$: rotation = startRotation + (value - min) / valueRange * rotRange;
+
+	const rotRange = 2 * Math.PI * 0.83;
+
+	let startY = 0
+  let startX = 0;
+  let startValue = 0
+	$: rotation = -Math.PI * 0.83 + (value) * rotRange;
+  
+  
 	
 	function clamp(num, min, max) {
 		return Math.max(min, Math.min(num, max));
 	}
 	
 	function pointerMove({ clientX, clientY }) {
-		let valueDiff = valueRange * (startY - clientY) / pixelRange;
-		valueDiff -= valueRange * (startX - clientX) / pixelRange;
-		value = clamp(startValue + valueDiff, min, max)
+		let scale = 3./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
+
+		let valueDiff = (startY - clientY) * scale;
+		valueDiff -= (startX - clientX) *scale;
+		value = clamp(startValue + valueDiff, 0, 1)
 	}
 	
 	function pointerDown(e: PointerEvent) {
@@ -71,7 +73,7 @@
 </script>
 
 
-<div class='knob-container-container'>
+<div draggable="false" class='knob-container-container'>
   <div class='knob-container'>
     <div class="knob" style="transform:rotate(calc({rotation} * 1rad))" on:pointerdown={pointerDown} >
       <svg width='100%' height='100%' viewBox="0 0 100 100">

@@ -47,7 +47,7 @@
 		// pointer-events: none;
 	}
 	.knob-container-container {
-		z-index: 9999999999999;
+		z-index: 99;
 		margin-bottom: auto;
 		margin-top: auto;
 		margin-right: 1.5rem;
