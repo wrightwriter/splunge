@@ -170,22 +170,15 @@
 </div>
 
 <script lang="ts">
-	// @ts-ignore
 	import solveIcon from '/../public/solve.svg'
-	// @ts-ignore
 	import launchIcon from '/../public/launch.svg'
-	// @ts-ignore
 	import resizeIcon from '/../public/resize.svg'
-	// @ts-ignore
 	import forbidIcon from '/../public/forbid.svg'
-	// @ts-ignore
 	import okIcon from '/../public/ok.svg'
-	// @ts-ignore
 	import captureIcon from '/../public/capture.svg'
-	// @ts-ignore
 	import downloadIcon from '/../public/download.svg'
-	// @ts-ignore
 	import timeIcon from '/../public/time.svg'
+
 	import {Dropbox, DropboxAuth} from 'dropbox'
 	import type {Project} from 'stuff'
 	import { onMount } from 'svelte'

@@ -1,9 +1,7 @@
 <svelte:options accessors />
 
 <script lang="ts">
-  // @ts-ignore
   import undoIcon from "/../public/undo.svg"
-  // @ts-ignore
   import redoIcon from "/../public/redo.svg" 
   
   

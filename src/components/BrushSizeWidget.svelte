@@ -10,7 +10,6 @@
 
 <script lang="ts">
 	import { clamp, min } from 'wmath'
-	// @ts-ignore
 	import brushSizeIcon from '/../public/copy.svg'
 
 	export let brush_sz: number[] = [0.2, 0.2]

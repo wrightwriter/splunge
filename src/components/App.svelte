@@ -244,13 +244,12 @@
 
 	const init_web_gl = () => {
 		window.isOnMobile = Utils.isOnMobile()
-		//@ts-ignore
 		window.gl = gl = canvasElement.getContext('webgl2', {
 			preserveDrawingBuffer: true,
 			alpha: false,
 			premultipliedAlpha: false,
 			antialias: true
-		})
+		}) as WebGL2RenderingContext
 		gl.getExtension('OES_texture_float');
 		gl.getExtension('OES_texture_float_linear');
 		gl.getExtension('EXT_color_buffer_float');
@@ -269,7 +268,6 @@
 		default_framebuffer.pong_idx = 0
 		// @ts-ignore
 		default_framebuffer._fb = null
-		// @ts-ignore
 		default_framebuffer._textures = [Object.create(Texture.prototype)]
 		default_framebuffer.textures[0].res = [...userAgentRes]
 
@@ -311,11 +309,9 @@
 		} 
 		io = new IO()
 		document.addEventListener('contextmenu', (event) => event.preventDefault())
-		// @ts-ignore
-		window.history.pushState(null, null, window.location.href);
+		window.history.pushState(null, "", window.location.href);
 		window.addEventListener('popstate', ()=> {
-			// @ts-ignore
-			window.history.pushState(null, null, window.location.href);
+			window.history.pushState(null, "", window.location.href);
 		});
 
 		brush_textures.push(
@@ -393,11 +389,8 @@
 			require('shaders/composite_temp_stroke_to_canvas_b.frag'),
 		)
 		const post_canvas_program = new ShaderProgram(require('shaders/post_canvas.vert'), require('shaders/post_canvas.frag'))
-		//@ts-ignore
 		post_canvas_program.zoom_loc = gl.getUniformLocation(post_canvas_program.program, "zoom")
-		//@ts-ignore
 		post_canvas_program.panning_loc = gl.getUniformLocation(post_canvas_program.program, "panning")
-		//@ts-ignore
 		post_canvas_program.blending_colour_space_loc = gl.getUniformLocation(post_canvas_program.program, "blending_colour_space")
 		
 		const brush_long_program = new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag'))
@@ -412,9 +405,7 @@
 		init_texture_uniforms(composite_stroke_to_canvas_program)
 		composite_stroke_to_canvas_b_program.use()
 		init_texture_uniforms(composite_stroke_to_canvas_b_program)
-		//@ts-ignore
 		composite_stroke_to_canvas_program.blending_colour_space_loc = gl.getUniformLocation(composite_stroke_to_canvas_program.program, "blending_colour_space")
-		//@ts-ignore
 		composite_stroke_to_canvas_b_program.blending_colour_space_loc = gl.getUniformLocation(composite_stroke_to_canvas_b_program.program, "blending_colour_space")
 
 		post_canvas_program.use()
@@ -422,7 +413,6 @@
 
 		brush_long_program.use()
 		init_texture_uniforms(brush_long_program)
-		//@ts-ignore
 		brush_long_program.brush_params_loc = gl.getUniformLocation(brush_long_program.program, "brush_params")
 		
 
@@ -472,7 +462,6 @@
 				
 			}
 			comp_program.use()
-			// @ts-ignore
 			gl.uniform1i(comp_program.blending_colour_space_loc, blending_colour_space)
 			canvas_fb.back_textures[0].bind_to_unit(1)
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
@@ -550,7 +539,6 @@
 					brush_params_mat[5] = new_noise_stretch[1]
 					brush_params_mat[6] = new_tex_stretch[0]
 					brush_params_mat[7] = new_tex_stretch[1] 
-					// @ts-ignore
 					gl.uniformMatrix4fv(brush_shader.brush_params_loc, false, brush_params_mat)
 				}
 
@@ -563,12 +551,10 @@
 
 				if(canvas_fb.pong_idx === 0){
 					if(new_col_space !== prev_colour_space){
-						// @ts-ignore
 						gl.uniform1i(comp_program.blending_colour_space_loc, prev_colour_space = new_col_space)
 					}
 				} else {
 					if(new_col_space !== prev_colour_space_b){
-						// @ts-ignore
 						gl.uniform1i(comp_program.blending_colour_space_loc, prev_colour_space_b = new_col_space)
 					}
 				}
@@ -907,7 +893,6 @@
 				brush_params_mat[6] = brush_stroke.draw_params.tex_stretch[0]
 				brush_params_mat[7] = brush_stroke.draw_params.tex_stretch[1] 
 
-				// @ts-ignore
 				gl.uniformMatrix4fv(brush_shader.brush_params_loc, false, brush_params_mat)
 
 				drawer.draw_stroke_idx(0)
@@ -953,11 +938,8 @@
 
 				post_canvas_program.use()
 
-				// @ts-ignore
 				gl.uniform1f(post_canvas_program.zoom_loc, zoom)
-				// @ts-ignore
 				gl.uniform2fv(post_canvas_program.panning_loc, panning)
-				// @ts-ignore
 				gl.uniform1i(post_canvas_program.blending_colour_space_loc, blending_colour_space)
 				canvas_fb.back_textures[0].bind_to_unit(1)
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)

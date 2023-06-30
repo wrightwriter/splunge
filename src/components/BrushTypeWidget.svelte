@@ -30,11 +30,8 @@
 	import {BrushPreset, BrushType} from 'brush_stroke'
 	import {onMount} from 'svelte'
 
-	// @ts-ignore
 	import brush_blobs_icon from '/../public/brush-blobs.svg'
-	// @ts-ignore
 	import brush_long_icon from '/../public/brush-long.svg'
-	// @ts-ignore
 	import brush_triangles_icon from '/../public/brush-triangles.svg'
 
 	export let curr_brush: BrushPreset

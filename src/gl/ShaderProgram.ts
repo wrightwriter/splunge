@@ -1,6 +1,7 @@
 import {Texture} from './Texture'
 
 export class ShaderProgram {
+	[x: string]: WebGLUniformLocation | null
 	program: WebGLProgram
 	loadShader(type: number, source: string) {
 		source = source.replaceAll('export default "', ``)

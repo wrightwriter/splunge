@@ -7,7 +7,6 @@
 </div>
 
 <script lang="ts">
-	// @ts-ignore
 	import pickIcon from '/../public/plug.svg'
 
 	export let pick_from_canvas: () => number[]
