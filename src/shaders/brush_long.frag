@@ -2,17 +2,16 @@
 #pragma glslify: import('./_chroma.glsl')
 #pragma glslify: import('./_rand.glsl')
 
-uniform int brush_texture_idx;
-uniform vec3 tex_hsv_dynamics;
-uniform vec2 tex_stretch;
+
+uniform mat4 brush_params;
+// uniform int brush_texture_idx;
+// uniform vec3 tex_hsv_dynamics;
+// uniform vec2 noise_stretch;
+// uniform vec2 tex_stretch;
 
 in vec2 uv;
 in vec4 vCol;
 out vec4 col;
-// float sdBox( in vec2 p, in vec2 b ) {
-//     vec2 d = abs(p)-b;
-//     return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
-// }
 
 vec4 sample_brush_tex(int idx, vec2 uv){
   if(idx == 0){
@@ -61,89 +60,96 @@ float sdBox(vec2 p, vec2 sz){
     return max(p.x,p.y);
 }
 void main() {
+
+  int brush_texture_idx = int(brush_params[0][0]+0.5);
+  vec3 tex_hsv_dynamics = vec3(brush_params[0][1], brush_params[0][2], brush_params[0][3]);
+  vec2 noise_stretch = vec2(brush_params[1][0], brush_params[1][1]);
+  vec2 tex_stretch = vec2(brush_params[1][2], brush_params[0][3]);
   col = vec4(1);
   // col.xyz = stroke_col.xyz;
   
   vec2 u = uv - 0.5;
   
   vec2 boxSz = vec2(0.49);
+  
+  float pi = 3.14159265359;
+  float tau = 2.*pi;
 
   col = vCol;
   {
     col.xyz = srgb_to_oklch(col.xyz);
 
     vec2 nuv = uv*2120.;
-    nuv *= tex_stretch;
+    nuv *= noise_stretch;
     float n = (valueNoise(nuv)*2. - 1.);
 
-    col.z += 5.5*n * tex_hsv_dynamics.z;
+    col.z += 5.5* n * tex_hsv_dynamics.z;
     col.x += n * tex_hsv_dynamics.x;
     col.y += n * tex_hsv_dynamics.y;
-    // col.x -= valueNoise(uv*120.)*0.6;
 
     col.x = clamp(col.x, 0., 1.);
     col.y = clamp(col.y, 0., 1.);
-    // col.z = clamp(col.z, 0., acos(-1.)*2.);
-    col.z = mod(col.z, acos(-1.)*2.);
+    col.z = mod(col.z, tau);
     col.xyz = oklch_to_srgb(col.xyz);
   }
   
   {
-    // col.w = smoothstep(1.,0.,(rect_sdf)/abs(fwidth(rect_sdf)));
     vec2 dx = dFdx(uv.xy);
     vec2 dy = dFdy(uv.xy);
     
     float sd = sdBox(u,boxSz);
-    sd = sdBox(u,boxSz - fwidth(sd));
-    // float sd = sdBox(u,boxSz);
+    // sd = sdBox(u,boxSz - fwidth(sd)); // ?
 
     float fw = fwidth((sd));
     
     #define render(pos)  (1.-step(0.,sdBox(pos,boxSz)))
         
-
     
-    if(fw < 0.004){
-      col.w *= smoothstep(1.,0.,(sd)/fw);
-    } else{
-        float w = 0.;
-        float _Bias = 1.;
-        vec2 uvOffsets = vec2(0.125, 0.375);
-        vec2 offsetUV = vec2(0.0, 0.0);
+    float brush_alpha = sample_brush_tex(
+      brush_texture_idx, 
+      fract(((uv - 0.5) * tex_stretch) + 0.5)
+      // fract(uv*4.)
+    ).w;
 
-        offsetUV.xy = u.xy + uvOffsets.x * dx + uvOffsets.y * dy;
-        w += render(offsetUV.xy);
-        offsetUV.xy = u.xy - uvOffsets.x * dx - uvOffsets.y * dy;
-        w += render(offsetUV.xy);
-        offsetUV.xy = u.xy + uvOffsets.y * dx - uvOffsets.x * dy;
-        w += render(offsetUV.xy);
-        offsetUV.xy = u.xy - uvOffsets.y * dx + uvOffsets.x * dy;
-        w += render(offsetUV.xy);
-        
-        uvOffsets = uvOffsets * rot(0.25*acos(-1.));
-        offsetUV.xy = u.xy + uvOffsets.x * dx + uvOffsets.y * dy;
-        w += render(offsetUV.xy);
-        offsetUV.xy = u.xy - uvOffsets.x * dx - uvOffsets.y * dy;
-        w += render(offsetUV.xy);
-        offsetUV.xy = u.xy + uvOffsets.y * dx - uvOffsets.x * dy;
-        w += render(offsetUV.xy);
-        offsetUV.xy = u.xy - uvOffsets.y * dx + uvOffsets.x * dy;
-        w += render(offsetUV.xy);
+    if(brush_alpha > 0.001){
+      if(fw < 0.004){
+        col.w *= smoothstep(1.,0.,(sd)/fw);
+      } else{
+        // col.w *= smoothstep(1.,0.,(sd)/fw);
 
-        w /= 8.;
-        col.w *= w;
-        //col.x = 1.;
+          float w = 0.;
+          float _Bias = 1.;
+          vec2 uvOffsets = vec2(0.125, 0.375);
+          vec2 offsetUV = vec2(0.0, 0.0);
+
+          offsetUV.xy = u.xy + uvOffsets.x * dx + uvOffsets.y * dy;
+          w += render(offsetUV.xy);
+          offsetUV.xy = u.xy - uvOffsets.x * dx - uvOffsets.y * dy;
+          w += render(offsetUV.xy);
+          offsetUV.xy = u.xy + uvOffsets.y * dx - uvOffsets.x * dy;
+          w += render(offsetUV.xy);
+          offsetUV.xy = u.xy - uvOffsets.y * dx + uvOffsets.x * dy;
+          w += render(offsetUV.xy);
+          w *= 1./4.;
+          col.w *= w;
+          
+          // uvOffsets = uvOffsets * rot(0.25*acos(-1.));
+          // offsetUV.xy = u.xy + uvOffsets.x * dx + uvOffsets.y * dy;
+          // w += render(offsetUV.xy);
+          // offsetUV.xy = u.xy - uvOffsets.x * dx - uvOffsets.y * dy;
+          // w += render(offsetUV.xy);
+          // offsetUV.xy = u.xy + uvOffsets.y * dx - uvOffsets.x * dy;
+          // w += render(offsetUV.xy);
+          // offsetUV.xy = u.xy - uvOffsets.y * dx + uvOffsets.x * dy;
+          // w += render(offsetUV.xy);
+
+          // w /= 8.;
+          // col.w *= w;
+          //col.x = 1.;
+      }
+      col.w *= brush_alpha;
+    } else {
+      col = vec4(0);
     }
-
-    col.w *= sample_brush_tex(brush_texture_idx, uv).w;
-    // col.w *= texture(brush_texture[1],uv,-4.).w;
   }
-  // col.xyz = uv.xyx;
-  // col.w *= sample_brush_tex(1, uv).w;
-  // col.w *= pow(texture(brush_texture[brush_texture_idx],uv).w,1.0);
-  // col.xyz /= pow(max(col.w,0.001),0.2);
-  // col.w = length(uv - 0.5) < 0.25 ? 1. : 0.; 
-  // col.xyz = uv.xyx;
-
-  // col.xyz = texture(canvas,uv).xyz;
 }

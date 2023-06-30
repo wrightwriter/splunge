@@ -85,13 +85,9 @@
 </div>
 
 <style lang="scss">
-  *{
-    user-select: none;
-    -webkit-tap-highlight-color:transparent;
-  }
   .knob-container-container{
     aspect-ratio: 1/1;
-    max-height: 50%;
+    // max-height: 50%;
     margin-top: 0.5rem;
     margin-right: 0.5rem;
     display: flex;
@@ -139,7 +135,6 @@
         var(--tertiary-color) 300deg 300deg,
         var(--secondary-color) 345deg 360deg
       );
-      box-shadow: -.15em .15em .05em .02em rgba(0, 0, 0, 0.3);
       border-radius: 50%;
       border: 0.2rem solid white;
     }

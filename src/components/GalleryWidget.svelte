@@ -106,7 +106,7 @@
 							Resize canvas
 						</div>
 						<div style='margin-bottom: 1rem;'>
-							{resize_widget_canvas_size[0]} x {resize_widget_canvas_size[1]}
+							{floor(resize_widget_canvas_size[0]) } x {floor(resize_widget_canvas_size[1]) }
 						</div>
 						<div style={`
 							background: white;
@@ -119,6 +119,8 @@
 							id="back-button"
 							class="ok-button"
 							on:click={() => {
+								resize_widget_canvas_size[0] = floor(resize_widget_canvas_size[0])
+								resize_widget_canvas_size[1] = floor(resize_widget_canvas_size[1])
 								resize_project(resize_widget_canvas_size)
 								size_modal_opened = false
 								// gallery_open = false
@@ -192,6 +194,7 @@
 	import {gallery_open} from 'store'
 	
 	import { fade } from 'svelte/transition';
+	import { floor} from 'wmath'
 
 
 	export let current_project: Project
@@ -378,10 +381,6 @@
 </script>
 
 <style lang="scss">
-	* {
-		user-select: none;
-		-webkit-tap-highlight-color: transparent;
-	}
 	#canvas-preview-img {
 		/* max-width: 12rem; */
 		height: 12rem;
@@ -577,7 +576,7 @@
 		/* width: 40px;
     height: 40px; */
 		aspect-ratio: 1/1;
-		max-height: 50%;
+		// max-height: 50%;
 		height: 100%;
 		display: flex;
 		justify-content: center;

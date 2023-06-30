@@ -45,9 +45,6 @@ export function copy_fb_to_fb(in_framebuffer: WebGLFramebuffer, out_framebuffer:
 	gl.bindFramebuffer(gl.READ_FRAMEBUFFER, in_framebuffer)
 	gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, out_framebuffer)
 	gl.blitFramebuffer(0, 0, res[0], res[1], 0, 0, res[0], res[1], gl.COLOR_BUFFER_BIT, gl.NEAREST)
-	// gl.bindFramebuffer(gl.FRAMEBUFFER, in_framebuffer)
-	// gl.bindTexture(gl.TEXTURE_2D, out_texture.tex)
-	// gl.copyTexImage2D(gl.TEXTURE_2D, 0, out_texture.internal_format, 0, 0, out_texture.res[0], out_texture.res[1], 0)
 }
 
 export function resizeIfNeeded(
@@ -65,9 +62,6 @@ export function resizeIfNeeded(
 	if (needResize) {
 		client_res[0] = canvas.width = displayWidth
 		client_res[1] = canvas.height = displayHeight
-		// console.log('RESIZED')
-		// console.log(client_res)
-		// console.log(canvas)
 		set_redraw_needed(true)
 		// @ts-ignore
 		default_framebuffer._textures[0].res = [...client_res]

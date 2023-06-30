@@ -32,7 +32,7 @@
   }
 	
 	const pointerMove = ({ clientX, clientY }) => {
-		let scale = 1./elements[colour_idx].clientWidth
+		let scale = 0.25/elements[colour_idx].clientWidth
 
 		let valueDiff = -(startX - clientX) *scale;
 		colour[colour_idx] = clamp(startValue + valueDiff, 0, 1)
@@ -89,20 +89,17 @@
 </div>
 
 <style lang="scss">
-  *{
-    user-select: none;
-    -webkit-tap-highlight-color:transparent;
-  }
   .knob-container-container{
-    max-height: 100% !important;
+    // max-height: 100% !important;
     margin-left: 0px;
     margin-right: 0px;
     aspect-ratio: 2/1;
     /* max-height: 50%; */
     height: 100%;
+    width: 14rem;
     /* margin-top: 0.5rem; */
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: center;
     align-items: center;
     pointer-events: all;

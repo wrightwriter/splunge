@@ -52,41 +52,35 @@
 </div>
   
 <style lang="scss">
-  *{
-    user-select: none;
-    -webkit-tap-highlight-color:transparent;
-  }
   .knob-container-container{
-    aspect-ratio: 1/1;
-    max-height: 75%;
-    margin-top: 0.7rem;
-    margin-bottom: auto;
-    margin-right: 2rem;
-
+    aspect-ratio: unset;
     display: grid;
     pointer-events: all;
     user-select: none;
     cursor: pointer;
-    width: fit-content;
+    // width: fit-content;
     grid-template-columns: 1fr 1fr 1fr;
     
     overflow: hidden;
     height: 100%;
-    max-height: unset !important;
+    width: 4rem;
+    // max-height: unset !important;
     margin: 0;
+    margin-top: auto;
+    margin-bottom: auto;
     max-width: unset;
-    width: fit-content;
+    // width: fit-content;
     margin-right: 1rem;
     >.title.menu-toggle{
       background: white;
       color: black;
-      width: 49%;
-      height: 70%;
+      width: 100%;
+      height: 100%;
     }
     >.title {
-      padding: 0.2rem;
+      padding: 0.0rem;
       font-size: 0.8rem !important;
-      margin: 0.3rem;
+      margin: 0.0rem;
       color: white;
       text-align: center;
       font-weight: bolder;

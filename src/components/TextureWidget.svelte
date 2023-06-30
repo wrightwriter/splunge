@@ -23,9 +23,7 @@
 </div>
 
 <script lang="ts">
-	import {BrushType} from 'brush_stroke'
 	import type {BrushTexture} from 'stuff'
-	import {onMount} from 'svelte'
 
 	export let brush_textures: Array<BrushTexture>
 	export let selected_brush_texture: BrushTexture
@@ -35,10 +33,6 @@
 </script>
 
 <style lang="scss">
-	* {
-		user-select: none;
-		-webkit-tap-highlight-color: transparent;
-	}
 	img {
 		&:active {
 			filter: invert(1);
@@ -49,7 +43,7 @@
 	.knob-container-container {
 		z-index: 99;
 		aspect-ratio: 1/1;
-		max-height: 50%;
+		// max-height: 50%;
 		margin-bottom: auto;
 		margin-top: auto;
 		margin-right: 1.5rem;

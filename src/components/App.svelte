@@ -1,22 +1,8 @@
 <main>
 	<div id="bar-container">
 		<div id="bar">
-			<div 
-				style='height: 100%; max-height: unset; display: flex;'
-				on:pointerenter={()=>{mouse_over_colour_picker = true}}
-				on:pointerleave={()=>{mouse_over_colour_picker = false; mouse_over_colour_picker_finished = true}}
-			>
-			<RGBSliders bind:colour={stroke_col} />
-			<ColourDisplay 
-				bind:colour={stroke_col} 
-				bind:update_display={trigger_colour_display_update} />
-			</div>
 
 			<Knob bind:this={chaosKnob} bind:value={curr_brush.chaos} title={'Chaos'} triggerModal={openModal} modal={chaosSemiModal} />
-			<BrushSizeWidget
-				bind:brush_sz={brush_sz}
-				bind:dragging={brush_size_widget_dragging}
-				bind:stopped_dragging={brush_size_widget_stopped_dragging} />
 			<Knob
 				bind:this={dynamicsKnob}
 				bind:value={curr_brush.dynamics}
@@ -29,6 +15,20 @@
 				title={'Tex'}
 				triggerModal={openModal}
 				modal={texDynamicsSemiModal} />
+			<BrushSizeWidget
+				bind:brush_sz={brush_sz}
+				bind:dragging={brush_size_widget_dragging}
+				bind:stopped_dragging={brush_size_widget_stopped_dragging} />
+			<div 
+				style='height: 100%; display: flex; aspect-ratio: 6/1;'
+				on:pointerenter={()=>{mouse_over_colour_picker = true}}
+				on:pointerleave={()=>{mouse_over_colour_picker = false; mouse_over_colour_picker_finished = true}}
+			>
+			<RGBSliders bind:colour={stroke_col} />
+			<ColourDisplay 
+				bind:colour={stroke_col} 
+				bind:update_display={trigger_colour_display_update} />
+			</div>
 			<!-- <BrushTypeWidget bind:selected_brush_type={curr_brush.selected_brush_type} /> -->
 			<BrushTypeWidget bind:curr_brush={curr_brush} />
 			<BrushPresetWidget bind:brush_presets={brush_presets} bind:selected_brush_preset={curr_brush} />
@@ -81,6 +81,8 @@
 		<SemiModal bind:this={texDynamicsSemiModal} knob={texDynamicsKnob}>
 			<Knob bind:value={curr_brush.tex_stretch[0]} title={'Stretch X'} />
 			<Knob bind:value={curr_brush.tex_stretch[1]} title={'Stretch Y'} />
+			<Knob bind:value={curr_brush.noise_stretch[0]} title={'Noise Stretch X'} />
+			<Knob bind:value={curr_brush.noise_stretch[1]} title={'Noise Stretch Y'} />
 			<Knob bind:value={curr_brush.tex_lch_dynamics[0]} title={'Tex V'} />
 			<Knob bind:value={curr_brush.tex_lch_dynamics[1]} title={'Tex S'} />
 			<Knob bind:value={curr_brush.tex_lch_dynamics[2]} title={'Tex H'} />
@@ -186,6 +188,8 @@
 	
 	let curr_brush: BrushPreset = brush_presets[0]
 	let blending_colour_space = BlendingColourSpace.OkLCH
+
+	let brush_params_mat = new Float32Array(16)
 
 	// Funcs
 	let resize_project: (sz: number[])=>void
@@ -410,7 +414,6 @@
 		init_texture_uniforms(composite_stroke_to_canvas_b_program)
 		//@ts-ignore
 		composite_stroke_to_canvas_program.blending_colour_space_loc = gl.getUniformLocation(composite_stroke_to_canvas_program.program, "blending_colour_space")
-
 		//@ts-ignore
 		composite_stroke_to_canvas_b_program.blending_colour_space_loc = gl.getUniformLocation(composite_stroke_to_canvas_b_program.program, "blending_colour_space")
 
@@ -420,11 +423,7 @@
 		brush_long_program.use()
 		init_texture_uniforms(brush_long_program)
 		//@ts-ignore
-		brush_long_program.brush_texture_idx_loc = gl.getUniformLocation(brush_long_program.program, "brush_texture_idx")
-		//@ts-ignore
-		brush_long_program.tex_hsv_dynamics_loc = gl.getUniformLocation(brush_long_program.program, "tex_hsv_dynamics")
-		//@ts-ignore
-		brush_long_program.tex_stretch_loc = gl.getUniformLocation(brush_long_program.program, "tex_stretch")
+		brush_long_program.brush_params_loc = gl.getUniformLocation(brush_long_program.program, "brush_params")
 		
 
 		//! ------------------- POST
@@ -448,7 +447,13 @@
 
 		let brush_stroke = new BrushStroke(
 			curr_brush.selected_brush_type, 
-			new DrawParams(curr_brush.tex_dynamics, curr_brush.tex_lch_dynamics, curr_brush.tex_stretch, BlendingColourSpace.Pigments),
+			new DrawParams(
+				curr_brush.tex_dynamics, 
+				curr_brush.tex_lch_dynamics, 
+				curr_brush.noise_stretch, 
+				curr_brush.tex_stretch, 
+				BlendingColourSpace.Pigments
+				),
 				curr_brush.selected_brush_texture
 			)
 
@@ -495,8 +500,10 @@
 			let prev_colour_space_b = -1
 			let prev_brush_tex_idx = -1
 			
-			let prev_hsv_dynamics = [0,0,0]
-			let prev_tex_stretch = [0,0]
+			let prev_hsv_dynamics = [-9999,-9999,-9999]
+			let prev_noise_stretch = [-9999,-9999]
+			let prev_tex_stretch = [-9999,-9999]
+
 
 			gl.useProgram(composite_stroke_to_canvas_program.program)
 
@@ -510,7 +517,9 @@
 
 			k = start_idx
 			let j = 0
+			
 			for(let amogus of drawer.recorded_drawcalls){
+				const new_noise_stretch = project.brush_strokes[k].draw_params.noise_stretch
 				const new_tex_stretch = project.brush_strokes[k].draw_params.tex_stretch
 				const new_hsv_dynamics = project.brush_strokes[k].draw_params.tex_lch_dynamics
 
@@ -522,24 +531,27 @@
 
 				brush_shader.use()
 
-				if(new_brush_tex_idx !== prev_brush_tex_idx){
-					// @ts-ignore
-					gl.uniform1i(brush_shader.brush_texture_idx_loc, prev_brush_tex_idx = new_brush_tex_idx )
-				}
 				if(
+					new_brush_tex_idx !== prev_brush_tex_idx ||
 					prev_hsv_dynamics[0] !== new_hsv_dynamics[0] || 
 					prev_hsv_dynamics[1] !== new_hsv_dynamics[1] || 
-					prev_hsv_dynamics[2] !== new_hsv_dynamics[2] 
-				){
-					// @ts-ignore
-					gl.uniform3fv(brush_shader.tex_hsv_dynamics_loc, project.brush_strokes[k].draw_params.tex_lch_dynamics )
-				}
-				if(
+					prev_hsv_dynamics[2] !== new_hsv_dynamics[2] ||
+					prev_noise_stretch[0] !== new_noise_stretch[0] || 
+					prev_noise_stretch[1] !== new_noise_stretch[1] ||
 					prev_tex_stretch[0] !== new_tex_stretch[0] || 
 					prev_tex_stretch[1] !== new_tex_stretch[1] 
-				){
+					
+					){
+					brush_params_mat[0] = new_brush_tex_idx
+					brush_params_mat[1] = new_hsv_dynamics[0]
+					brush_params_mat[2] = new_hsv_dynamics[1]
+					brush_params_mat[3] = new_hsv_dynamics[2]
+					brush_params_mat[4] = new_noise_stretch[0]
+					brush_params_mat[5] = new_noise_stretch[1]
+					brush_params_mat[6] = new_tex_stretch[0]
+					brush_params_mat[7] = new_tex_stretch[1] 
 					// @ts-ignore
-					gl.uniform2fv(brush_shader.tex_stretch_loc, project.brush_strokes[k].draw_params.tex_stretch )
+					gl.uniformMatrix4fv(brush_shader.brush_params_loc, false, brush_params_mat)
 				}
 
 				drawer.draw_stroke_idx(j)
@@ -572,6 +584,8 @@
 				prev_hsv_dynamics[0] = new_hsv_dynamics[0]
 				prev_hsv_dynamics[1] = new_hsv_dynamics[1]
 				prev_hsv_dynamics[2] = new_hsv_dynamics[2] 
+				prev_noise_stretch[0] = new_noise_stretch[0]
+				prev_noise_stretch[1] = new_noise_stretch[1]
 				prev_tex_stretch[0] = new_tex_stretch[0]
 				prev_tex_stretch[1] = new_tex_stretch[1]
 				k++
@@ -761,15 +775,15 @@
 		const record_stroke = ()=>{
 				if (io.mouse_just_pressed && !(redo_pending || undo_pending)) {
 					brush_stroke = new BrushStroke(curr_brush.selected_brush_type, new DrawParams(
-						curr_brush.tex_dynamics, curr_brush.tex_lch_dynamics, curr_brush.tex_stretch,
+						curr_brush.tex_dynamics, curr_brush.tex_lch_dynamics, curr_brush.noise_stretch,
+						// curr_brush.tex_stretch,
+						[curr_brush.tex_stretch[0]*20., curr_brush.tex_stretch[1]*2.*20.],
 						blending_colour_space
 						), curr_brush.selected_brush_texture)
 					for (let i = 0; i < redo_history_length; i++) {
 						project.brush_strokes.pop()
 					}
 					redo_history_length = 0
-					// console.log(brush_stroke)
-					// console.log('SET REDO HISTORY TO 0')
 				}
 
 				brush_rot = [...io.tilt]
@@ -787,12 +801,14 @@
 						zoom[0],
 						panning,
 					)
-					brush_pos_ndc_canvas[0] += curr_brush.pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 251, 2) - 1)
-					brush_pos_ndc_canvas[1] += curr_brush.pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 1251, 2) - 1)
+					if(curr_brush.pos_jitter > 0.01){
+						brush_pos_ndc_canvas[0] += curr_brush.pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 251, 2) - 1)
+						brush_pos_ndc_canvas[1] += curr_brush.pos_jitter * (2 * hash.valueNoiseSmooth(t * 100 + 1251, 2) - 1)
+					}
 
 					let col = [...stroke_col]
 
-					{
+					if(curr_brush.chaos > 0.01) {
 						const chroma_gl = (col: number[]) => {
 							return chroma.gl(col[0], col[1], col[2])
 						}
@@ -822,7 +838,9 @@
 						stroke_opacity = lerp(curr_brush.stroke_opacity_dynamics[0], curr_brush.stroke_opacity_dynamics[1], io.pressure)
 					}
 
-					brush_rot[1] += 10*curr_brush.rot_jitter * (2 * hash.valueNoiseSmooth(t * 10 + 100, 2) - 1)
+					if(curr_brush.rot_jitter > 0.01) {
+						brush_rot[1] += 10*curr_brush.rot_jitter * (2 * hash.valueNoiseSmooth(t * 10 + 100, 2) - 1)
+					}
 
 					let sz = [...brush_sz]
 
@@ -879,12 +897,19 @@
 				drawer.brush_buffer.upload_all_buffs()
 				const brush_shader = drawer.brush_buffer.shader
 				brush_shader.use()
+
+				brush_params_mat[0] = curr_brush.selected_brush_texture.idx
+				brush_params_mat[1] = brush_stroke.draw_params.tex_lch_dynamics[0]
+				brush_params_mat[2] = brush_stroke.draw_params.tex_lch_dynamics[1]
+				brush_params_mat[3] = brush_stroke.draw_params.tex_lch_dynamics[2]
+				brush_params_mat[4] = brush_stroke.draw_params.noise_stretch[0]
+				brush_params_mat[5] = brush_stroke.draw_params.noise_stretch[1]
+				brush_params_mat[6] = brush_stroke.draw_params.tex_stretch[0]
+				brush_params_mat[7] = brush_stroke.draw_params.tex_stretch[1] 
+
 				// @ts-ignore
-				gl.uniform1i(brush_shader.brush_texture_idx_loc, curr_brush.selected_brush_texture.idx )
-				// @ts-ignore
-				gl.uniform3fv(brush_shader.tex_hsv_dynamics_loc, curr_brush.tex_lch_dynamics )
-				// @ts-ignore
-				gl.uniform2fv(brush_shader.tex_stretch_loc, curr_brush.tex_stretch )
+				gl.uniformMatrix4fv(brush_shader.brush_params_loc, false, brush_params_mat)
+
 				drawer.draw_stroke_idx(0)
 			}
 			// ----- COMPOSITE NEW STROKE
@@ -906,8 +931,6 @@
 
 			// ----- REDRAW
 			if (redraw_needed) {
-				console.log("post redraw")
-				// gl.disable(gl.BLEND)
 				if(canvas_fb._textures[0].mipmapped){
 					gl.bindTexture(gl.TEXTURE_2D, canvas_fb._textures[0].tex)
 					gl.generateMipmap(gl.TEXTURE_2D)
@@ -921,8 +944,12 @@
 					gl.bindTexture(gl.TEXTURE_2D, null)
 				}
 
-				default_framebuffer.clear([0, 0, 0, 1])
-				default_framebuffer.bind()
+				// gl.clearColor(0,0,0,1)
+				gl.viewport(0, 0, default_framebuffer._textures[0].res[0], default_framebuffer._textures[0].res[1])
+				gl.bindFramebuffer(gl.FRAMEBUFFER, default_framebuffer.fb)
+				gl.clear(gl.COLOR_BUFFER_BIT)
+
+				Framebuffer.currently_bound = default_framebuffer
 
 				post_canvas_program.use()
 
@@ -935,7 +962,7 @@
 				canvas_fb.back_textures[0].bind_to_unit(1)
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 				
-				if(mouse_over_colour_picker){
+				if(mouse_over_colour_picker && !brush_size_widget_dragging){
 					colour_preview_program.use()
 					colour_preview_program.setUniformVec("brush_sz", brush_sz)
 					colour_preview_program.setUniformVec("colour", stroke_col)
@@ -983,11 +1010,10 @@
 	.knob-container {
 		padding: 1rem 0rem;
 	}
-	* {
-		* {
-			color: white;
-			font-family: 'Jetbrains Mono';
-		}
+	:global(*) {
+		color: white;
+		font-family: 'JetBrains Mono';
+		font-weight: 900;
 	}
 	main {
 		width: 100%;
@@ -1000,17 +1026,20 @@
 			display: flex;
 			flex-direction: column;
 			#bar {
+				z-index: 0;
 				>:global(div) {
-					max-height: 2.5rem;	
+					max-height: 4rem;
+					height: 100%;
+					&:not(:first-of-type){
+						margin-left: 0.25rem;
+					}
+					margin-right: 0.25rem;
 					z-index: 1;
 				}
 				flex-wrap: wrap;
 				background: black;
-				// position: absolute;
 				width: 100%;
-				height: 6rem;
 				display: flex;
-				// padding: 0rem 1rem;
 				align-items: center;
 				> *:last-of-type {
 					margin-left: auto;
@@ -1024,7 +1053,6 @@
 			display: block;
 			margin: auto;
 			padding: 0;
-			// background-color: red;
 		}
 	}
 </style>

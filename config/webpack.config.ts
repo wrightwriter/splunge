@@ -16,17 +16,10 @@ const fs_ = require('node:fs/promises')
 
 const mode = process.env.NODE_ENV ?? 'development'
 let isProduction = mode === 'production'
-// const isProduction = false
 let isDevelopment = !isProduction
-
-// isDevelopment = true
-// isProduction = false
 
 const MagicString = require('magic-string').default
 const Bundle = require('magic-string').Bundle
-// import MagicString, {Bundle} from
-// import * as path from "path";
-// import * as fs from 'node:fs/promises';
 
 /* Make `@import "./whatever.css" scoped;` statements import CSS into the component's CSS scope */
 function importCSSPreprocess() {
@@ -128,8 +121,7 @@ module.exports.default = {
 						compilerOptions: {
 							dev: isDevelopment,
 						},
-						// emitCss: isProduction,
-						emitCss: true,
+						emitCss: isProduction,
 						hotReload: false,
 						preprocess: [
 							// @ts-ignore
@@ -160,7 +152,7 @@ module.exports.default = {
 			{test: /\.ts$/, loader: 'ts-loader', exclude: /node_modules/},
 			{test: /\.js$/, loader: 'source-map-loader'},
 			{test: /\.css$/i, use: ['style-loader', 'css-loader']},
-			{test: /\.(png|jpe?g|gif)$/i, use: ['file-loader']},
+			{test: /\.(png|jpe?g|gif)$/i, type: 'asset/resource'},
 			{
 				test: /\.webp$/,
 				use: [
@@ -176,9 +168,14 @@ module.exports.default = {
 				],
 			},
 			{
+				test: /\.(woff|woff2|eot|ttf|otf)$/,
+				type: 'asset/resource',
+			},
+			{
 				test: /\.(glsl|vs|fs|vert|frag)$/,
 				exclude: /node_modules/,
 				type: 'asset/source',
+				// type: 'javascript/auto',
 				use: [
 					'raw-loader',
 					{
@@ -188,10 +185,6 @@ module.exports.default = {
 						},
 					},
 				],
-			},
-			{
-				test: /\.(woff|woff2|eot|ttf|otf)$/,
-				loader: 'file-loader',
 			},
 		],
 	},
@@ -203,9 +196,6 @@ module.exports.default = {
 			publicPath: './',
 			minify: false,
 		}),
-		// new CopyWebpackPlugin({
-
-		// })
 	],
 	optimization: {
 		minimize: false,
@@ -223,6 +213,6 @@ if (isDevelopment) {
 
 if (isProduction) {
 	// module.exports.default.plugins.push(new BundleAnalyzerPlugin())
-	// module.exports.default.plugins.push(new CompressionPlugin())
-	// module.exports.default.optimization.minimize = true
+	module.exports.default.plugins.push(new CompressionPlugin())
+	module.exports.default.optimization.minimize = true
 }

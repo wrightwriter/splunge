@@ -19,7 +19,7 @@
       255 * Math.pow(1.0, 0.45454545454545454545)})`)
     }
   }
-	export let update_display = (colour_r: number, colour_g: number, colour_b: number)=>{re_render_colour(colour_r, colour_g, colour_b)}
+	export const update_display = (colour_r: number, colour_g: number, colour_b: number)=>{re_render_colour(colour_r, colour_g, colour_b)}
   
 	$: re_render_colour(colour[0], colour[1], colour[2]);
 
@@ -50,11 +50,11 @@
 
     let col = chroma_gl(colour).oklch()
 
-    col[0] += valueDiffY*3.0*scale
+    col[0] += valueDiffY*1.0*scale
 		if(is_vs_adjusting){
-			col[1] += valueDiffX*1.0*scale
+			col[1] += valueDiffX*0.5*scale
 		} else{
-			col[2] += valueDiffX*360*3.0*scale
+			col[2] += valueDiffX*360*1.0*scale
 		}
     col[0] = clamp(col[0], 0, 1)
     col[1] = clamp(col[1], 0, 1)
@@ -67,7 +67,7 @@
     colour[2] = col[2]
 	}
 
-	function pointerDown(e: PointerEvent) {
+	const pointerDown = (e: PointerEvent) => {
 		dragging = true
 		const {clientX, clientY} = e
 		prevY = clientY
@@ -85,7 +85,7 @@
 		e.stopPropagation()
 	}
 
-	function pointerUp() {
+	const pointerUp = () => {
 		dragging = false
 		stopped_dragging = true
 		window.removeEventListener('pointermove', pointerMove)
@@ -109,11 +109,13 @@
   .knob-container{
     box-sizing: border-box;
     -webkit-box-sizing: border-box;
+		width: 10rem;
     &:hover{
       cursor: pointer;
     }
 		>div{
 			width: 100%;
+			height: 100%;
 			text-align: center;
 			user-select: none;
 			filter: invert(1);
@@ -121,12 +123,12 @@
 			color: black;
 		}
     margin-right: 0.5rem;
-    aspect-ratio: 2/1;
+    aspect-ratio: 1/1;
     display: flex;
     background-color: var(--color);
-		width: 14rem;
+		// width: 14rem;
     height: 100%;
-    max-height: 100% !important;
+    // max-height: 100% !important;
     align-items: center;
     justify-content: space-around;
   }  

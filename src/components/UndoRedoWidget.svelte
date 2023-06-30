@@ -12,23 +12,27 @@
   
 </script>
 
-<div class='knob-container'>
-  <div class="knob" on:click={()=>undo()}>
-    {@html undoIcon}
+<!-- <svelte:fragment> -->
+  <div class='knob-container'>
+    <div class="knob" on:click={()=>undo()}>
+      {@html undoIcon}
+    </div>
   </div>
-  <div class="knob" on:click={()=>redo()}>
-    {@html redoIcon}
+  <div class='knob-container'>
+    <div class="knob" on:click={()=>redo()}>
+      {@html redoIcon}
+    </div>
   </div>
-</div>
+<!-- </svelte:fragment> -->
 
 
 <!-- <style src='/../styles/icon.scss'> </style> -->
 <style lang="scss">
-  *{
-    user-select: none;
-    -webkit-tap-highlight-color:transparent;
-  } 
 
   @import "/../styles/icon.scss" scoped; 
+  
+  .knob-container{
+    // aspect-ratio: unset; 
+  }
 
 </style>

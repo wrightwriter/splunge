@@ -41,10 +41,9 @@
 		filter: invert(1);
 		background: black;
 	}
-	* {
-		user-select: none;
-		-webkit-tap-highlight-color: transparent;
-	}
 
   @import "/../styles/icon.scss" scoped; 
+	.knob-container {
+		z-index: 0 !important;
+	}
 </style>

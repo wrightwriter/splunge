@@ -13,7 +13,7 @@
 <style lang="scss">
   #four-icons{
     // width: 100%;
-    max-height: unset !important;
+    // max-height: unset !important;
     height: 100%;
     aspect-ratio: 1/1;
     display: grid;

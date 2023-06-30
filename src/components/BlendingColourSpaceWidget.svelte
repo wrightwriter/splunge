@@ -36,10 +36,6 @@
 </script>
 
 <style lang="scss">
-	* {
-		user-select: none;
-		-webkit-tap-highlight-color: transparent;
-	}
 	div {
 		&:active {
 			filter: invert(1);
@@ -47,7 +43,7 @@
 		}
 	}
 	.knob-container-container {
-		z-index: 99;
+		z-index: 0 !important;
 		margin-bottom: auto;
 		margin-top: auto;
 		margin-right: 1.5rem;

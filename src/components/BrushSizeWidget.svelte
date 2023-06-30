@@ -53,22 +53,32 @@
 </script>
 
 <style lang="scss">
-	* {
-		user-select: none;
-		-webkit-tap-highlight-color: transparent;
-	}
   @import "/../styles/icon.scss" scoped; 
 	.knob-container-container {
+		aspect-ratio: 1/1;
+
+		&:active{
+			filter: invert(1);
+		}
+
+		.knob{
+			&:active{
+				filter: invert(0);
+				background: black;
+			}
+		}
 		
-    max-height: unset !important;
-    display: flex;
-    align-items: center;
+    // max-height: unset !important;
+    // display: flex;
+    // align-items: center;
 		&:hover {
 			cursor: pointer;
 		}
-		height: 100%;
+		// height: 100%;
 		.knob-container{
-			padding: 0.3rem;
+			margin-left: 0;
+			margin-right: 0;
+			// padding: 0.3rem;
 		}
 	}
 

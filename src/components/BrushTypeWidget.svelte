@@ -13,7 +13,7 @@
 				for (let element of elements) {
 					if (k === i) {
 						element.style.outline = '1px solid white'
-						element.style.outlineOffset = '0.1rem'
+						element.style.outlineOffset = '0rem'
 					} else {
 						element.style.outline = '0px solid white'
 					}
@@ -74,32 +74,22 @@
 </script>
 
 <style lang="scss">
-	* {
-		user-select: none;
-		-webkit-tap-highlight-color: transparent;
-	}
 	.knob-container-container {
-		aspect-ratio: 1/1;
-		max-height: 50%;
-		margin-top: 0.5rem;
-		margin-bottom: auto;
-		margin-right: 1.5rem;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		pointer-events: all;
-		user-select: none;
-		cursor: pointer;
-		min-width: 7rem;
+    aspect-ratio: unset;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+		grid-column-gap: 0.4rem;
+		grid-row-gap: 0.4rem;
 
-		height: 100%;
-		display: flex;
-		margin: 0;
-		margin-right: 0.5rem;
-		min-height: unset;
-		min-width: unset;
-		max-height: 1.6rem !important;
+    pointer-events: all;
+    user-select: none;
+    cursor: pointer;
+
+    overflow: visible;
+    height: 100%;
+    width: 4rem;
+    max-width: unset;
+		padding: 0.2rem;
     >.title.menu-toggle {
       :global(svg) {
         fill: white;
@@ -107,19 +97,12 @@
           filter: invert(1);
           background: black;
         }
+				height: 100%;
+				width: 100%;
       }
-    }
-    >.title {
-      /* position: absolute; */
-      font-size: 0.8rem !important;
-      /* position: absolute; */
-      margin-top: 0.5rem;
-      color: white;
-      width: 100%;
-      text-align: center;
-      font-weight: bolder;
-      top: 5.5rem;
       user-select: none;
+      width: 100%;
+      height: 100%;
     }
 	}
 </style>
