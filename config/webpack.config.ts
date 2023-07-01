@@ -171,6 +171,12 @@ module.exports.default = {
 			{
 				test: /\.(woff|woff2|eot|ttf|otf)$/,
 				type: 'asset/resource',
+				// options: {
+				generator: {
+					outputPath: './', // Output directory for the images
+					publicPath: './', // Public URL path for the images
+				},
+				// },
 			},
 			{
 				test: /\.(glsl|vs|fs|vert|frag)$/,
