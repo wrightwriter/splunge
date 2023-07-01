@@ -90,7 +90,7 @@ module.exports.default = {
 		filename: 'bundle.js',
 		publicPath: '/',
 	},
-	devtool: 'inline-source-map',
+	devtool: 'source-map',
 	resolve: {
 		roots: [path.resolve(__dirname, '../src')],
 		extensions: ['.js', '.ts', '.svelte'],
