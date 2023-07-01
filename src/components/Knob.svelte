@@ -21,7 +21,7 @@
 	let startY = 0
   let startX = 0;
   let startValue = 0
-	$: rotation = -Math.PI * 0.83 + (value) * rotRange;
+	$: rotation = (value);
   
 	const pointerMove = ({ clientX, clientY }) => {
 		let scale = 3./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
@@ -69,9 +69,25 @@
 
 <div draggable="false" class='knob-container-container'>
   <div class='knob-container'>
-    <div class="knob" style="transform:rotate(calc({rotation} * 1rad))" on:pointerdown={pointerDown} >
-      <svg width='100%' height='100%' viewBox="0 0 100 100">
-        <g fill="none" stroke="currentColor">
+    <div class="knob" on:pointerdown={pointerDown} >
+      <!-- <svg style="transform:rotate(calc({rotation} * 1rad))"  width='100%' height='100%' viewBox="0 0 100 100"> -->
+      <svg style={`
+        background-image: conic-gradient(
+          transparent ${0}deg,
+          white ${0+5}deg,
+          white ${value*155*2}deg, 
+          transparent ${value*155*2 + 5}deg , 
+          transparent ${0}deg
+          ); 
+        // transparent ${0 - 2}deg;
+        transform: rotate(-155deg);
+        border-radius: 100%;
+      `}  width='100%' height='100%' viewBox="0 0 100 100">
+        <!-- border-radius: 1000rem;
+        background-image: conic-gradient(pink 1.14rad, transparent 0); -->
+        ;
+
+        <g fill="none" stroke="none">
           <path stroke-width="10" d="M50 40 l0 -50" />
         </g>
       </svg>
@@ -130,13 +146,13 @@
       align-items: center;
       background-image: conic-gradient(from 45deg,
         var(--secondary-color) 0deg 15deg,
-        var(--tertiary-color) 60deg 60deg,
-        var(--darken-color) 120deg 240deg,
-        var(--tertiary-color) 300deg 300deg,
+        white 60deg 60deg,
+        rgba(0,0,0,0) 120deg 240deg,
+        white 300deg 300deg,
         var(--secondary-color) 345deg 360deg
       );
       border-radius: 50%;
-      border: 0.2rem solid white;
+      outline: 0.2rem solid white;
     }
     >.knob {
       display: block;
@@ -147,13 +163,15 @@
       border-radius: 50%;
       color: var(--text-color);
       background-color: var(--tertiary-color);
-      box-shadow: 0 0 .3em rgba(255, 255, 255, 0.3) inset;
+      // box-shadow: 0 0 .3em rgba(255, 255, 255, 0.3) inset;
       transform-origin: 50% 50%;
     }
 
-    >.knob svg{
+    >.knob :global(svg){
       width: 100%;
       height: 100%;
+      border-radius: 1000%;
+      transform: rotate(-155deg);
     }
   }
 

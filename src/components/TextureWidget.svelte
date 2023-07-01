@@ -1,11 +1,16 @@
 <svelte:options accessors />
 
 <div class="knob-container-container">
+	<div class="title">
+		Texture
+	</div>
+	<div class="img-container">
 	<img
 		src={selected_brush_texture ? selected_brush_texture.path : ''}
 		on:click={() => {
 			dropdown_toggled = !dropdown_toggled
 		}} />
+	</div>
 	{#if dropdown_toggled}
 		<div id="dropdown">
 			{#each brush_textures as texture, i}
@@ -45,7 +50,7 @@
 		aspect-ratio: 1/1;
 		// max-height: 50%;
 		margin-bottom: auto;
-		margin-top: auto;
+		// margin-top: auto;
 		margin-right: 1.5rem;
 		display: block;
 		flex-direction: column;
@@ -56,10 +61,13 @@
 		cursor: pointer;
 		min-width: 7rem;
 
-		border: 1px solid white;
-		min-width: 0px;
-		aspect-ratio: 1/1;
 		height: 100%;
+		
+    min-height: 4rem;
+    margin-top: 0;
+		.title{
+			font-size: 0.8rem;
+		}
 		#dropdown {
 			display: flex;
 			flex-direction: column;
@@ -67,16 +75,26 @@
 			height: unset;
 			background: black;
 			// top: 88px;
-			> img {
+			img {
 				z-index: 10000000;
 				aspect-ratio: 1/1;
 				width: 100%;
+				height: unset;
 				// position: static;
 			}
 		}
-		> img {
+		.img-container{
+			overflow: hidden;
+			border: 1px solid white;
 			aspect-ratio: 1/1;
 			height: 100%;
+			width: unset;
+			img {
+				aspect-ratio: 1/1;
+				width: 100%;
+				height: unset;
+			}
+			
 		}
 	}
 </style>

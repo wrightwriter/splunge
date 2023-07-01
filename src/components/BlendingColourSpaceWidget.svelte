@@ -3,7 +3,7 @@
 <div class="knob-container-container" style="border: none;" >
 	{#if !dropdown_toggled}
 	<div style="border: none;">Blend space</div>
-	<div style="border: 1px solid white;" on:click={()=>{
+	<div style="border: 1px solid white;" class="space" on:click={()=>{
 		dropdown_toggled = true
 	}}>{BlendingColourSpace[selected_colour_space]}</div>
 	{/if}
@@ -11,7 +11,7 @@
 		<div id="dropdown">
 			{#each Object.keys(BlendingColourSpace) as colour_space, i}
 				{#if isNaN(BlendingColourSpace[colour_space])}
-					<div role="button" tabindex="0" on:click={()=>{
+					<div role="button" class="space" tabindex="0" on:click={()=>{
 						// @ts-ignore
 						selected_colour_space = colour_space
 						dropdown_toggled = false
@@ -36,7 +36,7 @@
 </script>
 
 <style lang="scss">
-	div {
+	.space {
 		&:active {
 			filter: invert(1);
 			background: black;
@@ -47,17 +47,20 @@
 		margin-bottom: auto;
 		margin-top: auto;
 		margin-right: 1.5rem;
-		display: block;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
+		display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
 		pointer-events: all;
 		user-select: none;
 		cursor: pointer;
-		min-width: 7rem;
+		// min-width: 7rem;
+		width: 8rem;
+		height: 100%;
+		min-height: 6rem;
 
 		border: 1px solid white;
-		min-width: 0px;
+		// min-width: 0px;
 		#dropdown {
 			display: flex;
 			flex-direction: column;

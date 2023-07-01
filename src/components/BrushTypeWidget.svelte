@@ -9,6 +9,7 @@
 			tabindex="0"
 			on:click={() => {
 				curr_brush.selected_brush_type = BrushType[brush_type]
+				trigger_brush_preset_redraw.set(!$trigger_brush_preset_redraw)
 				let k = 0
 				for (let element of elements) {
 					if (k === i) {
@@ -33,6 +34,8 @@
 	import brush_blobs_icon from '/../public/brush-blobs.svg'
 	import brush_long_icon from '/../public/brush-long.svg'
 	import brush_triangles_icon from '/../public/brush-triangles.svg'
+	import { stringify } from 'querystring'
+	import { trigger_brush_preset_redraw } from 'store'
 
 	export let curr_brush: BrushPreset
 	let selected_brush_type: BrushType
@@ -84,7 +87,7 @@
 
     overflow: visible;
     height: 100%;
-    width: 4rem;
+    width: 5rem;
     max-width: unset;
 		padding: 0.2rem;
     >.title.menu-toggle {

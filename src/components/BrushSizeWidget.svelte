@@ -43,7 +43,7 @@
 		e.stopPropagation()
 	}
 
-	function pointerUp() {
+	const pointerUp = () => {
 		dragging = false
 		stopped_dragging = true
 		window.removeEventListener('pointermove', pointerMove)
@@ -59,6 +59,8 @@
 		&:active{
 			filter: invert(1);
 		}
+		margin-top: auto;
+		margin-bottom: auto;
 
 		.knob{
 			&:active{

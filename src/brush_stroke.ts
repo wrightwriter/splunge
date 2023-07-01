@@ -9,21 +9,27 @@ export enum BlendingColourSpace {
 export class DrawParams {
 	tex_dynamics: number = 0.3
 	tex_lch_dynamics: number[] = [0, 0, 0.2]
-	noise_stretch: number[] = [1, 0.2]
 	tex_stretch: number[] = [1, 0.2]
+	tex_distort: number[] = [0, 0]
+	tex_distort_amt: number = 0
+	tex_grit: number = 0
 
 	blending_colour_space = BlendingColourSpace.Pigments
 	constructor(
 		tex_dynamics: number,
 		tex_lch_dynamics: number[],
-		noise_stretch: number[],
 		tex_stretch: number[],
+		tex_distort: number[],
+		tex_distort_amt: number,
+		tex_grit: number,
 		blending_colour_space: BlendingColourSpace,
 	) {
 		this.tex_dynamics = tex_dynamics
 		this.tex_lch_dynamics = [...tex_lch_dynamics]
-		this.noise_stretch = [...noise_stretch]
 		this.tex_stretch = [...tex_stretch]
+		this.tex_distort = [...tex_distort]
+		this.tex_distort_amt = tex_distort_amt
+		this.tex_grit = tex_grit
 		this.blending_colour_space = blending_colour_space
 	}
 }
@@ -46,8 +52,11 @@ export class BrushPreset {
 
 	tex_dynamics: number = 0.3
 	tex_lch_dynamics: number[] = [0, 0, 0.02]
-	noise_stretch: number[] = [1, 0.2]
+	// noise_stretch: number[] = [1, 0.2]
 	tex_stretch: number[] = [1, 0.2]
+	tex_distort: number[] = [0, 0]
+	tex_distort_amt: number = 0
+	tex_grit: number = 0
 
 	constructor() {}
 }

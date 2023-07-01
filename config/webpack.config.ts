@@ -107,6 +107,7 @@ module.exports.default = {
 			crypto: false,
 			util: false,
 			http: false,
+			querystring: false,
 		},
 	},
 	ignoreWarnings: [/Failed to parse source map/],

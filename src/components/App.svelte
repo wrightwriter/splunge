@@ -20,14 +20,22 @@
 				bind:dragging={brush_size_widget_dragging}
 				bind:stopped_dragging={brush_size_widget_stopped_dragging} />
 			<div 
-				style='height: 100%; display: flex; aspect-ratio: 6/1;'
+				style={`
+					height: 100%; 
+					display: flex; 
+					aspect-ratio: 6/1;
+					height: 5rem;
+					display: flex;
+					width: 38rem;
+					min-height: 6.6rem;
+				`}
 				on:pointerenter={()=>{mouse_over_colour_picker = true}}
 				on:pointerleave={()=>{mouse_over_colour_picker = false; mouse_over_colour_picker_finished = true}}
 			>
-			<RGBSliders bind:colour={stroke_col} />
-			<ColourDisplay 
-				bind:colour={stroke_col} 
-				bind:update_display={trigger_colour_display_update} />
+				<RGBSliders bind:colour={stroke_col} />
+				<ColourDisplay 
+					bind:colour={stroke_col} 
+					bind:update_display={trigger_colour_display_update} />
 			</div>
 			<!-- <BrushTypeWidget bind:selected_brush_type={curr_brush.selected_brush_type} /> -->
 			<BrushTypeWidget bind:curr_brush={curr_brush} />
@@ -65,27 +73,33 @@
 			<FloatingModal />
 		</div>
 		<SemiModal bind:this={chaosSemiModal} knob={chaosKnob}>
-			<Knob bind:value={curr_brush.chaos_lch[0]} title={'Chaos L'} />
-			<Knob bind:value={curr_brush.chaos_lch[1]} title={'Chaos C'} />
-			<Knob bind:value={curr_brush.chaos_lch[2]} title={'Chaos H'} />
+			<Sliders 
+				bind:value_1={curr_brush.chaos_lch[0]} 
+				bind:value_2={curr_brush.chaos_lch[1]} 
+				bind:value_3={curr_brush.chaos_lch[2]} 
+				names={["Chaos L", "Chaos C", "Chaos H"]} />
 			<Knob bind:value={curr_brush.chaos_speed} title={'Chaos Speed'} />
 		</SemiModal>
 		<SemiModal bind:this={dynamicsSemiModal} knob={dynamicsKnob}>
-			<Knob bind:value={curr_brush.stroke_opacity_dynamics[0]} title={'Opacity min'} />
-			<Knob bind:value={curr_brush.stroke_opacity_dynamics[1]} title={'Opacity max'} />
-			<Knob bind:value={curr_brush.stroke_size_dynamics[0]} title={'Size min'} />
-			<Knob bind:value={curr_brush.stroke_size_dynamics[1]} title={'Size max'} />
+			<Sliders bind:value_1={curr_brush.stroke_opacity_dynamics[0]} bind:value_2={curr_brush.stroke_opacity_dynamics[1]} names={["Opacity min", "Opacity max"]} />
+			<Sliders bind:value_1={curr_brush.stroke_size_dynamics[0]} bind:value_2={curr_brush.stroke_size_dynamics[1]} names={["Size min", "Size max"]} />
 			<Knob bind:value={curr_brush.rot_jitter} title={'Rot jitt'} />
 			<Knob bind:value={curr_brush.pos_jitter} title={'Pos jitt'} />
 		</SemiModal>
 		<SemiModal bind:this={texDynamicsSemiModal} knob={texDynamicsKnob}>
-			<Knob bind:value={curr_brush.tex_stretch[0]} title={'Stretch X'} />
-			<Knob bind:value={curr_brush.tex_stretch[1]} title={'Stretch Y'} />
-			<Knob bind:value={curr_brush.noise_stretch[0]} title={'Noise Stretch X'} />
-			<Knob bind:value={curr_brush.noise_stretch[1]} title={'Noise Stretch Y'} />
-			<Knob bind:value={curr_brush.tex_lch_dynamics[0]} title={'Tex V'} />
+			<Knob bind:value={curr_brush.tex_grit} title={'Grit'} />
+			<Knob bind:value={curr_brush.tex_distort_amt} title={'Distort Amt'} />
+			<Knob bind:value={curr_brush.tex_distort[0]} title={'Distort X'} />
+			<Knob bind:value={curr_brush.tex_distort[1]} title={'Distort Y'} />
+			<!-- <Knob bind:value={curr_brush.tex_lch_dynamics[0]} title={'Tex V'} />
 			<Knob bind:value={curr_brush.tex_lch_dynamics[1]} title={'Tex S'} />
-			<Knob bind:value={curr_brush.tex_lch_dynamics[2]} title={'Tex H'} />
+			<Knob bind:value={curr_brush.tex_lch_dynamics[2]} title={'Tex H'} /> -->
+			<Sliders 
+				bind:value_1={curr_brush.tex_lch_dynamics[0]} 
+				bind:value_2={curr_brush.tex_lch_dynamics[1]} 
+				bind:value_3={curr_brush.tex_lch_dynamics[2]} 
+				names={["Tex V", "Tex S", "Tex H"]} />
+			<TextureStretchWidget bind:selected_brush_texture={curr_brush.selected_brush_texture} bind:selected_brush_preset={curr_brush}/>
 			<TextureWidget bind:brush_textures={brush_textures} bind:selected_brush_texture={curr_brush.selected_brush_texture} />
 		</SemiModal>
 	</div>
@@ -109,9 +123,11 @@
 	import FloatingModal from './FloatingModal.svelte'
 	import PickColourWidget from './PickColourWidget.svelte'
 	import TextureWidget from './TextureWidget.svelte'
+	import TextureStretchWidget from './TextureStretchWidget.svelte'
 	import BlendingColourSpaceWidget from './BlendingColourSpaceWidget.svelte'
 
 	import RGBSliders from './RGBSliders.svelte'
+	import Sliders from './Sliders.svelte'
 	import ColourDisplay from './ColourDisplay.svelte'
 	import SemiModal from './SemiModal.svelte'
 	import FourIconsWidget from './FourIconsWidget.svelte'
@@ -120,7 +136,7 @@
 	import {Hash, abs, pow, tau, mix, max, log2} from 'wmath'
 	import {clamp, lerp, mod, smoothstep} from '@0b5vr/experimental'
 	import {BrushTexture, Project, Utils} from 'stuff'
-	import {BlendingColourSpace, BrushPreset, BrushStroke, DrawParams} from 'brush_stroke'
+	import {BlendingColourSpace, BrushPreset, BrushStroke, BrushType, DrawParams} from 'brush_stroke'
 	import {Drawer} from 'drawer'
 	import { Framebuffer } from 'gl/Framebuffer'
 	import { VertexBuffer, UBO } from 'gl/Buffer'
@@ -156,11 +172,18 @@
 	let desired_zoom = 1
 	const panning_temp_pinch = new Float32Array(2)
 	let panning = new Float32Array(2)
-	let brush_presets: BrushPreset[] = []
-	for(let i = 0; i < 6; i++){
-		brush_presets.push(new BrushPreset())
-	}
+	let brush_presets: BrushPreset[] = [
+		new BrushPreset(),
+		new BrushPreset(),
+		new BrushPreset(),
+		new BrushPreset(),
+		new BrushPreset(),
+		new BrushPreset(),
+	]
+
 	let brush_textures: Array<BrushTexture> = []
+	let noise_tex: Texture 
+
 
 	// Internals
 	const undo_cache_steps = 25
@@ -184,7 +207,7 @@
 	let brush_rot: number[] = [0, 0]
 	let brush_pos_ndc_screen: number[] = [0, 0]
 	let brush_pos_ndc_canvas: number[] = [0, 0]
-	let brush_sz: number[] = [1, 0.2]
+	let brush_sz: number[] = [1, 0.5]
 	
 	let curr_brush: BrushPreset = brush_presets[0]
 	let blending_colour_space = BlendingColourSpace.OkLCH
@@ -280,6 +303,7 @@
 		temp_undo_fb = new Framebuffer([
 			new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, false) 
 		], false)
+
 		
 
 		ubo = new UBO()
@@ -314,6 +338,8 @@
 			window.history.pushState(null, "", window.location.href);
 		});
 
+		noise_tex = await Texture.from_image_path(require("../../public/images/noise_tex.webp").default)
+
 		brush_textures.push(
 			await BrushTexture.create(require("../../public/images/brow.webp").default, 0)
 		)
@@ -339,6 +365,33 @@
 
 		for(let brush of brush_presets){
 			brush.selected_brush_texture = brush_textures[0]
+		}
+
+		{
+			brush_presets[0].selected_brush_type = BrushType.Long
+			brush_presets[0].selected_brush_texture = brush_textures[4]
+			// brush_presets[0].tex_stretch[0] = 1/20
+			// brush_presets[0].tex_stretch[1] = 1/40
+			brush_presets[0].tex_stretch[0] = 1.339
+			brush_presets[0].tex_stretch[1] = 1.75
+			brush_presets[0].tex_distort[0] = 0.294
+			brush_presets[0].tex_distort[1] = 0
+			brush_presets[0].tex_distort_amt = 0.18
+			// brush_presets[0].noise_stretch[0] = curr_brush.noise_stretch[0] = 0
+			// brush_presets[0].noise_stretch[1] = curr_brush.noise_stretch[1] = 0.1
+			curr_brush.tex_stretch[0] =  brush_presets[0].tex_stretch[0]/20
+			curr_brush.tex_stretch[1] =  brush_presets[0].tex_stretch[1]/40
+		}
+		{
+			brush_presets[1].selected_brush_type = BrushType.Blobs
+			brush_presets[1].selected_brush_texture = brush_textures[0]
+			brush_presets[1].tex_stretch[0] = 1/20
+			brush_presets[1].tex_stretch[1] = 1/40
+			brush_presets[1].tex_distort[0] = 0
+			brush_presets[1].tex_distort[1] = 0
+			// brush_presets[1].noise_stretch[0] = curr_brush.noise_stretch[0] = 0
+			// brush_presets[1].noise_stretch[1] = curr_brush.noise_stretch[1] = 0.1
+			
 		}
 		modals = [chaosSemiModal, dynamicsSemiModal, texDynamicsSemiModal]
 	}
@@ -375,6 +428,11 @@
 				brush_tex.gpu_tex.bind_to_unit(brush_tex_start_idx + i)				
 				gl.uniform1i(brush_textures_loc, brush_tex_start_idx + i);
 			})
+			 
+			noise_tex.bind_to_unit(brush_tex_start_idx + brush_textures.length)				
+			const noise_tex_loc = gl.getUniformLocation(program.program, "noise_tex")
+			gl.uniform1i(noise_tex_loc, brush_tex_start_idx + brush_textures.length);
+			// gl.activeTexture(gl.TEXTURE0) // TODELETE
 			gl.activeTexture(gl.TEXTURE0) // TODELETE
 		}
 		const brush_preview_program = new ShaderProgram(require('shaders/brush_preview.vert'), require('shaders/brush_preview.frag'))
@@ -440,8 +498,11 @@
 			new DrawParams(
 				curr_brush.tex_dynamics, 
 				curr_brush.tex_lch_dynamics, 
-				curr_brush.noise_stretch, 
+				// curr_brush.noise_stretch, 
 				curr_brush.tex_stretch, 
+				curr_brush.tex_distort, 
+				curr_brush.tex_distort_amt, 
+				curr_brush.tex_grit, 
 				BlendingColourSpace.Pigments
 				),
 				curr_brush.selected_brush_texture
@@ -478,7 +539,8 @@
 			end_idx = end_idx ?? project.brush_strokes.length
 			
 			for(k = start_idx; k < end_idx; k++){
-				drawer.push_any_stroke(project.brush_strokes[k])
+				const stroke = project.brush_strokes[k]
+				drawer.push_any_stroke(stroke)
 			}
 
 			drawer.brush_buffer.upload_all_buffs()
@@ -490,8 +552,11 @@
 			let prev_brush_tex_idx = -1
 			
 			let prev_hsv_dynamics = [-9999,-9999,-9999]
-			let prev_noise_stretch = [-9999,-9999]
+			// let prev_noise_stretch = [-9999,-9999]
 			let prev_tex_stretch = [-9999,-9999]
+			let prev_tex_distort = [-9999,-9999]
+			let prev_tex_distort_amt = -9999
+			let prev_tex_grit = -9999
 
 
 			gl.useProgram(composite_stroke_to_canvas_program.program)
@@ -508,8 +573,11 @@
 			let j = 0
 			
 			for(let amogus of drawer.recorded_drawcalls){
-				const new_noise_stretch = project.brush_strokes[k].draw_params.noise_stretch
+				// const new_noise_stretch = project.brush_strokes[k].draw_params.noise_stretch
 				const new_tex_stretch = project.brush_strokes[k].draw_params.tex_stretch
+				const new_tex_distort = project.brush_strokes[k].draw_params.tex_distort
+				const new_tex_distort_amt = project.brush_strokes[k].draw_params.tex_distort_amt
+				const new_tex_grit = project.brush_strokes[k].draw_params.tex_grit
 				const new_hsv_dynamics = project.brush_strokes[k].draw_params.tex_lch_dynamics
 
 				const new_brush_tex_idx = project.brush_strokes[k].brush_texture.idx
@@ -525,20 +593,25 @@
 					prev_hsv_dynamics[0] !== new_hsv_dynamics[0] || 
 					prev_hsv_dynamics[1] !== new_hsv_dynamics[1] || 
 					prev_hsv_dynamics[2] !== new_hsv_dynamics[2] ||
-					prev_noise_stretch[0] !== new_noise_stretch[0] || 
-					prev_noise_stretch[1] !== new_noise_stretch[1] ||
+					// prev_noise_stretch[0] !== new_noise_stretch[0] || 
+					// prev_noise_stretch[1] !== new_noise_stretch[1] ||
 					prev_tex_stretch[0] !== new_tex_stretch[0] || 
-					prev_tex_stretch[1] !== new_tex_stretch[1] 
-					
+					prev_tex_stretch[1] !== new_tex_stretch[1] ||
+					prev_tex_distort[0] !== new_tex_distort[0] || 
+					prev_tex_distort[1] !== new_tex_distort[1] 
 					){
 					brush_params_mat[0] = new_brush_tex_idx
 					brush_params_mat[1] = new_hsv_dynamics[0]
 					brush_params_mat[2] = new_hsv_dynamics[1]
 					brush_params_mat[3] = new_hsv_dynamics[2]
-					brush_params_mat[4] = new_noise_stretch[0]
-					brush_params_mat[5] = new_noise_stretch[1]
+					// brush_params_mat[4] = new_noise_stretch[0]
+					// brush_params_mat[5] = new_noise_stretch[1]
 					brush_params_mat[6] = new_tex_stretch[0]
 					brush_params_mat[7] = new_tex_stretch[1] 
+					brush_params_mat[8] = new_tex_distort[0]
+					brush_params_mat[9] = new_tex_distort[1] 
+				  brush_params_mat[10] = new_tex_distort_amt
+				  brush_params_mat[11] = new_tex_grit
 					gl.uniformMatrix4fv(brush_shader.brush_params_loc, false, brush_params_mat)
 				}
 
@@ -570,10 +643,12 @@
 				prev_hsv_dynamics[0] = new_hsv_dynamics[0]
 				prev_hsv_dynamics[1] = new_hsv_dynamics[1]
 				prev_hsv_dynamics[2] = new_hsv_dynamics[2] 
-				prev_noise_stretch[0] = new_noise_stretch[0]
-				prev_noise_stretch[1] = new_noise_stretch[1]
 				prev_tex_stretch[0] = new_tex_stretch[0]
 				prev_tex_stretch[1] = new_tex_stretch[1]
+				prev_tex_distort[0] = new_tex_distort[0]
+				prev_tex_distort[1] = new_tex_distort[1]
+				prev_tex_distort_amt = new_tex_distort_amt
+				prev_tex_grit = new_tex_grit
 				k++
 				j++
 			}
@@ -761,9 +836,12 @@
 		const record_stroke = ()=>{
 				if (io.mouse_just_pressed && !(redo_pending || undo_pending)) {
 					brush_stroke = new BrushStroke(curr_brush.selected_brush_type, new DrawParams(
-						curr_brush.tex_dynamics, curr_brush.tex_lch_dynamics, curr_brush.noise_stretch,
+						curr_brush.tex_dynamics, curr_brush.tex_lch_dynamics,
 						// curr_brush.tex_stretch,
 						[curr_brush.tex_stretch[0]*20., curr_brush.tex_stretch[1]*2.*20.],
+						curr_brush.tex_distort,
+						curr_brush.tex_distort_amt,
+						curr_brush.tex_grit,
 						blending_colour_space
 						), curr_brush.selected_brush_texture)
 					for (let i = 0; i < redo_history_length; i++) {
@@ -888,10 +966,14 @@
 				brush_params_mat[1] = brush_stroke.draw_params.tex_lch_dynamics[0]
 				brush_params_mat[2] = brush_stroke.draw_params.tex_lch_dynamics[1]
 				brush_params_mat[3] = brush_stroke.draw_params.tex_lch_dynamics[2]
-				brush_params_mat[4] = brush_stroke.draw_params.noise_stretch[0]
-				brush_params_mat[5] = brush_stroke.draw_params.noise_stretch[1]
+				// brush_params_mat[4] = brush_stroke.draw_params.noise_stretch[0]
+				// brush_params_mat[5] = brush_stroke.draw_params.noise_stretch[1]
 				brush_params_mat[6] = brush_stroke.draw_params.tex_stretch[0]
 				brush_params_mat[7] = brush_stroke.draw_params.tex_stretch[1] 
+				brush_params_mat[8] = brush_stroke.draw_params.tex_distort[0]
+				brush_params_mat[9] = brush_stroke.draw_params.tex_distort[1] 
+				brush_params_mat[10] = brush_stroke.draw_params.tex_distort_amt
+				brush_params_mat[11] = brush_stroke.draw_params.tex_grit
 
 				gl.uniformMatrix4fv(brush_shader.brush_params_loc, false, brush_params_mat)
 
@@ -938,13 +1020,13 @@
 
 				post_canvas_program.use()
 
-				gl.uniform1f(post_canvas_program.zoom_loc, zoom)
+				gl.uniform1f(post_canvas_program.zoom_loc, zoom[0])
 				gl.uniform2fv(post_canvas_program.panning_loc, panning)
 				gl.uniform1i(post_canvas_program.blending_colour_space_loc, blending_colour_space)
 				canvas_fb.back_textures[0].bind_to_unit(1)
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 				
-				if(mouse_over_colour_picker && !brush_size_widget_dragging){
+				if((mouse_over_colour_picker && !brush_size_widget_dragging)){
 					colour_preview_program.use()
 					colour_preview_program.setUniformVec("brush_sz", brush_sz)
 					colour_preview_program.setUniformVec("colour", stroke_col)
@@ -1012,6 +1094,7 @@
 				>:global(div) {
 					max-height: 4rem;
 					height: 100%;
+					margin-bottom: auto;
 					&:not(:first-of-type){
 						margin-left: 0.25rem;
 					}

@@ -29,6 +29,7 @@ html {
   touch-action: none;
   width: 100%;
   height: 100%;
+  font-size: 1.7vw;
 }
 
 canvas {

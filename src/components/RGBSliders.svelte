@@ -35,6 +35,7 @@
 		let scale = 0.25/elements[colour_idx].clientWidth
 
 		let valueDiff = -(startX - clientX) *scale;
+		valueDiff += (startY - clientY) *scale;
 		colour[colour_idx] = clamp(startValue + valueDiff, 0, 1)
     update_style(colour_idx)
 	}
@@ -79,7 +80,9 @@
       >
          <div class='inner' 
           style={
-            i === 0 ? "background: rgba(255,0,0,1);" : i === 1 ? "background: rgba(0,255,0,1);" : "background: rgba(0,0,255,1);"
+            i === 0 ? "background:  rgb(238, 0, 107);" 
+            : i === 1 ? "background: rgb(0, 222, 107);" 
+            : "background: rgb(0, 85, 255);"
            }
            bind:this={inners[i]}
          />
@@ -93,10 +96,11 @@
     // max-height: 100% !important;
     margin-left: 0px;
     margin-right: 0px;
-    aspect-ratio: 2/1;
+    // aspect-ratio: 2/1;
     /* max-height: 50%; */
     height: 100%;
-    width: 14rem;
+    width: 100%;
+    // width: 14rem;
     /* margin-top: 0.5rem; */
     display: flex;
     flex-direction: row;

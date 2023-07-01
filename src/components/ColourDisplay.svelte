@@ -23,7 +23,7 @@
   
 	$: re_render_colour(colour[0], colour[1], colour[2]);
 
-	export let dragging: boolean = false
+	export let dragging: boolean = true
 	export let stopped_dragging: boolean = false
 
 	let startValue = [0, 0]
@@ -96,20 +96,24 @@
 
 <div draggable="false" class='knob-container' bind:this={container} on:pointerdown={pointerDown} >
 	{#if dragging}
-	<div transition:fade={{duration: 200}} style={`opacity: ${is_vs_adjusting ? 0.5 : 1};`}>
-		V/H
+	<div class="text-container" transition:fade={{duration: 200}} style={`opacity: ${is_vs_adjusting ? 0.5 : 1};`}>
+		<div>
+			V/H
+		</div>
 	</div>
-	<div style={`opacity: ${is_vs_adjusting ? 1 : 0.5};`}>
-		V/S
+	<div class="text-container" style={`opacity: ${is_vs_adjusting ? 1 : 0.5};`}>
+		<div>
+			V/S
+		</div>
 	</div>
 	{/if}
 </div>
 
 <style lang="scss">
   .knob-container{
-    box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-		width: 10rem;
+    // box-sizing: border-box;
+    // -webkit-box-sizing: border-box;
+		width: 100%;
     &:hover{
       cursor: pointer;
     }
@@ -122,14 +126,20 @@
 			filter: grayscale(1);
 			color: black;
 		}
+		.text-container{
+			display: flex;
+			align-items: center;
+			transform: translate(0px, -2.5%);
+			justify-content: center;
+		}
     margin-right: 0.5rem;
-    aspect-ratio: 1/1;
+    // aspect-ratio: 1/1;
     display: flex;
     background-color: var(--color);
 		// width: 14rem;
     height: 100%;
     // max-height: 100% !important;
-    align-items: center;
-    justify-content: space-around;
+    // align-items: center;
+    // justify-content: space-around;
   }  
 </style>

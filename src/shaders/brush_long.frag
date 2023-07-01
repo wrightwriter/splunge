@@ -3,6 +3,7 @@
 #pragma glslify: import('./_rand.glsl')
 
 
+uniform sampler2D noise_tex;
 uniform mat4 brush_params;
 // uniform int brush_texture_idx;
 // uniform vec3 tex_hsv_dynamics;
@@ -13,27 +14,28 @@ in vec2 uv;
 in vec4 vCol;
 out vec4 col;
 
-vec4 sample_brush_tex(int idx, vec2 uv){
+vec4 sample_brush_tex(int idx, vec2 uv, float grit){
+  grit = -grit * 9.;
   if(idx == 0){
-    return texture(brush_texture[0],uv,-1.);
+    return texture(brush_texture[0],uv,grit);
   }
   if(idx == 1){
-    return texture(brush_texture[1],uv,-1.);
+    return texture(brush_texture[1],uv,grit);
   }
   if(idx == 2){
-    return texture(brush_texture[2],uv,-1.);
+    return texture(brush_texture[2],uv,grit);
   }
   if(idx == 3){
-    return texture(brush_texture[3],uv,-1.);
+    return texture(brush_texture[3],uv,grit);
   }
   if(idx == 4){
-    return texture(brush_texture[4],uv,-1.);
+    return texture(brush_texture[4],uv,grit);
   }
   if(idx == 5){
-    return texture(brush_texture[5],uv,-1.);
+    return texture(brush_texture[5],uv,grit);
   }
   if(idx == 6){
-    return texture(brush_texture[6],uv,-1.);
+    return texture(brush_texture[6],uv,grit);
   } 
   // if(idx == 7){
   //   return texture(brush_texture[7],uv);
@@ -60,32 +62,43 @@ float sdBox(vec2 p, vec2 sz){
     return max(p.x,p.y);
 }
 void main() {
-
-  int brush_texture_idx = int(brush_params[0][0]+0.5);
-  vec3 tex_hsv_dynamics = vec3(brush_params[0][1], brush_params[0][2], brush_params[0][3]);
-  vec2 noise_stretch = vec2(brush_params[1][0], brush_params[1][1]);
-  vec2 tex_stretch = vec2(brush_params[1][2], brush_params[0][3]);
-  col = vec4(1);
-  // col.xyz = stroke_col.xyz;
-  
-  vec2 u = uv - 0.5;
-  
   vec2 boxSz = vec2(0.49);
   
   float pi = 3.14159265359;
   float tau = 2.*pi;
 
+  int brush_texture_idx = int(brush_params[0][0]+0.5);
+  vec3 tex_hsv_dynamics = vec3(brush_params[0][1], brush_params[0][2], brush_params[0][3]);
+  // vec2 noise_stretch = vec2(brush_params[1][0], brush_params[1][1]);
+  vec2 tex_stretch = vec2(brush_params[1][2], brush_params[1][3]);
+  vec2 tex_distort = vec2(brush_params[2][0], brush_params[2][1]);
+  float tex_distort_amt = brush_params[2][2];
+  float tex_grit = brush_params[2][3];
+  col = vec4(1);
+  // col.xyz = stroke_col.xyz;
+  
+  vec2 u = uv - 0.5;
+
+  vec4 noise_tex_sample = (
+    texture(
+    noise_tex,
+    fract(
+      (u - 0.5)*1.*tex_distort
+    ),
+    -tex_grit * 9.
+    ) - 0.5
+  );
+  
+
   col = vCol;
   {
     col.xyz = srgb_to_oklch(col.xyz);
 
-    vec2 nuv = uv*2120.;
-    nuv *= noise_stretch;
-    float n = (valueNoise(nuv)*2. - 1.);
+    vec4 n = noise_tex_sample;
 
-    col.z += 5.5* n * tex_hsv_dynamics.z;
-    col.x += n * tex_hsv_dynamics.x;
-    col.y += n * tex_hsv_dynamics.y;
+    col.z += 5.5* n.x * tex_hsv_dynamics.z;
+    col.x += n.y * tex_hsv_dynamics.x;
+    col.y += n.z * tex_hsv_dynamics.y;
 
     col.x = clamp(col.x, 0., 1.);
     col.y = clamp(col.y, 0., 1.);
@@ -107,8 +120,13 @@ void main() {
     
     float brush_alpha = sample_brush_tex(
       brush_texture_idx, 
-      fract(((uv - 0.5) * tex_stretch) + 0.5)
-      // fract(uv*4.)
+      clamp(
+        ( (uv - 0.5) * tex_stretch 
+          + tex_distort_amt * 10.0 * noise_tex_sample.xy
+        ) + 0.5, 0., 1.
+      ),
+      tex_grit
+      // fract(uv*1.)
     ).w;
 
     if(brush_alpha > 0.001){
