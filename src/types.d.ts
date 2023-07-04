@@ -1,9 +1,11 @@
 import {UBO} from 'gl_utils'
+import Dexie from '../node_modules/dexie/dist/dexie'
 
 export declare global {
 	var gl: WebGL2RenderingContext
 	var ubo: UBO
 	var isOnMobile: boolean
+	var sketch_db: Dexie
 	interface Window {
 		zoom: Float32Array
 	}

@@ -23,7 +23,7 @@
   
 	$: re_render_colour(colour[0], colour[1], colour[2]);
 
-	export let dragging: boolean = true
+	export let dragging: boolean = false
 	export let stopped_dragging: boolean = false
 
 	let startValue = [0, 0]

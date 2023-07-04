@@ -9,7 +9,7 @@ export enum BlendingColourSpace {
 export class DrawParams {
 	tex_dynamics: number = 0.3
 	tex_lch_dynamics: number[] = [0, 0, 0.2]
-	tex_stretch: number[] = [1, 0.2]
+	tex_stretch: number[] = [0.5 + 1 / 20, 0.5 + 1 / 20]
 	tex_distort: number[] = [0, 0]
 	tex_distort_amt: number = 0
 	tex_grit: number = 0
@@ -53,7 +53,7 @@ export class BrushPreset {
 	tex_dynamics: number = 0.3
 	tex_lch_dynamics: number[] = [0, 0, 0.02]
 	// noise_stretch: number[] = [1, 0.2]
-	tex_stretch: number[] = [1, 0.2]
+	tex_stretch: number[] = [0.5 + 1 / 20, 0.5 + 1 / 20]
 	tex_distort: number[] = [0, 0]
 	tex_distort_amt: number = 0
 	tex_grit: number = 0
@@ -83,9 +83,6 @@ export class BrushStroke {
 		this.brush_texture = brush_texture
 	}
 	push_stroke(position: number[], rotation: number[], size: number[], opacity: number, colour: number[]) {
-		// assert(position.length === 2)
-		// assert(rotation.length === 2)
-		// assert(colour.length === 3)
 		const curr_idx = this.idx
 		this.positions.length += 2
 		this.rotations.length += 2

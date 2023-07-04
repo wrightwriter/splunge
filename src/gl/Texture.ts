@@ -217,17 +217,6 @@ export class Texture {
 		}
 
 		blob = await getCanvasBlob(canvas)
-		console.log('BLORGUBS')
-		console.log(blob)
-
-		// canvas.toBlob((b) => {
-		// 	blob = b as Blob
-		// 	console.log('BLOB A')
-		// 	console.log(blob)
-		// }, 'image/png')
-
-		// console.log('BLOB B')
-		// console.log(blob)
 
 		const imageData = context.createImageData(canvas.width, canvas.height)
 		imageData.data.set(data)

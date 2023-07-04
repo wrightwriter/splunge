@@ -33,6 +33,22 @@
 				<div id="current-project">
 					<img src={canvas_image_src} id="canvas-preview-img" alt="" />
 					<div id="project-options">
+						<div id="project-save-button" role="button" tabindex="0" on:click={async ()=>{
+								// localStorage.setItem(`project`,JSON.stringify(current_project))
+								// @ts-ignore
+								await window.sketch_db.transaction('rw', window.sketch_db.sketch, async()=>{
+									// @ts-ignore
+									const sketch = await window.sketch_db.sketch.get(1)
+									sketch.data = current_project 
+									// @ts-ignore
+									await window.sketch_db.sketch.put(sketch)
+								})
+						}}>
+							<div id="project-save-button-title">Save to localStorage</div>
+							<div class="icon" style="transform: translate(0px,0.2rem);">
+								{@html captureIcon}
+							</div>
+						</div>
 						<div id="project-save-button" role="button" tabindex="0" on:click={save_to_dropbox}>
 							<div id="project-save-button-title">Save to dropbox</div>
 							<div class="icon" style="transform: translate(0px,0.2rem);">

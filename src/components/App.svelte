@@ -91,14 +91,11 @@
 			<Knob bind:value={curr_brush.tex_distort_amt} title={'Distort Amt'} />
 			<Knob bind:value={curr_brush.tex_distort[0]} title={'Distort X'} />
 			<Knob bind:value={curr_brush.tex_distort[1]} title={'Distort Y'} />
-			<!-- <Knob bind:value={curr_brush.tex_lch_dynamics[0]} title={'Tex V'} />
-			<Knob bind:value={curr_brush.tex_lch_dynamics[1]} title={'Tex S'} />
-			<Knob bind:value={curr_brush.tex_lch_dynamics[2]} title={'Tex H'} /> -->
 			<Sliders 
 				bind:value_1={curr_brush.tex_lch_dynamics[0]} 
 				bind:value_2={curr_brush.tex_lch_dynamics[1]} 
 				bind:value_3={curr_brush.tex_lch_dynamics[2]} 
-				names={["Tex V", "Tex S", "Tex H"]} />
+				names={["Noise V", "Noise S", "Noise H"]} />
 			<TextureStretchWidget bind:selected_brush_texture={curr_brush.selected_brush_texture} bind:selected_brush_preset={curr_brush}/>
 			<TextureWidget bind:brush_textures={brush_textures} bind:selected_brush_texture={curr_brush.selected_brush_texture} />
 		</SemiModal>
@@ -143,6 +140,14 @@
 	import { Texture } from 'gl/Texture'
 	import { ShaderProgram } from 'gl/ShaderProgram'
 	import { Thing } from 'gl/Thing'
+	import Dexie, { type DBCoreRangeType } from "dexie"
+
+	window.sketch_db = new Dexie("sketch")
+	window.sketch_db.version(1).stores({
+    sketch: '++id, data'
+	})
+
+	// let dexies = new Dexie('my db')
 
 	// Elements
 	let canvasElement: HTMLCanvasElement
@@ -153,6 +158,7 @@
 	let chaosKnob: Knob
 	let dynamicsKnob: Knob
 	let texDynamicsKnob: Knob
+	
 
 	// UI State
 	let brush_size_widget_dragging: boolean
@@ -186,7 +192,7 @@
 
 
 	// Internals
-	const undo_cache_steps = 25
+	const undo_cache_steps = 20
 	const hash = new Hash()
 	let io: IO
 	let gl: WebGL2RenderingContext
@@ -197,7 +203,12 @@
 	let default_framebuffer: Framebuffer
 	let canvas_fb: Framebuffer
 	let canvas_read_tex: Texture
-	let temp_undo_fb: Framebuffer
+	let temp_undo_fb_a: Framebuffer
+	let temp_undo_fb_b: Framebuffer
+	
+	let temp_undo_fb_a_idx = 100000
+	let temp_undo_fb_b_idx = 100000
+
 	let drawer: Drawer
 	let ubo: UBO
 
@@ -300,7 +311,11 @@
 			new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, !isOnMobile) 
 		], true)
 
-		temp_undo_fb = new Framebuffer([
+		temp_undo_fb_a = new Framebuffer([
+			new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, false) 
+		], false)
+
+		temp_undo_fb_b = new Framebuffer([
 			new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, false) 
 		], false)
 
@@ -636,8 +651,16 @@
 
 				canvas_fb.pong()
 				
-				if(full_redraw && j === end_idx - (end_idx % undo_cache_steps) - 1){
-					copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb.fb, canvas_fb._textures[0].res)
+				if(full_redraw){
+					const offs = (end_idx % undo_cache_steps)
+					if(j === end_idx - offs - 1){
+						copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, canvas_fb._textures[0].res)
+						temp_undo_fb_a_idx = j + 1
+					} else if(j === end_idx - offs - undo_cache_steps - 1){
+						copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_b.fb, canvas_fb._textures[0].res)
+						temp_undo_fb_b_idx = j + 1
+					}
+					
 				}
 				
 				prev_hsv_dynamics[0] = new_hsv_dynamics[0]
@@ -680,8 +703,10 @@
 			canvas_fb.back_textures[0].bind_to_unit(1)
 			temp_stroke_fb.recreate()
 			temp_stroke_fb.textures[0].bind_to_unit(0)
-			temp_undo_fb.textures[0].resize(new_sz)
-			temp_undo_fb.recreate()
+			temp_undo_fb_a.textures[0].resize(new_sz)
+			temp_undo_fb_a.recreate()
+			temp_undo_fb_b.textures[0].resize(new_sz)
+			temp_undo_fb_b.recreate()
 			set_shared_uniforms()
 			full_redraw_needed = true
 			project_has_been_modified = false
@@ -700,15 +725,26 @@
 			resize_project(project.canvasRes)
 			redraw_whole_project()
 		}
-		let local_storage_proj = localStorage.getItem('project')
+		// @ts-ignore
+		// let local_storage_proj = (await window.sketch_db.sketch.toArray())[0]
+		let local_storage_proj = await window.sketch_db.sketch.get(1)
 
 		if (local_storage_proj) {
-			local_storage_proj = JSON.parse(local_storage_proj)
+			local_storage_proj = local_storage_proj.data
 			// @ts-ignore
 			load_project(local_storage_proj)
 		} else {
 			// load_project(new Project())
 			load_project(new Project())
+			// @ts-ignore
+			await window.sketch_db.sketch.add({data: project})
+			// window.sketch_db.transaction('rw', window.sketch_db.sketch, async()=>{
+			// 	// @ts-ignore
+			// 	const sketch = await window.sketch_db.sketch.get(1)
+			// 	sketch.data = project
+			// 	// @ts-ignore
+			// 	await window.sketch_db.sketch.put(sketch)
+			// })
 		}
 		
 		const handle_input_actions = ()=>{
@@ -780,22 +816,32 @@
 				}
 			}
 
-			// ----- UNDO_REDO
+			
 			let l_ctrl_down = io.getKey('ControlLeft').down
 			let l_shift_down = io.getKey('ShiftLeft').down
 			let z_just_pressed = io.getKey('KeyZ').just_pressed
 			const idx_before = project.brush_strokes.length - redo_history_length
 			if (redo_pending || (l_shift_down && l_ctrl_down && z_just_pressed)) {
+				// * --------- REDO --------- * //
 				redo_history_length -= 1
 				const idx_now = idx_before + 1
 				if (redo_history_length >= 0) { 
+					// ---- DRAW ONE
+					temp_stroke_fb.clear()
+					draw_n_strokes(idx_before,idx_now) 
 					if(idx_now % undo_cache_steps === 0){
-						temp_stroke_fb.clear()
-						draw_n_strokes(idx_before, idx_before + 1)
-						copy_fb_to_fb(canvas_fb.fb_back,temp_undo_fb.fb, canvas_fb.textures[0].res)
+						// ---- HIT CACHE
+						// save to cache
+						const res = canvas_fb.textures[0].res
+						if(temp_undo_fb_a_idx === idx_now){
+							copy_fb_to_fb( canvas_fb.fb_back, temp_undo_fb_a.fb, res)
+						} else {
+							copy_fb_to_fb( temp_undo_fb_a.fb, temp_undo_fb_b.fb, res) // needless copy
+							copy_fb_to_fb( canvas_fb.fb_back, temp_undo_fb_a.fb, res)
+							temp_undo_fb_b_idx = temp_undo_fb_a_idx 
+							temp_undo_fb_a_idx = idx_now 
+						}
 					} else {
-						temp_stroke_fb.clear()
-						draw_n_strokes(idx_before, idx_before + 1)
 					}
 				} else { 
 					// clamp
@@ -803,26 +849,77 @@
 					floating_modal_message.set("Last redo")
 				}
 			} else if (undo_pending || (l_ctrl_down && z_just_pressed)) {
+				// * --------- UNDO --------- * //
 				redo_history_length += 1
 				const idx_now = idx_before - 1
 				if (redo_history_length <= project.brush_strokes.length) { 
+					const is_undo_fb_a = ( idx_now >= temp_undo_fb_a_idx && idx_now < temp_undo_fb_a_idx + undo_cache_steps )
+					const is_undo_fb_b =  ( idx_now >= temp_undo_fb_b_idx  && idx_now < temp_undo_fb_b_idx + undo_cache_steps )
+					const undo_fb = is_undo_fb_a ? temp_undo_fb_a : is_undo_fb_b ? temp_undo_fb_b : undefined;
 					if(idx_before % undo_cache_steps === 0){
-						// redraw all
-						canvas_fb.clear()
-						canvas_fb.pong()
-						canvas_fb.back_textures[0].bind_to_unit(1)
-						canvas_fb.clear()
-						temp_stroke_fb.clear()
-						draw_n_strokes(0, idx_before - undo_cache_steps)
-						copy_fb_to_fb(canvas_fb.fb_back,temp_undo_fb.fb, canvas_fb.textures[0].res)
-						temp_stroke_fb.clear()
-						draw_n_strokes( idx_before - undo_cache_steps, project.brush_strokes.length - redo_history_length)
+						// ---- FIND CACHE FB HIT
+
+						if(undo_fb === undefined) {
+							// ---- DIDN'T HIT UNDO FB
+							const res = canvas_fb.textures[0].res
+
+							canvas_fb.clear()
+							canvas_fb.pong()
+						  canvas_fb.back_textures[0].bind_to_unit(1)
+							canvas_fb.clear()
+
+							let idx = idx_before - undo_cache_steps * 2
+							if(idx < 0.){
+								// GENERATE B CACHE
+								temp_stroke_fb.clear()
+								draw_n_strokes(0, temp_undo_fb_a_idx = idx_before - undo_cache_steps)
+
+								copy_fb_to_fb(
+									canvas_fb.fb_back,
+									temp_undo_fb_a.fb, 
+									res
+								)
+								
+							} else {
+								// GENERATE B CACHE
+								temp_stroke_fb.clear()
+								draw_n_strokes(0, temp_undo_fb_b_idx = idx)
+								// write b cache
+								copy_fb_to_fb(
+									canvas_fb.fb_back,
+									temp_undo_fb_b.fb, 
+									res
+								)
+
+								temp_stroke_fb.clear()
+								draw_n_strokes(temp_undo_fb_b_idx, temp_undo_fb_a_idx = idx_before - undo_cache_steps)
+
+								copy_fb_to_fb(
+									canvas_fb.fb_back,
+									temp_undo_fb_a.fb, 
+									res
+								)
+							}
+							// DRAW FROM PREV CACHE TO CANVAS
+							temp_stroke_fb.clear()
+							draw_n_strokes( idx_before - undo_cache_steps, project.brush_strokes.length - redo_history_length)
+						} else {
+							// HIT UNDO FB
+							copy_fb_to_fb(undo_fb.fb,canvas_fb.fb_back, canvas_fb.textures[0].res)
+							// DRAW FROM PREV CACHE TO CANVAS
+							temp_stroke_fb.clear()
+							draw_n_strokes( idx_before - undo_cache_steps, idx_now)
+						}
 					} else {
-						copy_fb_to_fb(temp_undo_fb.fb,canvas_fb.fb_back, canvas_fb.textures[0].res)
-						canvas_fb.back_textures[0].bind_to_unit(1)
-						temp_stroke_fb.clear()
-						const undo_mod_offs = idx_now % undo_cache_steps
-						draw_n_strokes( idx_now - undo_mod_offs, project.brush_strokes.length - redo_history_length)
+						// ---- NO CACHE HIT
+						// DRAW FROM PREV CACHE TO CANVAS
+						{
+							copy_fb_to_fb((undo_fb as Framebuffer).fb,canvas_fb.fb_back, canvas_fb.textures[0].res)
+							canvas_fb.back_textures[0].bind_to_unit(1)
+							temp_stroke_fb.clear()
+							const undo_mod_offs = idx_now % undo_cache_steps
+							draw_n_strokes( idx_now - undo_mod_offs, idx_now)
+						}
 					}
 					gl.activeTexture(gl.TEXTURE15)
 				} else { 
@@ -981,16 +1078,44 @@
 			}
 			// ----- COMPOSITE NEW STROKE
 			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
-				if(frame % 15 === 0 || !isOnMobile){
-					localStorage.setItem('project', JSON.stringify(project))
-				}
 				project.push_stroke(brush_stroke)
+				if(frame % 5 === 0 || !isOnMobile){
+					// localStorage.setItem('project', JSON.stringify(project))
+					// (await window.sketch_db.toArray())[0]
+					// @ts-ignore
+
+					// (async()=>{
+					// 	try{
+					// @ts-ignore
+					project.brush_strokes[project.brush_strokes.length - 1].brush_texture.gpu_tex = {}
+					// @ts-ignore
+					window.sketch_db.sketch.update(1, {data: project})
+					// 	} catch(e){
+					// 		console.log(e)
+					// 	}
+						
+					// })()
+					// window.sketch_db.sketch.add
+					// window.sketch_db.transaction('rw', window.sketch_db.sketch, async()=>{
+					// 	// @ts-ignore
+					// 	const sketch = await window.sketch_db.sketch.get(1)
+					// 	// sketch.data = project
+					// 	sketch.data.brush_strokes = project.brush_strokes
+					// 	sketch.data.stroke = project.brush_strokes[0]
+					// 	// @ts-ignore
+					// 	await window.sketch_db.sketch.put(sketch)
+					// })
+				}
 				redraw_needed = true
 				composite_stroke()
 				canvas_fb.pong()
 				canvas_fb.back_textures[0].bind_to_unit(1)
 				if(project.brush_strokes.length % undo_cache_steps === 0){
-					copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb.fb, canvas_fb.textures[0].res)
+					const res = canvas_fb.textures[0].res
+					copy_fb_to_fb(temp_undo_fb_a.fb, temp_undo_fb_b.fb, res) // needless copy
+					copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, res)
+					temp_undo_fb_b_idx = temp_undo_fb_a_idx 
+					temp_undo_fb_a_idx = project.brush_strokes.length
 				}
 			}
 

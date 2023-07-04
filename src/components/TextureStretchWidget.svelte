@@ -5,8 +5,8 @@
 	class="knob-container-container"
 	on:pointerdown={pointerDown}
 	on:dblclick={()=>{
-		selected_brush_preset.tex_stretch[0] = 0.5
-		selected_brush_preset.tex_stretch[1] = 0.5
+		selected_brush_preset.tex_stretch[0] = 0.5 + 1./20
+		selected_brush_preset.tex_stretch[1] = 0.5 + 1./20
 	}}
 >
 	<div class="title">
@@ -16,7 +16,7 @@
 		<img
 			src={selected_brush_texture ? selected_brush_texture.path : ''}
 			style={`
-				transform: scale(${1 + (selected_brush_preset.tex_stretch[0] - 0.5)*10}, ${1 + (selected_brush_preset.tex_stretch[1] - 0.5)*10});
+				transform: scale(${(selected_brush_preset.tex_stretch[0] - 0.5)*20}, ${(selected_brush_preset.tex_stretch[1] - 0.5)*20});
 			`}
 		/>
 	</div>
@@ -38,13 +38,11 @@
 	let startX = 0
 
 	const pointerMove = ({clientX, clientY}) => {
-		const scale = 10./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
+		const scale = 3./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
 
 		const valueDiffY = (startY - clientY) * scale
 		const valueDiffX = (startX - clientX) * scale
 
-		// brush_sz[0] = clamp(startValue[0] - valueDiffX,0,5)
-		// brush_sz[1] = clamp(startValue[1] + valueDiffY,0,5)
 		selected_brush_preset.tex_stretch[0] = clamp(startValue[0] - valueDiffX,0,1)
 		selected_brush_preset.tex_stretch[1] = clamp(startValue[1] + valueDiffY,0,1)
 	}
@@ -70,13 +68,6 @@
 </script>
 
 <style lang="scss">
-	// img {
-	// 	&:active {
-	// 		// filter: invert(1);
-	// 		// background: black;
-	// 	}
-	// 	// pointer-events: none;
-	// }
 	.knob-container-container {
 		z-index: 99;
 		aspect-ratio: 1/1;
