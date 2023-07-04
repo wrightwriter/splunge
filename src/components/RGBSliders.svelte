@@ -32,7 +32,7 @@
   }
 	
 	const pointerMove = ({ clientX, clientY }) => {
-		let scale = 0.25/elements[colour_idx].clientWidth
+		let scale = 0.125/elements[colour_idx].clientWidth
 
 		let valueDiff = -(startX - clientX) *scale;
 		valueDiff += (startY - clientY) *scale;

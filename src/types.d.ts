@@ -15,6 +15,7 @@ export declare global {
 	// }
 	interface Window {
 		zoom: Float32Array
+		media_recorder: MediaRecorder
 	}
 	interface PointerEvent {
 		altitudeAngle: number

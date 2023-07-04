@@ -60,6 +60,7 @@
 					load_project={(project)=>{ 
 						project_pending_load = project
 					}}
+					bind:recording_pending={recording_pending}
 					bind:resize_project={resize_project}
 					bind:project_has_been_modified={project_has_been_modified}
 					bind:is_safe_to_switch_to_new_project={is_safe_to_switch_to_new_project}
@@ -162,6 +163,9 @@
 	let brush_size_widget_dragging: boolean
 	let brush_size_widget_stopped_dragging: boolean
 	let new_project_pending: boolean = false
+	let recording_pending: boolean = false
+	let recording_stroke_idx: number = 0
+	let recording: boolean = false
 	let undo_pending: boolean = false
 	let redo_pending: boolean = false
 	let mouse_over_colour_picker = false
@@ -184,7 +188,6 @@
 		new BrushPreset(),
 		new BrushPreset(),
 	]
-
 	let brush_textures: Array<BrushTexture> = []
 	let noise_tex: Texture 
 
@@ -1019,6 +1022,48 @@
 		}
 
 		const draw = (_t: number) => {
+			if(recording_pending || recording){
+				if(!recording){
+					canvas_fb.clear()
+					canvas_fb.pong()
+					canvas_fb.clear()
+					recording_stroke_idx = 0
+					recording_pending = false
+					recording = true
+				} else {
+					if(recording_stroke_idx === project.brush_strokes.length - 1){
+						if (window.media_recorder.state !== "inactive") {
+								window.media_recorder.stop();
+						}                 
+						recording = false
+					} else {
+						canvas_fb.back_textures[0].bind_to_unit(1)
+						canvas_fb.clear()
+						temp_stroke_fb.clear()
+
+						draw_n_strokes(recording_stroke_idx, recording_stroke_idx + 1, false)
+
+						gl.viewport(0, 0, default_framebuffer._textures[0].res[0], default_framebuffer._textures[0].res[1])
+						gl.bindFramebuffer(gl.FRAMEBUFFER, default_framebuffer.fb)
+						gl.clear(gl.COLOR_BUFFER_BIT)
+
+						Framebuffer.currently_bound = default_framebuffer // not needed?
+
+						post_canvas_program.use()
+						gl.uniform1f(post_canvas_program.zoom_loc, zoom[0])
+						gl.uniform2fv(post_canvas_program.panning_loc, panning)
+						gl.uniform1i(post_canvas_program.blending_colour_space_loc, blending_colour_space)
+
+						canvas_fb.back_textures[0].bind_to_unit(1)
+						
+						gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+						
+						recording_stroke_idx++
+					}
+				}
+				requestAnimationFrame(draw)
+				return
+			}
 			redraw_needed = false
 			const new_t = _t / 1000
 			delta_t = new_t - t
@@ -1143,7 +1188,7 @@
 				gl.bindFramebuffer(gl.FRAMEBUFFER, default_framebuffer.fb)
 				gl.clear(gl.COLOR_BUFFER_BIT)
 
-				Framebuffer.currently_bound = default_framebuffer
+				Framebuffer.currently_bound = default_framebuffer // not needed?
 
 				post_canvas_program.use()
 
