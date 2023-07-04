@@ -13397,6 +13397,7 @@ class Texture {
     }
     async read_back_image(gamma_correct = false, offs = [0, 0], read_back_res = [...this.res]) {
         let data = this.read_back_array(offs, read_back_res);
+        let data_reflected = new Float32Array(data.length);
         let i = 0;
         let idx = 0;
         for (let pixel of data) {
@@ -13422,6 +13423,16 @@ class Texture {
             idx++;
             i++;
         }
+        for (let y = 0; y < read_back_res[1]; y++) {
+            for (let x = 0; x < read_back_res[0]; x++) {
+                const idx = y * read_back_res[0] * 4 + x * 4;
+                const idx_refl = (read_back_res[1] - y - 1) * read_back_res[0] * 4 + x * 4;
+                data_reflected[idx + 0] = data[idx_refl];
+                data_reflected[idx + 1] = data[idx_refl + 1];
+                data_reflected[idx + 2] = data[idx_refl + 2];
+                data_reflected[idx + 3] = data[idx_refl + 3];
+            }
+        }
         const canvas = document.createElement('canvas');
         canvas.width = this.res[0];
         canvas.height = this.res[1];
@@ -13436,7 +13447,7 @@ class Texture {
         };
         blob = await getCanvasBlob(canvas);
         const imageData = context.createImageData(canvas.width, canvas.height);
-        imageData.data.set(data);
+        imageData.data.set(data_reflected);
         context.putImageData(imageData, 0, 0);
         const img = new Image();
         img.src = canvas.toDataURL();
@@ -42695,20 +42706,20 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 		{
 			$$invalidate(18, brush_presets[0].selected_brush_type = BrushType.Long, brush_presets);
 			$$invalidate(18, brush_presets[0].selected_brush_texture = brush_textures[4], brush_presets);
-			$$invalidate(18, brush_presets[0].tex_stretch[0] = 1.339, brush_presets);
-			$$invalidate(18, brush_presets[0].tex_stretch[1] = 1.75, brush_presets);
+			$$invalidate(18, brush_presets[0].tex_stretch[0] = 0.5 + 1 / 20, brush_presets);
+			$$invalidate(18, brush_presets[0].tex_stretch[1] = 0.5 + 1 / 20, brush_presets);
 			$$invalidate(18, brush_presets[0].tex_distort[0] = 0.294, brush_presets);
 			$$invalidate(18, brush_presets[0].tex_distort[1] = 0, brush_presets);
 			$$invalidate(18, brush_presets[0].tex_distort_amt = 0.18, brush_presets);
-			$$invalidate(25, curr_brush.tex_stretch[0] = brush_presets[0].tex_stretch[0] / 20, curr_brush);
-			$$invalidate(25, curr_brush.tex_stretch[1] = brush_presets[0].tex_stretch[1] / 40, curr_brush);
+			$$invalidate(25, curr_brush.tex_stretch[0] = brush_presets[0].tex_stretch[0], curr_brush);
+			$$invalidate(25, curr_brush.tex_stretch[1] = brush_presets[0].tex_stretch[1], curr_brush);
 		}
 
 		{
 			$$invalidate(18, brush_presets[1].selected_brush_type = BrushType.Blobs, brush_presets);
 			$$invalidate(18, brush_presets[1].selected_brush_texture = brush_textures[0], brush_presets);
-			$$invalidate(18, brush_presets[1].tex_stretch[0] = 1 / 20, brush_presets);
-			$$invalidate(18, brush_presets[1].tex_stretch[1] = 1 / 40, brush_presets);
+			$$invalidate(18, brush_presets[1].tex_stretch[0] = 0.5 + 1 / 20, brush_presets);
+			$$invalidate(18, brush_presets[1].tex_stretch[1] = 0.5 + 1 / 20, brush_presets);
 			$$invalidate(18, brush_presets[1].tex_distort[0] = 0, brush_presets);
 			$$invalidate(18, brush_presets[1].tex_distort[1] = 0, brush_presets);
 		}
@@ -43161,8 +43172,8 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 				new DrawParams(curr_brush.tex_dynamics,
 					curr_brush.tex_lch_dynamics,
 					[
-							curr_brush.tex_stretch[0] * 20.,
-							curr_brush.tex_stretch[1] * 2. * 20.
+							(curr_brush.tex_stretch[0] - 0.5) * 20.,
+							(curr_brush.tex_stretch[1] - 0.5) * 20.
 						],
 					curr_brush.tex_distort,
 					curr_brush.tex_distort_amt,
