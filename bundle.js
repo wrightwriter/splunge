@@ -36305,30 +36305,30 @@ const { Error: Error_1, console: console_1 } = globals;
 const GalleryWidget_svelte_file = "src/components/GalleryWidget.svelte";
 
 function GalleryWidget_svelte_add_css(target) {
-	append_styles(target, "svelte-1pzoxsa", "#canvas-preview-img.svelte-1pzoxsa.svelte-1pzoxsa{height:12rem}.hide.svelte-1pzoxsa.svelte-1pzoxsa{display:none}#gallery-container::-webkit-scrollbar{background:black}#gallery-container::-webkit-scrollbar-track{background:grey}#gallery-container::-webkit-scrollbar-thumb{background:white}#db-login-button.svelte-1pzoxsa.svelte-1pzoxsa{font-size:3rem;border-radius:0px;margin-bottom:2rem;cursor:pointer}#db-login-button.svelte-1pzoxsa.svelte-1pzoxsa:active{filter:invert(1)}#size-modal.svelte-1pzoxsa.svelte-1pzoxsa{position:fixed;display:flex;flex-direction:column;align-items:center;width:100vw;height:100vh;left:0;top:0;z-index:101;background:black;justify-content:center}#gallery-container-outer.svelte-1pzoxsa.svelte-1pzoxsa{position:fixed;display:flex;flex-direction:column;align-items:center;width:100vw;height:100vh;left:0;top:0;z-index:100;background:black}#gallery-container-outer.svelte-1pzoxsa #gallery-container.svelte-1pzoxsa{overflow-y:overlay;scrollbar-gutter:stable both-edges;margin-top:1rem;height:100%;max-width:40rem;width:100%;display:flex;flex-direction:column;align-items:center}#gallery-container-outer.svelte-1pzoxsa #gallery-container #top-bar.svelte-1pzoxsa{margin-bottom:1rem;width:100%;font-size:2rem;display:flex;justify-content:space-between}#gallery-container-outer.svelte-1pzoxsa #gallery-container #top-bar #project-title.svelte-1pzoxsa{margin-left:0.5rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar.svelte-1pzoxsa{align-items:center;margin-bottom:1rem;width:100%;font-size:2rem;display:flex;justify-content:space-between}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar .svelte-1pzoxsa{font-size:0.95rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar .svelte-1pzoxsa svg{fill:white}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar #button.svelte-1pzoxsa{display:flex;cursor:pointer;padding:0rem 0.2rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar #button.svelte-1pzoxsa svg{height:100%}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar #button.svelte-1pzoxsa:active{filter:invert(1);background:black}#gallery-container-outer.svelte-1pzoxsa #gallery-container .ok-button.svelte-1pzoxsa svg{transform:scale(0.96) !important}#gallery-container-outer.svelte-1pzoxsa #gallery-container #back-button.svelte-1pzoxsa>svg{transform:scale(1.5) translate(0.2rem, 0px);fill:white;width:3rem;aspect-ratio:1/1;cursor:pointer}#gallery-container-outer.svelte-1pzoxsa #gallery-container #back-button.svelte-1pzoxsa>svg:active{filter:invert(1);background:black}#gallery-container-outer.svelte-1pzoxsa #gallery-container #gallery-elements.svelte-1pzoxsa{width:100%;display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;grid-auto-rows:minmax(100px, auto)}#gallery-container-outer.svelte-1pzoxsa #gallery-container #gallery-elements #element.svelte-1pzoxsa{cursor:pointer;user-select:none}#gallery-container-outer.svelte-1pzoxsa #gallery-container #gallery-elements #element #element-name.svelte-1pzoxsa{margin-bottom:0.5rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #gallery-elements #element.svelte-1pzoxsa:active{background:white}#gallery-container-outer.svelte-1pzoxsa #gallery-container #gallery-elements #element:active .svelte-1pzoxsa{color:black}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project.svelte-1pzoxsa{display:flex;justify-content:space-between;width:100%;margin-bottom:1rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options.svelte-1pzoxsa{display:flex;flex-direction:column;justify-content:space-between}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options .svelte-1pzoxsa{font-size:1.3rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button-title.svelte-1pzoxsa{margin-right:0.5rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button.svelte-1pzoxsa{margin-right:1.5rem;cursor:pointer;justify-content:flex-end;display:flex;flex-direction:row;align-items:center;height:2rem;max-width:30rem;width:100%}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button.svelte-1pzoxsa:active{filter:invert(1);background:black}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button .icon.svelte-1pzoxsa{width:2rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button .svelte-1pzoxsa{font-size:1rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button.svelte-1pzoxsa svg{aspect-ratio:1/1;fill:white}.knob-container.svelte-1pzoxsa.svelte-1pzoxsa{cursor:pointer;aspect-ratio:1/1;height:100%;margin-left:0.5rem;margin-right:0.5rem;margin-bottom:auto;margin-top:auto;pointer-events:all;user-select:none;width:unset}.knob-container.svelte-1pzoxsa.svelte-1pzoxsa:hover{cursor:pointer}.knob.svelte-1pzoxsa.svelte-1pzoxsa{display:block;aspect-ratio:1/1;height:100%;padding:0;color:var(--text-color);fill:white;width:unset;max-width:unset;transform-origin:50% 50%}.knob.svelte-1pzoxsa.svelte-1pzoxsa:active{filter:invert(1);background:black}.knob.svelte-1pzoxsa svg{fill:white;width:100%;height:100%}.knob-container.svelte-1pzoxsa.svelte-1pzoxsa{box-sizing:border-box;-webkit-box-sizing:border-box;aspect-ratio:1/1;height:100%;display:flex;justify-content:center;align-items:center;margin-right:1rem;pointer-events:all;user-select:none;margin-bottom:auto;margin-top:auto;margin-right:0rem}.knob.svelte-1pzoxsa.svelte-1pzoxsa{cursor:pointer;display:block;aspect-ratio:1/1;height:100%;padding:0;color:var(--text-color);transform-origin:50% 50%}.knob.svelte-1pzoxsa.svelte-1pzoxsa:active{filter:invert(1);background:black}.knob.svelte-1pzoxsa svg{fill:white;width:100%;height:100%}\n/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiR2FsbGVyeVdpZGdldC5zdmVsdGUiLCJtYXBwaW5ncyI6IkFBdVlrQiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJHYWxsZXJ5V2lkZ2V0LnN2ZWx0ZSJdfQ== */");
+	append_styles(target, "svelte-1pzoxsa", "#canvas-preview-img.svelte-1pzoxsa.svelte-1pzoxsa{height:12rem}.hide.svelte-1pzoxsa.svelte-1pzoxsa{display:none}#gallery-container::-webkit-scrollbar{background:black}#gallery-container::-webkit-scrollbar-track{background:grey}#gallery-container::-webkit-scrollbar-thumb{background:white}#db-login-button.svelte-1pzoxsa.svelte-1pzoxsa{font-size:3rem;border-radius:0px;margin-bottom:2rem;cursor:pointer}#db-login-button.svelte-1pzoxsa.svelte-1pzoxsa:active{filter:invert(1)}#size-modal.svelte-1pzoxsa.svelte-1pzoxsa{position:fixed;display:flex;flex-direction:column;align-items:center;width:100vw;height:100vh;left:0;top:0;z-index:101;background:black;justify-content:center}#gallery-container-outer.svelte-1pzoxsa.svelte-1pzoxsa{position:fixed;display:flex;flex-direction:column;align-items:center;width:100vw;height:100vh;left:0;top:0;z-index:100;background:black}#gallery-container-outer.svelte-1pzoxsa #gallery-container.svelte-1pzoxsa{overflow-y:overlay;scrollbar-gutter:stable both-edges;margin-top:1rem;height:100%;max-width:40rem;width:100%;display:flex;flex-direction:column;align-items:center}#gallery-container-outer.svelte-1pzoxsa #gallery-container #top-bar.svelte-1pzoxsa{margin-bottom:1rem;width:100%;font-size:2rem;display:flex;justify-content:space-between}#gallery-container-outer.svelte-1pzoxsa #gallery-container #top-bar #project-title.svelte-1pzoxsa{margin-left:0.5rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar.svelte-1pzoxsa{align-items:center;margin-bottom:1rem;width:100%;font-size:2rem;display:flex;justify-content:space-between}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar .svelte-1pzoxsa{font-size:0.95rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar .svelte-1pzoxsa svg{fill:white}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar #button.svelte-1pzoxsa{display:flex;cursor:pointer;padding:0rem 0.2rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar #button.svelte-1pzoxsa svg{height:100%}#gallery-container-outer.svelte-1pzoxsa #gallery-container #options-bar #button.svelte-1pzoxsa:active{filter:invert(1);background:black}#gallery-container-outer.svelte-1pzoxsa #gallery-container .ok-button.svelte-1pzoxsa svg{transform:scale(0.96) !important}#gallery-container-outer.svelte-1pzoxsa #gallery-container #back-button.svelte-1pzoxsa>svg{transform:scale(1.5) translate(0.2rem, 0px);fill:white;width:3rem;aspect-ratio:1/1;cursor:pointer}#gallery-container-outer.svelte-1pzoxsa #gallery-container #back-button.svelte-1pzoxsa>svg:active{filter:invert(1);background:black}#gallery-container-outer.svelte-1pzoxsa #gallery-container #gallery-elements.svelte-1pzoxsa{width:100%;display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;grid-auto-rows:minmax(100px, auto)}#gallery-container-outer.svelte-1pzoxsa #gallery-container #gallery-elements #element.svelte-1pzoxsa{cursor:pointer;user-select:none}#gallery-container-outer.svelte-1pzoxsa #gallery-container #gallery-elements #element #element-name.svelte-1pzoxsa{margin-bottom:0.5rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #gallery-elements #element.svelte-1pzoxsa:active{background:white}#gallery-container-outer.svelte-1pzoxsa #gallery-container #gallery-elements #element:active .svelte-1pzoxsa{color:black}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project.svelte-1pzoxsa{display:flex;justify-content:space-between;width:100%;margin-bottom:1rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options.svelte-1pzoxsa{display:flex;flex-direction:column;justify-content:space-between}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options .svelte-1pzoxsa{font-size:1.3rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button-title.svelte-1pzoxsa{margin-right:0.5rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button.svelte-1pzoxsa{margin-right:1.5rem;cursor:pointer;justify-content:flex-end;display:flex;flex-direction:row;align-items:center;height:2rem;max-width:30rem;width:100%}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button.svelte-1pzoxsa:active{filter:invert(1);background:black}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button .icon.svelte-1pzoxsa{width:2rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button .svelte-1pzoxsa{font-size:1rem}#gallery-container-outer.svelte-1pzoxsa #gallery-container #current-project #project-options #project-save-button.svelte-1pzoxsa svg{aspect-ratio:1/1;fill:white}.knob-container.svelte-1pzoxsa.svelte-1pzoxsa{cursor:pointer;aspect-ratio:1/1;height:100%;margin-left:0.5rem;margin-right:0.5rem;margin-bottom:auto;margin-top:auto;pointer-events:all;user-select:none;width:unset}.knob-container.svelte-1pzoxsa.svelte-1pzoxsa:hover{cursor:pointer}.knob.svelte-1pzoxsa.svelte-1pzoxsa{display:block;aspect-ratio:1/1;height:100%;padding:0;color:var(--text-color);fill:white;width:unset;max-width:unset;transform-origin:50% 50%}.knob.svelte-1pzoxsa.svelte-1pzoxsa:active{filter:invert(1);background:black}.knob.svelte-1pzoxsa svg{fill:white;width:100%;height:100%}.knob-container.svelte-1pzoxsa.svelte-1pzoxsa{box-sizing:border-box;-webkit-box-sizing:border-box;aspect-ratio:1/1;height:100%;display:flex;justify-content:center;align-items:center;margin-right:1rem;pointer-events:all;user-select:none;margin-bottom:auto;margin-top:auto;margin-right:0rem}.knob.svelte-1pzoxsa.svelte-1pzoxsa{cursor:pointer;display:block;aspect-ratio:1/1;height:100%;padding:0;color:var(--text-color);transform-origin:50% 50%}.knob.svelte-1pzoxsa.svelte-1pzoxsa:active{filter:invert(1);background:black}.knob.svelte-1pzoxsa svg{fill:white;width:100%;height:100%}\n/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiR2FsbGVyeVdpZGdldC5zdmVsdGUiLCJtYXBwaW5ncyI6IkFBa2VrQiIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJHYWxsZXJ5V2lkZ2V0LnN2ZWx0ZSJdfQ== */");
 }
 
 function GalleryWidget_svelte_get_each_context(ctx, list, i) {
 	const child_ctx = ctx.slice();
-	child_ctx[39] = list[i];
-	child_ctx[41] = i;
+	child_ctx[41] = list[i];
+	child_ctx[43] = i;
 	return child_ctx;
 }
 
-// (18:1) {#if $gallery_open}
+// (19:1) {#if $gallery_open}
 function GalleryWidget_svelte_create_if_block(ctx) {
-	let div30;
-	let div29;
+	let div33;
+	let div32;
 	let div2;
 	let div0;
 	let t1;
 	let div1;
 	let t2;
-	let div16;
+	let div19;
 	let img;
 	let img_src_value;
 	let t3;
-	let div15;
+	let div18;
 	let div5;
 	let div3;
 	let t5;
@@ -36346,44 +36346,49 @@ function GalleryWidget_svelte_create_if_block(ctx) {
 	let t12;
 	let div14;
 	let div12;
-	let t13_value = /*format_time*/ ctx[15](/*current_project*/ ctx[0].id) + "";
-	let t13;
 	let t14;
 	let div13;
 	let t15;
-	let div27;
-	let div18;
 	let div17;
+	let div15;
+	let t16_value = /*format_time*/ ctx[15](/*current_project*/ ctx[0].id) + "";
+	let t16;
 	let t17;
-	let html_tag;
+	let div16;
 	let t18;
-	let div20;
-	let div19;
-	let t20;
-	let html_tag_1;
-	let t21;
-	let div26;
+	let div30;
 	let div21;
-	let t22;
-	let div22;
-	let t24;
+	let div20;
+	let t20;
+	let html_tag;
+	let t21;
 	let div23;
-	let t25_value = floor(/*resize_widget_canvas_size*/ ctx[13][0]) + "";
-	let t25;
-	let t26;
-	let t27_value = floor(/*resize_widget_canvas_size*/ ctx[13][1]) + "";
-	let t27;
-	let t28;
+	let div22;
+	let t23;
+	let html_tag_1;
+	let t24;
+	let div29;
 	let div24;
-	let div24_style_value;
-	let t29;
+	let t25;
 	let div25;
-	let div26_style_value;
+	let t27;
+	let div26;
+	let t28_value = floor(/*resize_widget_canvas_size*/ ctx[13][0]) + "";
+	let t28;
+	let t29;
+	let t30_value = floor(/*resize_widget_canvas_size*/ ctx[13][1]) + "";
 	let t30;
-	let button;
+	let t31;
+	let div27;
+	let div27_style_value;
 	let t32;
 	let div28;
-	let div30_intro;
+	let div29_style_value;
+	let t33;
+	let button;
+	let t35;
+	let div31;
+	let div33_intro;
 	let mounted;
 	let dispose;
 	let each_value = ensure_array_like_dev(/*gallery_elements*/ ctx[12]);
@@ -36395,74 +36400,80 @@ function GalleryWidget_svelte_create_if_block(ctx) {
 
 	const block = {
 		c: function create() {
-			div30 = dom_element("div");
-			div29 = dom_element("div");
+			div33 = dom_element("div");
+			div32 = dom_element("div");
 			div2 = dom_element("div");
 			div0 = dom_element("div");
 			div0.textContent = "Project";
 			t1 = space();
 			div1 = dom_element("div");
 			t2 = space();
-			div16 = dom_element("div");
+			div19 = dom_element("div");
 			img = dom_element("img");
 			t3 = space();
-			div15 = dom_element("div");
+			div18 = dom_element("div");
 			div5 = dom_element("div");
 			div3 = dom_element("div");
-			div3.textContent = "Save to localStorage";
+			div3.textContent = "Export to video";
 			t5 = space();
 			div4 = dom_element("div");
 			t6 = space();
 			div8 = dom_element("div");
 			div6 = dom_element("div");
-			div6.textContent = "Save to dropbox";
+			div6.textContent = "Save to localStorage";
 			t8 = space();
 			div7 = dom_element("div");
 			t9 = space();
 			div11 = dom_element("div");
 			div9 = dom_element("div");
-			div9.textContent = "Download";
+			div9.textContent = "Save to dropbox";
 			t11 = space();
 			div10 = dom_element("div");
 			t12 = space();
 			div14 = dom_element("div");
 			div12 = dom_element("div");
-			t13 = dom_text(t13_value);
+			div12.textContent = "Download";
 			t14 = space();
 			div13 = dom_element("div");
 			t15 = space();
-			div27 = dom_element("div");
-			div18 = dom_element("div");
 			div17 = dom_element("div");
-			div17.textContent = "New file";
+			div15 = dom_element("div");
+			t16 = dom_text(t16_value);
 			t17 = space();
-			html_tag = new HtmlTag(false);
+			div16 = dom_element("div");
 			t18 = space();
-			div20 = dom_element("div");
-			div19 = dom_element("div");
-			div19.textContent = "Resize";
-			t20 = space();
-			html_tag_1 = new HtmlTag(false);
-			t21 = space();
-			div26 = dom_element("div");
+			div30 = dom_element("div");
 			div21 = dom_element("div");
-			t22 = space();
-			div22 = dom_element("div");
-			div22.textContent = "Resize canvas";
-			t24 = space();
+			div20 = dom_element("div");
+			div20.textContent = "New file";
+			t20 = space();
+			html_tag = new HtmlTag(false);
+			t21 = space();
 			div23 = dom_element("div");
-			t25 = dom_text(t25_value);
-			t26 = dom_text(" x ");
-			t27 = dom_text(t27_value);
-			t28 = space();
+			div22 = dom_element("div");
+			div22.textContent = "Resize";
+			t23 = space();
+			html_tag_1 = new HtmlTag(false);
+			t24 = space();
+			div29 = dom_element("div");
 			div24 = dom_element("div");
-			t29 = space();
+			t25 = space();
 			div25 = dom_element("div");
-			t30 = space();
-			button = dom_element("button");
-			button.textContent = "LOG INTO DROPBOX";
+			div25.textContent = "Resize canvas";
+			t27 = space();
+			div26 = dom_element("div");
+			t28 = dom_text(t28_value);
+			t29 = dom_text(" x ");
+			t30 = dom_text(t30_value);
+			t31 = space();
+			div27 = dom_element("div");
 			t32 = space();
 			div28 = dom_element("div");
+			t33 = space();
+			button = dom_element("button");
+			button.textContent = "LOG INTO DROPBOX";
+			t35 = space();
+			div31 = dom_element("div");
 
 			for (let i = 0; i < each_blocks.length; i += 1) {
 				each_blocks[i].c();
@@ -36470,219 +36481,237 @@ function GalleryWidget_svelte_create_if_block(ctx) {
 
 			attr_dev(div0, "id", "project-title");
 			attr_dev(div0, "class", "svelte-1pzoxsa");
-			add_location(div0, GalleryWidget_svelte_file, 21, 5, 574);
+			add_location(div0, GalleryWidget_svelte_file, 22, 5, 575);
 			attr_dev(div1, "id", "back-button");
 			attr_dev(div1, "role", "button");
 			attr_dev(div1, "tabindex", "0");
 			attr_dev(div1, "class", "svelte-1pzoxsa");
-			add_location(div1, GalleryWidget_svelte_file, 22, 5, 617);
+			add_location(div1, GalleryWidget_svelte_file, 23, 5, 618);
 			attr_dev(div2, "id", "top-bar");
 			attr_dev(div2, "class", "svelte-1pzoxsa");
-			add_location(div2, GalleryWidget_svelte_file, 20, 4, 550);
+			add_location(div2, GalleryWidget_svelte_file, 21, 4, 551);
 			if (!src_url_equal(img.src, img_src_value = /*canvas_image_src*/ ctx[9])) attr_dev(img, "src", img_src_value);
 			attr_dev(img, "id", "canvas-preview-img");
 			attr_dev(img, "alt", "");
 			attr_dev(img, "class", "svelte-1pzoxsa");
-			add_location(img, GalleryWidget_svelte_file, 33, 5, 867);
+			add_location(img, GalleryWidget_svelte_file, 35, 5, 873);
 			attr_dev(div3, "id", "project-save-button-title");
 			attr_dev(div3, "class", "svelte-1pzoxsa");
-			add_location(div3, GalleryWidget_svelte_file, 46, 7, 1454);
+			add_location(div3, GalleryWidget_svelte_file, 38, 7, 1062);
 			attr_dev(div4, "class", "icon svelte-1pzoxsa");
 			set_style(div4, "transform", "translate(0px,0.2rem)");
-			add_location(div4, GalleryWidget_svelte_file, 47, 7, 1524);
+			add_location(div4, GalleryWidget_svelte_file, 39, 7, 1127);
 			attr_dev(div5, "id", "project-save-button");
 			attr_dev(div5, "role", "button");
 			attr_dev(div5, "tabindex", "0");
 			attr_dev(div5, "class", "svelte-1pzoxsa");
-			add_location(div5, GalleryWidget_svelte_file, 35, 6, 967);
+			add_location(div5, GalleryWidget_svelte_file, 37, 6, 973);
 			attr_dev(div6, "id", "project-save-button-title");
 			attr_dev(div6, "class", "svelte-1pzoxsa");
-			add_location(div6, GalleryWidget_svelte_file, 52, 7, 1738);
+			add_location(div6, GalleryWidget_svelte_file, 58, 7, 1769);
 			attr_dev(div7, "class", "icon svelte-1pzoxsa");
 			set_style(div7, "transform", "translate(0px,0.2rem)");
-			add_location(div7, GalleryWidget_svelte_file, 53, 7, 1803);
+			add_location(div7, GalleryWidget_svelte_file, 59, 7, 1839);
 			attr_dev(div8, "id", "project-save-button");
 			attr_dev(div8, "role", "button");
 			attr_dev(div8, "tabindex", "0");
 			attr_dev(div8, "class", "svelte-1pzoxsa");
-			add_location(div8, GalleryWidget_svelte_file, 51, 6, 1646);
+			add_location(div8, GalleryWidget_svelte_file, 43, 6, 1249);
 			attr_dev(div9, "id", "project-save-button-title");
 			attr_dev(div9, "class", "svelte-1pzoxsa");
-			add_location(div9, GalleryWidget_svelte_file, 66, 7, 2345);
+			add_location(div9, GalleryWidget_svelte_file, 64, 7, 2053);
 			attr_dev(div10, "class", "icon svelte-1pzoxsa");
-			set_style(div10, "transform", "scale(1.34)");
-			add_location(div10, GalleryWidget_svelte_file, 67, 7, 2403);
+			set_style(div10, "transform", "translate(0px,0.2rem)");
+			add_location(div10, GalleryWidget_svelte_file, 65, 7, 2118);
 			attr_dev(div11, "id", "project-save-button");
 			attr_dev(div11, "role", "button");
 			attr_dev(div11, "tabindex", "0");
 			attr_dev(div11, "class", "svelte-1pzoxsa");
-			add_location(div11, GalleryWidget_svelte_file, 65, 6, 2253);
+			add_location(div11, GalleryWidget_svelte_file, 63, 6, 1961);
 			attr_dev(div12, "id", "project-save-button-title");
 			attr_dev(div12, "class", "svelte-1pzoxsa");
-			add_location(div12, GalleryWidget_svelte_file, 72, 7, 2567);
+			add_location(div12, GalleryWidget_svelte_file, 78, 7, 2659);
 			attr_dev(div13, "class", "icon svelte-1pzoxsa");
-			add_location(div13, GalleryWidget_svelte_file, 73, 7, 2650);
+			set_style(div13, "transform", "scale(1.34)");
+			add_location(div13, GalleryWidget_svelte_file, 79, 7, 2717);
 			attr_dev(div14, "id", "project-save-button");
-			attr_dev(div14, "class", "date svelte-1pzoxsa");
-			add_location(div14, GalleryWidget_svelte_file, 71, 6, 2516);
-			attr_dev(div15, "id", "project-options");
+			attr_dev(div14, "role", "button");
+			attr_dev(div14, "tabindex", "0");
+			attr_dev(div14, "class", "svelte-1pzoxsa");
+			add_location(div14, GalleryWidget_svelte_file, 77, 6, 2568);
+			attr_dev(div15, "id", "project-save-button-title");
 			attr_dev(div15, "class", "svelte-1pzoxsa");
-			add_location(div15, GalleryWidget_svelte_file, 34, 5, 934);
-			attr_dev(div16, "id", "current-project");
-			attr_dev(div16, "class", "svelte-1pzoxsa");
-			add_location(div16, GalleryWidget_svelte_file, 32, 4, 835);
-			attr_dev(div17, "class", "svelte-1pzoxsa");
-			add_location(div17, GalleryWidget_svelte_file, 92, 6, 3149);
-			html_tag.a = null;
-			attr_dev(div18, "id", "button");
-			attr_dev(div18, "role", "button");
-			attr_dev(div18, "tabindex", "0");
+			add_location(div15, GalleryWidget_svelte_file, 84, 7, 2881);
+			attr_dev(div16, "class", "icon svelte-1pzoxsa");
+			add_location(div16, GalleryWidget_svelte_file, 85, 7, 2964);
+			attr_dev(div17, "id", "project-save-button");
+			attr_dev(div17, "class", "date svelte-1pzoxsa");
+			add_location(div17, GalleryWidget_svelte_file, 83, 6, 2830);
+			attr_dev(div18, "id", "project-options");
 			attr_dev(div18, "class", "svelte-1pzoxsa");
-			add_location(div18, GalleryWidget_svelte_file, 81, 5, 2777);
-			attr_dev(div19, "draggable", "false");
+			add_location(div18, GalleryWidget_svelte_file, 36, 5, 940);
+			attr_dev(div19, "id", "current-project");
 			attr_dev(div19, "class", "svelte-1pzoxsa");
-			add_location(div19, GalleryWidget_svelte_file, 104, 6, 3485);
-			html_tag_1.a = null;
-			attr_dev(div20, "id", "button");
-			attr_dev(div20, "role", "button");
-			attr_dev(div20, "tabindex", "0");
+			add_location(div19, GalleryWidget_svelte_file, 34, 4, 841);
 			attr_dev(div20, "class", "svelte-1pzoxsa");
-			add_location(div20, GalleryWidget_svelte_file, 97, 5, 3226);
-			attr_dev(div21, "id", "back-button");
+			add_location(div20, GalleryWidget_svelte_file, 105, 6, 3482);
+			html_tag.a = null;
+			attr_dev(div21, "id", "button");
 			attr_dev(div21, "role", "button");
 			attr_dev(div21, "tabindex", "0");
-			set_style(div21, "margin-bottom", "0.45rem");
 			attr_dev(div21, "class", "svelte-1pzoxsa");
-			add_location(div21, GalleryWidget_svelte_file, 110, 6, 3656);
-			set_style(div22, "margin-bottom", "1rem");
+			add_location(div21, GalleryWidget_svelte_file, 92, 5, 3090);
+			attr_dev(div22, "draggable", "false");
 			attr_dev(div22, "class", "svelte-1pzoxsa");
-			add_location(div22, GalleryWidget_svelte_file, 120, 6, 3882);
-			set_style(div23, "margin-bottom", "1rem");
+			add_location(div22, GalleryWidget_svelte_file, 117, 6, 3818);
+			html_tag_1.a = null;
+			attr_dev(div23, "id", "button");
+			attr_dev(div23, "role", "button");
+			attr_dev(div23, "tabindex", "0");
 			attr_dev(div23, "class", "svelte-1pzoxsa");
-			add_location(div23, GalleryWidget_svelte_file, 123, 6, 3957);
+			add_location(div23, GalleryWidget_svelte_file, 108, 5, 3544);
+			attr_dev(div24, "id", "back-button");
+			attr_dev(div24, "role", "button");
+			attr_dev(div24, "tabindex", "0");
+			set_style(div24, "margin-bottom", "0.45rem");
+			attr_dev(div24, "class", "svelte-1pzoxsa");
+			add_location(div24, GalleryWidget_svelte_file, 121, 6, 3974);
+			set_style(div25, "margin-bottom", "1rem");
+			attr_dev(div25, "class", "svelte-1pzoxsa");
+			add_location(div25, GalleryWidget_svelte_file, 131, 6, 4198);
+			set_style(div26, "margin-bottom", "1rem");
+			attr_dev(div26, "class", "svelte-1pzoxsa");
+			add_location(div26, GalleryWidget_svelte_file, 132, 6, 4258);
 
-			attr_dev(div24, "style", div24_style_value = `
+			attr_dev(div27, "style", div27_style_value = `
 							background: white;
 							width: 10rem;
 							aspect-ratio: 1/${/*resize_widget_canvas_size*/ ctx[13][1] / /*resize_widget_canvas_size*/ ctx[13][0]}
 						`);
 
-			attr_dev(div24, "class", "svelte-1pzoxsa");
-			add_location(div24, GalleryWidget_svelte_file, 126, 6, 4098);
-			attr_dev(div25, "role", "button");
-			attr_dev(div25, "tabindex", "0");
-			attr_dev(div25, "id", "back-button");
-			attr_dev(div25, "class", "ok-button svelte-1pzoxsa");
-			set_style(div25, "margin-top", "1.14rem");
-			add_location(div25, GalleryWidget_svelte_file, 132, 6, 4317);
-			attr_dev(div26, "id", "size-modal");
-			attr_dev(div26, "style", div26_style_value = /*size_modal_opened*/ ctx[6] ? "" : "display: none;");
-			attr_dev(div26, "class", "svelte-1pzoxsa");
-			add_location(div26, GalleryWidget_svelte_file, 109, 5, 3578);
-			attr_dev(div27, "id", "options-bar");
 			attr_dev(div27, "class", "svelte-1pzoxsa");
-			add_location(div27, GalleryWidget_svelte_file, 80, 4, 2749);
+			add_location(div27, GalleryWidget_svelte_file, 135, 6, 4397);
+			attr_dev(div28, "role", "button");
+			attr_dev(div28, "tabindex", "0");
+			attr_dev(div28, "id", "back-button");
+			attr_dev(div28, "class", "ok-button svelte-1pzoxsa");
+			set_style(div28, "margin-top", "1.14rem");
+			add_location(div28, GalleryWidget_svelte_file, 142, 6, 4620);
+			attr_dev(div29, "id", "size-modal");
+			attr_dev(div29, "style", div29_style_value = /*size_modal_opened*/ ctx[6] ? '' : 'display: none;');
+			attr_dev(div29, "class", "svelte-1pzoxsa");
+			add_location(div29, GalleryWidget_svelte_file, 120, 5, 3896);
+			attr_dev(div30, "id", "options-bar");
+			attr_dev(div30, "class", "svelte-1pzoxsa");
+			add_location(div30, GalleryWidget_svelte_file, 91, 4, 3062);
 			attr_dev(button, "id", "db-login-button");
 			attr_dev(button, "class", "svelte-1pzoxsa");
 			toggle_class(button, "hide", /*authed*/ ctx[11]);
-			add_location(button, GalleryWidget_svelte_file, 151, 4, 4935);
-			attr_dev(div28, "id", "gallery-elements");
-			attr_dev(div28, "class", "svelte-1pzoxsa");
-			add_location(div28, GalleryWidget_svelte_file, 154, 4, 5071);
-			attr_dev(div29, "id", "gallery-container");
-			attr_dev(div29, "class", "svelte-1pzoxsa");
-			add_location(div29, GalleryWidget_svelte_file, 19, 3, 517);
-			attr_dev(div30, "id", "gallery-container-outer");
-			attr_dev(div30, "class", "svelte-1pzoxsa");
-			add_location(div30, GalleryWidget_svelte_file, 18, 2, 453);
+			add_location(button, GalleryWidget_svelte_file, 161, 4, 5235);
+			attr_dev(div31, "id", "gallery-elements");
+			attr_dev(div31, "class", "svelte-1pzoxsa");
+			add_location(div31, GalleryWidget_svelte_file, 164, 4, 5373);
+			attr_dev(div32, "id", "gallery-container");
+			attr_dev(div32, "class", "svelte-1pzoxsa");
+			add_location(div32, GalleryWidget_svelte_file, 20, 3, 518);
+			attr_dev(div33, "id", "gallery-container-outer");
+			attr_dev(div33, "class", "svelte-1pzoxsa");
+			add_location(div33, GalleryWidget_svelte_file, 19, 2, 454);
 		},
 		m: function mount(target, anchor) {
-			insert_dev(target, div30, anchor);
-			append_dev(div30, div29);
-			append_dev(div29, div2);
+			insert_dev(target, div33, anchor);
+			append_dev(div33, div32);
+			append_dev(div32, div2);
 			append_dev(div2, div0);
 			append_dev(div2, t1);
 			append_dev(div2, div1);
 			div1.innerHTML = (forbid_default());
-			append_dev(div29, t2);
-			append_dev(div29, div16);
-			append_dev(div16, img);
-			append_dev(div16, t3);
-			append_dev(div16, div15);
-			append_dev(div15, div5);
+			append_dev(div32, t2);
+			append_dev(div32, div19);
+			append_dev(div19, img);
+			append_dev(div19, t3);
+			append_dev(div19, div18);
+			append_dev(div18, div5);
 			append_dev(div5, div3);
 			append_dev(div5, t5);
 			append_dev(div5, div4);
 			div4.innerHTML = (capture_default());
-			append_dev(div15, t6);
-			append_dev(div15, div8);
+			append_dev(div18, t6);
+			append_dev(div18, div8);
 			append_dev(div8, div6);
 			append_dev(div8, t8);
 			append_dev(div8, div7);
 			div7.innerHTML = (capture_default());
-			append_dev(div15, t9);
-			append_dev(div15, div11);
+			append_dev(div18, t9);
+			append_dev(div18, div11);
 			append_dev(div11, div9);
 			append_dev(div11, t11);
 			append_dev(div11, div10);
-			div10.innerHTML = (download_default());
-			append_dev(div15, t12);
-			append_dev(div15, div14);
+			div10.innerHTML = (capture_default());
+			append_dev(div18, t12);
+			append_dev(div18, div14);
 			append_dev(div14, div12);
-			append_dev(div12, t13);
 			append_dev(div14, t14);
 			append_dev(div14, div13);
-			div13.innerHTML = (time_default());
-			append_dev(div29, t15);
-			append_dev(div29, div27);
-			append_dev(div27, div18);
+			div13.innerHTML = (download_default());
+			append_dev(div18, t15);
 			append_dev(div18, div17);
-			append_dev(div18, t17);
-			html_tag.m((launch_default()), div18);
-			append_dev(div27, t18);
-			append_dev(div27, div20);
-			append_dev(div20, div19);
-			append_dev(div20, t20);
-			html_tag_1.m((resize_default()), div20);
-			append_dev(div27, t21);
-			append_dev(div27, div26);
-			append_dev(div26, div21);
-			div21.innerHTML = (forbid_default());
-			append_dev(div26, t22);
-			append_dev(div26, div22);
-			append_dev(div26, t24);
-			append_dev(div26, div23);
-			append_dev(div23, t25);
-			append_dev(div23, t26);
-			append_dev(div23, t27);
+			append_dev(div17, div15);
+			append_dev(div15, t16);
+			append_dev(div17, t17);
+			append_dev(div17, div16);
+			div16.innerHTML = (time_default());
+			append_dev(div32, t18);
+			append_dev(div32, div30);
+			append_dev(div30, div21);
+			append_dev(div21, div20);
+			append_dev(div21, t20);
+			html_tag.m((launch_default()), div21);
+			append_dev(div30, t21);
+			append_dev(div30, div23);
+			append_dev(div23, div22);
+			append_dev(div23, t23);
+			html_tag_1.m((resize_default()), div23);
+			append_dev(div30, t24);
+			append_dev(div30, div29);
+			append_dev(div29, div24);
+			div24.innerHTML = (forbid_default());
+			append_dev(div29, t25);
+			append_dev(div29, div25);
+			append_dev(div29, t27);
+			append_dev(div29, div26);
 			append_dev(div26, t28);
-			append_dev(div26, div24);
 			append_dev(div26, t29);
-			append_dev(div26, div25);
-			div25.innerHTML = (ok_default());
-			append_dev(div29, t30);
-			append_dev(div29, button);
+			append_dev(div26, t30);
+			append_dev(div29, t31);
+			append_dev(div29, div27);
 			append_dev(div29, t32);
 			append_dev(div29, div28);
+			div28.innerHTML = (ok_default());
+			append_dev(div32, t33);
+			append_dev(div32, button);
+			append_dev(div32, t35);
+			append_dev(div32, div31);
 
 			for (let i = 0; i < each_blocks.length; i += 1) {
 				if (each_blocks[i]) {
-					each_blocks[i].m(div28, null);
+					each_blocks[i].m(div31, null);
 				}
 			}
 
 			if (!mounted) {
 				dispose = [
-					listen_dev(div1, "click", /*click_handler_1*/ ctx[22], false, false, false, false),
-					listen_dev(div5, "click", /*click_handler_2*/ ctx[23], false, false, false, false),
-					listen_dev(div8, "click", /*save_to_dropbox*/ ctx[18], false, false, false, false),
-					listen_dev(div11, "click", /*download_image*/ ctx[17], false, false, false, false),
-					listen_dev(div18, "click", /*click_handler_3*/ ctx[24], false, false, false, false),
-					listen_dev(div20, "click", /*click_handler_4*/ ctx[25], false, false, false, false),
-					listen_dev(div21, "click", /*click_handler_5*/ ctx[26], false, false, false, false),
-					listen_dev(div24, "pointerdown", /*resize_widget_pointer_down*/ ctx[19], false, false, false, false),
-					listen_dev(div25, "click", /*click_handler_6*/ ctx[27], false, false, false, false),
-					listen_dev(button, "click", /*click_handler_7*/ ctx[28], false, false, false, false)
+					listen_dev(div1, "click", /*click_handler_1*/ ctx[24], false, false, false, false),
+					listen_dev(div5, "click", /*record_video*/ ctx[18], false, false, false, false),
+					listen_dev(div8, "click", /*click_handler_2*/ ctx[25], false, false, false, false),
+					listen_dev(div11, "click", /*save_to_dropbox*/ ctx[19], false, false, false, false),
+					listen_dev(div14, "click", /*download_image*/ ctx[17], false, false, false, false),
+					listen_dev(div21, "click", /*click_handler_3*/ ctx[26], false, false, false, false),
+					listen_dev(div23, "click", /*click_handler_4*/ ctx[27], false, false, false, false),
+					listen_dev(div24, "click", /*click_handler_5*/ ctx[28], false, false, false, false),
+					listen_dev(div27, "pointerdown", /*resize_widget_pointer_down*/ ctx[20], false, false, false, false),
+					listen_dev(div28, "click", /*click_handler_6*/ ctx[29], false, false, false, false),
+					listen_dev(button, "click", /*click_handler_7*/ ctx[30], false, false, false, false)
 				];
 
 				mounted = true;
@@ -36693,20 +36722,20 @@ function GalleryWidget_svelte_create_if_block(ctx) {
 				attr_dev(img, "src", img_src_value);
 			}
 
-			if (dirty[0] & /*current_project*/ 1 && t13_value !== (t13_value = /*format_time*/ ctx[15](/*current_project*/ ctx[0].id) + "")) set_data_dev(t13, t13_value);
-			if (dirty[0] & /*resize_widget_canvas_size*/ 8192 && t25_value !== (t25_value = floor(/*resize_widget_canvas_size*/ ctx[13][0]) + "")) set_data_dev(t25, t25_value);
-			if (dirty[0] & /*resize_widget_canvas_size*/ 8192 && t27_value !== (t27_value = floor(/*resize_widget_canvas_size*/ ctx[13][1]) + "")) set_data_dev(t27, t27_value);
+			if (dirty[0] & /*current_project*/ 1 && t16_value !== (t16_value = /*format_time*/ ctx[15](/*current_project*/ ctx[0].id) + "")) set_data_dev(t16, t16_value);
+			if (dirty[0] & /*resize_widget_canvas_size*/ 8192 && t28_value !== (t28_value = floor(/*resize_widget_canvas_size*/ ctx[13][0]) + "")) set_data_dev(t28, t28_value);
+			if (dirty[0] & /*resize_widget_canvas_size*/ 8192 && t30_value !== (t30_value = floor(/*resize_widget_canvas_size*/ ctx[13][1]) + "")) set_data_dev(t30, t30_value);
 
-			if (dirty[0] & /*resize_widget_canvas_size*/ 8192 && div24_style_value !== (div24_style_value = `
+			if (dirty[0] & /*resize_widget_canvas_size*/ 8192 && div27_style_value !== (div27_style_value = `
 							background: white;
 							width: 10rem;
 							aspect-ratio: 1/${/*resize_widget_canvas_size*/ ctx[13][1] / /*resize_widget_canvas_size*/ ctx[13][0]}
 						`)) {
-				attr_dev(div24, "style", div24_style_value);
+				attr_dev(div27, "style", div27_style_value);
 			}
 
-			if (dirty[0] & /*size_modal_opened*/ 64 && div26_style_value !== (div26_style_value = /*size_modal_opened*/ ctx[6] ? "" : "display: none;")) {
-				attr_dev(div26, "style", div26_style_value);
+			if (dirty[0] & /*size_modal_opened*/ 64 && div29_style_value !== (div29_style_value = /*size_modal_opened*/ ctx[6] ? '' : 'display: none;')) {
+				attr_dev(div29, "style", div29_style_value);
 			}
 
 			if (dirty[0] & /*authed*/ 2048) {
@@ -36725,7 +36754,7 @@ function GalleryWidget_svelte_create_if_block(ctx) {
 					} else {
 						each_blocks[i] = GalleryWidget_svelte_create_each_block(child_ctx);
 						each_blocks[i].c();
-						each_blocks[i].m(div28, null);
+						each_blocks[i].m(div31, null);
 					}
 				}
 
@@ -36738,10 +36767,10 @@ function GalleryWidget_svelte_create_if_block(ctx) {
 		},
 		i: function intro(local) {
 			if (local) {
-				if (!div30_intro) {
+				if (!div33_intro) {
 					scheduler_add_render_callback(() => {
-						div30_intro = create_in_transition(div30, fade, { duration: 200 });
-						div30_intro.start();
+						div33_intro = create_in_transition(div33, fade, { duration: 200 });
+						div33_intro.start();
 					});
 				}
 			}
@@ -36749,7 +36778,7 @@ function GalleryWidget_svelte_create_if_block(ctx) {
 		o: utils_noop,
 		d: function destroy(detaching) {
 			if (detaching) {
-				detach_dev(div30);
+				detach_dev(div33);
 			}
 
 			destroy_each(each_blocks, detaching);
@@ -36762,18 +36791,18 @@ function GalleryWidget_svelte_create_if_block(ctx) {
 		block,
 		id: GalleryWidget_svelte_create_if_block.name,
 		type: "if",
-		source: "(18:1) {#if $gallery_open}",
+		source: "(19:1) {#if $gallery_open}",
 		ctx
 	});
 
 	return block;
 }
 
-// (156:5) {#each gallery_elements as element, i}
+// (166:5) {#each gallery_elements as element, i}
 function GalleryWidget_svelte_create_each_block(ctx) {
 	let div1;
 	let div0;
-	let t0_value = /*format_time*/ ctx[15](/*element*/ ctx[39].name) + "";
+	let t0_value = /*format_time*/ ctx[15](/*element*/ ctx[41].name) + "";
 	let t0;
 	let t1;
 	let img;
@@ -36784,7 +36813,7 @@ function GalleryWidget_svelte_create_each_block(ctx) {
 	let dispose;
 
 	function click_handler_8() {
-		return /*click_handler_8*/ ctx[29](/*element*/ ctx[39]);
+		return /*click_handler_8*/ ctx[31](/*element*/ ctx[41]);
 	}
 
 	const block = {
@@ -36797,23 +36826,23 @@ function GalleryWidget_svelte_create_each_block(ctx) {
 			t2 = space();
 			attr_dev(div0, "id", "element-name");
 			attr_dev(div0, "class", "svelte-1pzoxsa");
-			add_location(div0, GalleryWidget_svelte_file, 175, 7, 5895);
+			add_location(div0, GalleryWidget_svelte_file, 187, 7, 6228);
 			attr_dev(img, "draggable", "false");
-			if (!src_url_equal(img.src, img_src_value = /*element*/ ctx[39].image_src)) attr_dev(img, "src", img_src_value);
+			if (!src_url_equal(img.src, img_src_value = /*element*/ ctx[41].image_src)) attr_dev(img, "src", img_src_value);
 			attr_dev(img, "id", "canvas-preview-img");
 			attr_dev(img, "alt", "");
 			attr_dev(img, "class", "svelte-1pzoxsa");
-			add_location(img, GalleryWidget_svelte_file, 178, 7, 5976);
+			add_location(img, GalleryWidget_svelte_file, 190, 7, 6309);
 			attr_dev(div1, "id", "element");
 			attr_dev(div1, "role", "button");
 			attr_dev(div1, "tabindex", "0");
 
-			attr_dev(div1, "style", div1_style_value = Number(/*element*/ ctx[39].name) === /*current_project*/ ctx[0].id
-			? "border: 0.1rem solid white;"
-			: "");
+			attr_dev(div1, "style", div1_style_value = Number(/*element*/ ctx[41].name) === /*current_project*/ ctx[0].id
+			? 'border: 0.1rem solid white;'
+			: '');
 
 			attr_dev(div1, "class", "svelte-1pzoxsa");
-			add_location(div1, GalleryWidget_svelte_file, 156, 6, 5149);
+			add_location(div1, GalleryWidget_svelte_file, 166, 6, 5451);
 		},
 		m: function mount(target, anchor) {
 			insert_dev(target, div1, anchor);
@@ -36830,15 +36859,15 @@ function GalleryWidget_svelte_create_each_block(ctx) {
 		},
 		p: function update(new_ctx, dirty) {
 			ctx = new_ctx;
-			if (dirty[0] & /*gallery_elements*/ 4096 && t0_value !== (t0_value = /*format_time*/ ctx[15](/*element*/ ctx[39].name) + "")) set_data_dev(t0, t0_value);
+			if (dirty[0] & /*gallery_elements*/ 4096 && t0_value !== (t0_value = /*format_time*/ ctx[15](/*element*/ ctx[41].name) + "")) set_data_dev(t0, t0_value);
 
-			if (dirty[0] & /*gallery_elements*/ 4096 && !src_url_equal(img.src, img_src_value = /*element*/ ctx[39].image_src)) {
+			if (dirty[0] & /*gallery_elements*/ 4096 && !src_url_equal(img.src, img_src_value = /*element*/ ctx[41].image_src)) {
 				attr_dev(img, "src", img_src_value);
 			}
 
-			if (dirty[0] & /*gallery_elements, current_project*/ 4097 && div1_style_value !== (div1_style_value = Number(/*element*/ ctx[39].name) === /*current_project*/ ctx[0].id
-			? "border: 0.1rem solid white;"
-			: "")) {
+			if (dirty[0] & /*gallery_elements, current_project*/ 4097 && div1_style_value !== (div1_style_value = Number(/*element*/ ctx[41].name) === /*current_project*/ ctx[0].id
+			? 'border: 0.1rem solid white;'
+			: '')) {
 				attr_dev(div1, "style", div1_style_value);
 			}
 		},
@@ -36856,7 +36885,7 @@ function GalleryWidget_svelte_create_each_block(ctx) {
 		block,
 		id: GalleryWidget_svelte_create_each_block.name,
 		type: "each",
-		source: "(156:5) {#each gallery_elements as element, i}",
+		source: "(166:5) {#each gallery_elements as element, i}",
 		ctx
 	});
 
@@ -36895,7 +36924,7 @@ function GalleryWidget_svelte_create_fragment(ctx) {
 			if (if_block) if_block.m(div1, null);
 
 			if (!mounted) {
-				dispose = listen_dev(div0, "click", /*click_handler*/ ctx[21], false, false, false, false);
+				dispose = listen_dev(div0, "click", /*click_handler*/ ctx[23], false, false, false, false);
 				mounted = true;
 			}
 		},
@@ -36965,11 +36994,11 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 	const format_time = t => {
 		return new Date(Number(t)).toLocaleString('en-GB', {
 			hourCycle: 'h23',
-			day: "2-digit",
-			month: "2-digit",
-			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit"
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
 		}).replace(',', '');
 	};
 
@@ -37029,13 +37058,70 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 		link.click();
 	};
 
+	let { recording_pending } = $$props;
+
+	const record_video = async () => {
+		const createMediaRecorder = canvas => {
+			let options = {
+				audioBitsPerSecond: 0,
+				videoBitsPerSecond: 8000000
+			};
+
+			const types = ['video/webm;codecs=h264', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8'];
+
+			for (let type of types) {
+				if (MediaRecorder.isTypeSupported(type)) {
+					options.mimeType = type;
+				}
+			}
+
+			if (!options.mimeType) {
+				options.mimeType = 'video/webm';
+			}
+
+			const mediaRecorder = new MediaRecorder(canvas.captureStream(), options);
+			const chunks = [];
+
+			mediaRecorder.ondataavailable = function (e) {
+				if (e.data.size > 0) {
+					chunks.push(e.data);
+				}
+			};
+
+			mediaRecorder.onstop = function () {
+				let blob = new Blob(chunks, { type: 'video/mp4' });
+				chunks.length = 0;
+				const url = window.URL.createObjectURL(blob);
+				let a = document.createElement('a');
+				document.body.appendChild(a);
+				a.style = 'display: none';
+				a.href = url;
+				a.download = 'shader.mp4';
+				a.click();
+				window.URL.revokeObjectURL(url);
+			};
+
+			return mediaRecorder;
+		};
+
+		if (!window.media_recorder) {
+			window.media_recorder = createMediaRecorder(document.querySelector('canvas'));
+		}
+
+		if (window.media_recorder.state === 'inactive') {
+			window.media_recorder.start();
+		}
+
+		$$invalidate(22, recording_pending = true);
+	};
+
 	const refetch_canvases = async () => {
 		let response = await dbx.filesListFolder({ path: '' });
 		console.log(response);
 		$$invalidate(12, gallery_elements = []);
 
 		for (let element of response.result.entries) {
-			if (element.name.endsWith(".json")) {
+			if (element.name.endsWith('.json')) {
 				let proj_name = element.name.slice(0, -5);
 				let image = await dbx.filesDownload({ path: '/' + proj_name + '.png' });
 				let binary = image.result.fileBlob;
@@ -37045,7 +37131,7 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 							const reader = new FileReader();
 							reader.onload = _e => resolve(reader.result);
 							reader.onerror = _e => reject(reader.error);
-							reader.onabort = _e => reject(new Error("Read aborted"));
+							reader.onabort = _e => reject(new Error('Read aborted'));
 							reader.readAsDataURL(blob);
 						});
 				};
@@ -37056,22 +37142,22 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 	};
 
 	const save_to_dropbox = async () => {
-		floating_modal_message.set("Starting upload to dropbox.");
+		floating_modal_message.set('Starting upload to dropbox.');
 
 		let r = await dbx.filesUpload({
 			path: '/' + current_project.id + '.json',
 			contents: JSON.stringify(current_project),
-			mode: "overwrite"
+			mode: 'overwrite'
 		});
 
 		r = await dbx.filesUpload({
 			path: '/' + current_project.id + '.png',
 			contents: await (await fetch(canvas_image.src)).blob(),
-			mode: "overwrite"
+			mode: 'overwrite'
 		});
 
-		floating_modal_message.set("Upload to dropbox succesful.");
-		$$invalidate(20, project_has_been_modified = false);
+		floating_modal_message.set('Upload to dropbox succesful.');
+		$$invalidate(21, project_has_been_modified = false);
 		await refetch_canvases();
 	};
 
@@ -37138,6 +37224,10 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 		if (project_has_been_modified === undefined && !('project_has_been_modified' in $$props || $$self.$$.bound[$$self.$$.props['project_has_been_modified']])) {
 			console_1.warn("<GalleryWidget> was created without expected prop 'project_has_been_modified'");
 		}
+
+		if (recording_pending === undefined && !('recording_pending' in $$props || $$self.$$.bound[$$self.$$.props['recording_pending']])) {
+			console_1.warn("<GalleryWidget> was created without expected prop 'recording_pending'");
+		}
 	});
 
 	const writable_props = [
@@ -37146,7 +37236,8 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 		'resize_project',
 		'new_project',
 		'load_project',
-		'project_has_been_modified'
+		'project_has_been_modified',
+		'recording_pending'
 	];
 
 	Object.keys($$props).forEach(key => {
@@ -37247,7 +37338,8 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 		if ('resize_project' in $$props) $$invalidate(2, resize_project = $$props.resize_project);
 		if ('new_project' in $$props) $$invalidate(3, new_project = $$props.new_project);
 		if ('load_project' in $$props) $$invalidate(4, load_project = $$props.load_project);
-		if ('project_has_been_modified' in $$props) $$invalidate(20, project_has_been_modified = $$props.project_has_been_modified);
+		if ('project_has_been_modified' in $$props) $$invalidate(21, project_has_been_modified = $$props.project_has_been_modified);
+		if ('recording_pending' in $$props) $$invalidate(22, recording_pending = $$props.recording_pending);
 	};
 
 	$$self.$capture_state = () => ({
@@ -37286,6 +37378,8 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 		log_into_dropbox,
 		is_safe_to_switch_to_new_project,
 		download_image,
+		recording_pending,
+		record_video,
 		refetch_canvases,
 		save_to_dropbox,
 		resize_widget_pixel_range,
@@ -37308,7 +37402,7 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 		if ('resize_project' in $$props) $$invalidate(2, resize_project = $$props.resize_project);
 		if ('new_project' in $$props) $$invalidate(3, new_project = $$props.new_project);
 		if ('load_project' in $$props) $$invalidate(4, load_project = $$props.load_project);
-		if ('project_has_been_modified' in $$props) $$invalidate(20, project_has_been_modified = $$props.project_has_been_modified);
+		if ('project_has_been_modified' in $$props) $$invalidate(21, project_has_been_modified = $$props.project_has_been_modified);
 		if ('size_modal_opened' in $$props) $$invalidate(6, size_modal_opened = $$props.size_modal_opened);
 		if ('canvas_image' in $$props) $$invalidate(7, canvas_image = $$props.canvas_image);
 		if ('canvas_image_blob' in $$props) $$invalidate(8, canvas_image_blob = $$props.canvas_image_blob);
@@ -37316,6 +37410,7 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 		if ('dbx' in $$props) $$invalidate(10, dbx = $$props.dbx);
 		if ('authed' in $$props) $$invalidate(11, authed = $$props.authed);
 		if ('gallery_elements' in $$props) $$invalidate(12, gallery_elements = $$props.gallery_elements);
+		if ('recording_pending' in $$props) $$invalidate(22, recording_pending = $$props.recording_pending);
 		if ('resize_widget_canvas_size' in $$props) $$invalidate(13, resize_widget_canvas_size = $$props.resize_widget_canvas_size);
 		if ('resize_widget_start_y' in $$props) resize_widget_start_y = $$props.resize_widget_start_y;
 		if ('resize_wdiget_start_value' in $$props) resize_wdiget_start_value = $$props.resize_wdiget_start_value;
@@ -37348,9 +37443,11 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 		format_time,
 		log_into_dropbox,
 		download_image,
+		record_video,
 		save_to_dropbox,
 		resize_widget_pointer_down,
 		project_has_been_modified,
+		recording_pending,
 		click_handler,
 		click_handler_1,
 		click_handler_2,
@@ -37379,8 +37476,9 @@ class GalleryWidget extends SvelteComponentDev {
 				resize_project: 2,
 				new_project: 3,
 				load_project: 4,
-				project_has_been_modified: 20,
-				is_safe_to_switch_to_new_project: 5
+				project_has_been_modified: 21,
+				is_safe_to_switch_to_new_project: 5,
+				recording_pending: 22
 			},
 			GalleryWidget_svelte_add_css,
 			[-1, -1]
@@ -37440,7 +37538,7 @@ class GalleryWidget extends SvelteComponentDev {
 	}
 
 	get project_has_been_modified() {
-		return this.$$.ctx[20];
+		return this.$$.ctx[21];
 	}
 
 	set project_has_been_modified(project_has_been_modified) {
@@ -37454,6 +37552,15 @@ class GalleryWidget extends SvelteComponentDev {
 
 	set is_safe_to_switch_to_new_project(value) {
 		throw new Error_1("<GalleryWidget>: Cannot set read-only property 'is_safe_to_switch_to_new_project'");
+	}
+
+	get recording_pending() {
+		return this.$$.ctx[22];
+	}
+
+	set recording_pending(recording_pending) {
+		this.$$set({ recording_pending });
+		scheduler_flush();
 	}
 }
 
@@ -38939,9 +39046,9 @@ function RGBSliders_svelte_create_if_block(ctx) {
 				? "background: rgb(0, 222, 107);"
 				: "background: rgb(0, 85, 255);");
 
-			add_location(div0, RGBSliders_svelte_file, 80, 9, 1774);
+			add_location(div0, RGBSliders_svelte_file, 80, 9, 1775);
 			attr_dev(div1, "class", "knob-container svelte-dscti0");
-			add_location(div1, RGBSliders_svelte_file, 72, 6, 1574);
+			add_location(div1, RGBSliders_svelte_file, 72, 6, 1575);
 		},
 		m: function mount(target, anchor) {
 			insert_dev(target, div1, anchor);
@@ -39049,7 +39156,7 @@ function RGBSliders_svelte_create_fragment(ctx) {
 
 			attr_dev(div, "draggable", "false");
 			attr_dev(div, "class", "knob-container-container svelte-dscti0");
-			add_location(div, RGBSliders_svelte_file, 67, 0, 1442);
+			add_location(div, RGBSliders_svelte_file, 67, 0, 1443);
 		},
 		l: function claim(nodes) {
 			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -39129,7 +39236,7 @@ function RGBSliders_svelte_instance($$self, $$props, $$invalidate) {
 	};
 
 	const pointerMove = ({ clientX, clientY }) => {
-		let scale = 0.25 / elements[colour_idx].clientWidth;
+		let scale = 0.125 / elements[colour_idx].clientWidth;
 		let valueDiff = -(startX - clientX) * scale;
 		valueDiff += (startY - clientY) * scale;
 		$$invalidate(0, colour[colour_idx] = clamp(startValue + valueDiff, 0, 1), colour);
@@ -41086,7 +41193,7 @@ function App_svelte_add_css(target) {
 	append_styles(target, "svelte-1peai3v", "*{color:white;font-family:\"JetBrains Mono\";font-weight:900}main.svelte-1peai3v.svelte-1peai3v.svelte-1peai3v{width:100%;height:100%;display:flex;flex-direction:column}main.svelte-1peai3v #bar-container.svelte-1peai3v.svelte-1peai3v{width:100%;position:absolute;display:flex;flex-direction:column}main.svelte-1peai3v #bar-container #bar.svelte-1peai3v.svelte-1peai3v{z-index:0;flex-wrap:wrap;background:black;width:100%;display:flex;align-items:center}main.svelte-1peai3v #bar-container #bar.svelte-1peai3v>div{max-height:4rem;height:100%;margin-bottom:auto;margin-right:0.25rem;z-index:1}main.svelte-1peai3v #bar-container #bar.svelte-1peai3v>div:not(:first-of-type){margin-left:0.25rem}main.svelte-1peai3v #bar-container #bar.svelte-1peai3v>.svelte-1peai3v:last-of-type{margin-left:auto;margin-right:0px}main.svelte-1peai3v canvas.svelte-1peai3v.svelte-1peai3v{width:100%;height:100%;display:block;margin:auto;padding:0}\n/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiQXBwLnN2ZWx0ZSIsIm1hcHBpbmdzIjoiIiwibmFtZXMiOltdLCJzb3VyY2VzIjpbIi9ob21lL3J1bm5lci93b3JrL3NwbHVuZ2Uvc3BsdW5nZS9zcmMvY29tcG9uZW50cy9BcHAuc3ZlbHRlIl19 */");
 }
 
-// (75:2) <SemiModal bind:this={chaosSemiModal} knob={chaosKnob}>
+// (76:2) <SemiModal bind:this={chaosSemiModal} knob={chaosKnob}>
 function create_default_slot_2(ctx) {
 	let sliders;
 	let updating_value_1;
@@ -41098,29 +41205,29 @@ function create_default_slot_2(ctx) {
 	let current;
 
 	function sliders_value_1_binding(value) {
-		/*sliders_value_1_binding*/ ctx[61](value);
+		/*sliders_value_1_binding*/ ctx[63](value);
 	}
 
 	function sliders_value_2_binding(value) {
-		/*sliders_value_2_binding*/ ctx[62](value);
+		/*sliders_value_2_binding*/ ctx[64](value);
 	}
 
 	function sliders_value_3_binding(value) {
-		/*sliders_value_3_binding*/ ctx[63](value);
+		/*sliders_value_3_binding*/ ctx[65](value);
 	}
 
 	let sliders_props = { names: ["Chaos L", "Chaos C", "Chaos H"] };
 
-	if (/*curr_brush*/ ctx[25].chaos_lch[0] !== void 0) {
-		sliders_props.value_1 = /*curr_brush*/ ctx[25].chaos_lch[0];
+	if (/*curr_brush*/ ctx[26].chaos_lch[0] !== void 0) {
+		sliders_props.value_1 = /*curr_brush*/ ctx[26].chaos_lch[0];
 	}
 
-	if (/*curr_brush*/ ctx[25].chaos_lch[1] !== void 0) {
-		sliders_props.value_2 = /*curr_brush*/ ctx[25].chaos_lch[1];
+	if (/*curr_brush*/ ctx[26].chaos_lch[1] !== void 0) {
+		sliders_props.value_2 = /*curr_brush*/ ctx[26].chaos_lch[1];
 	}
 
-	if (/*curr_brush*/ ctx[25].chaos_lch[2] !== void 0) {
-		sliders_props.value_3 = /*curr_brush*/ ctx[25].chaos_lch[2];
+	if (/*curr_brush*/ ctx[26].chaos_lch[2] !== void 0) {
+		sliders_props.value_3 = /*curr_brush*/ ctx[26].chaos_lch[2];
 	}
 
 	sliders = new Sliders_svelte({ props: sliders_props, $$inline: true });
@@ -41129,13 +41236,13 @@ function create_default_slot_2(ctx) {
 	binding_callbacks.push(() => bind(sliders, 'value_3', sliders_value_3_binding));
 
 	function knob_value_binding(value) {
-		/*knob_value_binding*/ ctx[64](value);
+		/*knob_value_binding*/ ctx[66](value);
 	}
 
 	let knob_props = { title: 'Chaos Speed' };
 
-	if (/*curr_brush*/ ctx[25].chaos_speed !== void 0) {
-		knob_props.value = /*curr_brush*/ ctx[25].chaos_speed;
+	if (/*curr_brush*/ ctx[26].chaos_speed !== void 0) {
+		knob_props.value = /*curr_brush*/ ctx[26].chaos_speed;
 	}
 
 	knob = new Knob_svelte({ props: knob_props, $$inline: true });
@@ -41156,30 +41263,30 @@ function create_default_slot_2(ctx) {
 		p: function update(ctx, dirty) {
 			const sliders_changes = {};
 
-			if (!updating_value_1 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_1 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_1 = true;
-				sliders_changes.value_1 = /*curr_brush*/ ctx[25].chaos_lch[0];
+				sliders_changes.value_1 = /*curr_brush*/ ctx[26].chaos_lch[0];
 				add_flush_callback(() => updating_value_1 = false);
 			}
 
-			if (!updating_value_2 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_2 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_2 = true;
-				sliders_changes.value_2 = /*curr_brush*/ ctx[25].chaos_lch[1];
+				sliders_changes.value_2 = /*curr_brush*/ ctx[26].chaos_lch[1];
 				add_flush_callback(() => updating_value_2 = false);
 			}
 
-			if (!updating_value_3 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_3 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_3 = true;
-				sliders_changes.value_3 = /*curr_brush*/ ctx[25].chaos_lch[2];
+				sliders_changes.value_3 = /*curr_brush*/ ctx[26].chaos_lch[2];
 				add_flush_callback(() => updating_value_3 = false);
 			}
 
 			sliders.$set(sliders_changes);
 			const knob_changes = {};
 
-			if (!updating_value && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value = true;
-				knob_changes.value = /*curr_brush*/ ctx[25].chaos_speed;
+				knob_changes.value = /*curr_brush*/ ctx[26].chaos_speed;
 				add_flush_callback(() => updating_value = false);
 			}
 
@@ -41210,14 +41317,14 @@ function create_default_slot_2(ctx) {
 		block,
 		id: create_default_slot_2.name,
 		type: "slot",
-		source: "(75:2) <SemiModal bind:this={chaosSemiModal} knob={chaosKnob}>",
+		source: "(76:2) <SemiModal bind:this={chaosSemiModal} knob={chaosKnob}>",
 		ctx
 	});
 
 	return block;
 }
 
-// (83:2) <SemiModal bind:this={dynamicsSemiModal} knob={dynamicsKnob}>
+// (84:2) <SemiModal bind:this={dynamicsSemiModal} knob={dynamicsKnob}>
 function create_default_slot_1(ctx) {
 	let sliders0;
 	let updating_value_1;
@@ -41235,21 +41342,21 @@ function create_default_slot_1(ctx) {
 	let current;
 
 	function sliders0_value_1_binding(value) {
-		/*sliders0_value_1_binding*/ ctx[66](value);
+		/*sliders0_value_1_binding*/ ctx[68](value);
 	}
 
 	function sliders0_value_2_binding(value) {
-		/*sliders0_value_2_binding*/ ctx[67](value);
+		/*sliders0_value_2_binding*/ ctx[69](value);
 	}
 
 	let sliders0_props = { names: ["Opacity min", "Opacity max"] };
 
-	if (/*curr_brush*/ ctx[25].stroke_opacity_dynamics[0] !== void 0) {
-		sliders0_props.value_1 = /*curr_brush*/ ctx[25].stroke_opacity_dynamics[0];
+	if (/*curr_brush*/ ctx[26].stroke_opacity_dynamics[0] !== void 0) {
+		sliders0_props.value_1 = /*curr_brush*/ ctx[26].stroke_opacity_dynamics[0];
 	}
 
-	if (/*curr_brush*/ ctx[25].stroke_opacity_dynamics[1] !== void 0) {
-		sliders0_props.value_2 = /*curr_brush*/ ctx[25].stroke_opacity_dynamics[1];
+	if (/*curr_brush*/ ctx[26].stroke_opacity_dynamics[1] !== void 0) {
+		sliders0_props.value_2 = /*curr_brush*/ ctx[26].stroke_opacity_dynamics[1];
 	}
 
 	sliders0 = new Sliders_svelte({ props: sliders0_props, $$inline: true });
@@ -41257,21 +41364,21 @@ function create_default_slot_1(ctx) {
 	binding_callbacks.push(() => bind(sliders0, 'value_2', sliders0_value_2_binding));
 
 	function sliders1_value_1_binding(value) {
-		/*sliders1_value_1_binding*/ ctx[68](value);
+		/*sliders1_value_1_binding*/ ctx[70](value);
 	}
 
 	function sliders1_value_2_binding(value) {
-		/*sliders1_value_2_binding*/ ctx[69](value);
+		/*sliders1_value_2_binding*/ ctx[71](value);
 	}
 
 	let sliders1_props = { names: ["Size min", "Size max"] };
 
-	if (/*curr_brush*/ ctx[25].stroke_size_dynamics[0] !== void 0) {
-		sliders1_props.value_1 = /*curr_brush*/ ctx[25].stroke_size_dynamics[0];
+	if (/*curr_brush*/ ctx[26].stroke_size_dynamics[0] !== void 0) {
+		sliders1_props.value_1 = /*curr_brush*/ ctx[26].stroke_size_dynamics[0];
 	}
 
-	if (/*curr_brush*/ ctx[25].stroke_size_dynamics[1] !== void 0) {
-		sliders1_props.value_2 = /*curr_brush*/ ctx[25].stroke_size_dynamics[1];
+	if (/*curr_brush*/ ctx[26].stroke_size_dynamics[1] !== void 0) {
+		sliders1_props.value_2 = /*curr_brush*/ ctx[26].stroke_size_dynamics[1];
 	}
 
 	sliders1 = new Sliders_svelte({ props: sliders1_props, $$inline: true });
@@ -41279,26 +41386,26 @@ function create_default_slot_1(ctx) {
 	binding_callbacks.push(() => bind(sliders1, 'value_2', sliders1_value_2_binding));
 
 	function knob0_value_binding_1(value) {
-		/*knob0_value_binding_1*/ ctx[70](value);
+		/*knob0_value_binding_1*/ ctx[72](value);
 	}
 
 	let knob0_props = { title: 'Rot jitt' };
 
-	if (/*curr_brush*/ ctx[25].rot_jitter !== void 0) {
-		knob0_props.value = /*curr_brush*/ ctx[25].rot_jitter;
+	if (/*curr_brush*/ ctx[26].rot_jitter !== void 0) {
+		knob0_props.value = /*curr_brush*/ ctx[26].rot_jitter;
 	}
 
 	knob0 = new Knob_svelte({ props: knob0_props, $$inline: true });
 	binding_callbacks.push(() => bind(knob0, 'value', knob0_value_binding_1));
 
 	function knob1_value_binding_1(value) {
-		/*knob1_value_binding_1*/ ctx[71](value);
+		/*knob1_value_binding_1*/ ctx[73](value);
 	}
 
 	let knob1_props = { title: 'Pos jitt' };
 
-	if (/*curr_brush*/ ctx[25].pos_jitter !== void 0) {
-		knob1_props.value = /*curr_brush*/ ctx[25].pos_jitter;
+	if (/*curr_brush*/ ctx[26].pos_jitter !== void 0) {
+		knob1_props.value = /*curr_brush*/ ctx[26].pos_jitter;
 	}
 
 	knob1 = new Knob_svelte({ props: knob1_props, $$inline: true });
@@ -41327,48 +41434,48 @@ function create_default_slot_1(ctx) {
 		p: function update(ctx, dirty) {
 			const sliders0_changes = {};
 
-			if (!updating_value_1 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_1 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_1 = true;
-				sliders0_changes.value_1 = /*curr_brush*/ ctx[25].stroke_opacity_dynamics[0];
+				sliders0_changes.value_1 = /*curr_brush*/ ctx[26].stroke_opacity_dynamics[0];
 				add_flush_callback(() => updating_value_1 = false);
 			}
 
-			if (!updating_value_2 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_2 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_2 = true;
-				sliders0_changes.value_2 = /*curr_brush*/ ctx[25].stroke_opacity_dynamics[1];
+				sliders0_changes.value_2 = /*curr_brush*/ ctx[26].stroke_opacity_dynamics[1];
 				add_flush_callback(() => updating_value_2 = false);
 			}
 
 			sliders0.$set(sliders0_changes);
 			const sliders1_changes = {};
 
-			if (!updating_value_1_1 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_1_1 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_1_1 = true;
-				sliders1_changes.value_1 = /*curr_brush*/ ctx[25].stroke_size_dynamics[0];
+				sliders1_changes.value_1 = /*curr_brush*/ ctx[26].stroke_size_dynamics[0];
 				add_flush_callback(() => updating_value_1_1 = false);
 			}
 
-			if (!updating_value_2_1 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_2_1 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_2_1 = true;
-				sliders1_changes.value_2 = /*curr_brush*/ ctx[25].stroke_size_dynamics[1];
+				sliders1_changes.value_2 = /*curr_brush*/ ctx[26].stroke_size_dynamics[1];
 				add_flush_callback(() => updating_value_2_1 = false);
 			}
 
 			sliders1.$set(sliders1_changes);
 			const knob0_changes = {};
 
-			if (!updating_value && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value = true;
-				knob0_changes.value = /*curr_brush*/ ctx[25].rot_jitter;
+				knob0_changes.value = /*curr_brush*/ ctx[26].rot_jitter;
 				add_flush_callback(() => updating_value = false);
 			}
 
 			knob0.$set(knob0_changes);
 			const knob1_changes = {};
 
-			if (!updating_value_3 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_3 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_3 = true;
-				knob1_changes.value = /*curr_brush*/ ctx[25].pos_jitter;
+				knob1_changes.value = /*curr_brush*/ ctx[26].pos_jitter;
 				add_flush_callback(() => updating_value_3 = false);
 			}
 
@@ -41407,14 +41514,14 @@ function create_default_slot_1(ctx) {
 		block,
 		id: create_default_slot_1.name,
 		type: "slot",
-		source: "(83:2) <SemiModal bind:this={dynamicsSemiModal} knob={dynamicsKnob}>",
+		source: "(84:2) <SemiModal bind:this={dynamicsSemiModal} knob={dynamicsKnob}>",
 		ctx
 	});
 
 	return block;
 }
 
-// (89:2) <SemiModal bind:this={texDynamicsSemiModal} knob={texDynamicsKnob}>
+// (90:2) <SemiModal bind:this={texDynamicsSemiModal} knob={texDynamicsKnob}>
 function create_default_slot(ctx) {
 	let knob0;
 	let updating_value;
@@ -41443,81 +41550,81 @@ function create_default_slot(ctx) {
 	let current;
 
 	function knob0_value_binding_2(value) {
-		/*knob0_value_binding_2*/ ctx[73](value);
+		/*knob0_value_binding_2*/ ctx[75](value);
 	}
 
 	let knob0_props = { title: 'Grit' };
 
-	if (/*curr_brush*/ ctx[25].tex_grit !== void 0) {
-		knob0_props.value = /*curr_brush*/ ctx[25].tex_grit;
+	if (/*curr_brush*/ ctx[26].tex_grit !== void 0) {
+		knob0_props.value = /*curr_brush*/ ctx[26].tex_grit;
 	}
 
 	knob0 = new Knob_svelte({ props: knob0_props, $$inline: true });
 	binding_callbacks.push(() => bind(knob0, 'value', knob0_value_binding_2));
 
 	function knob1_value_binding_2(value) {
-		/*knob1_value_binding_2*/ ctx[74](value);
+		/*knob1_value_binding_2*/ ctx[76](value);
 	}
 
 	let knob1_props = { title: 'Distort Amt' };
 
-	if (/*curr_brush*/ ctx[25].tex_distort_amt !== void 0) {
-		knob1_props.value = /*curr_brush*/ ctx[25].tex_distort_amt;
+	if (/*curr_brush*/ ctx[26].tex_distort_amt !== void 0) {
+		knob1_props.value = /*curr_brush*/ ctx[26].tex_distort_amt;
 	}
 
 	knob1 = new Knob_svelte({ props: knob1_props, $$inline: true });
 	binding_callbacks.push(() => bind(knob1, 'value', knob1_value_binding_2));
 
 	function knob2_value_binding_1(value) {
-		/*knob2_value_binding_1*/ ctx[75](value);
+		/*knob2_value_binding_1*/ ctx[77](value);
 	}
 
 	let knob2_props = { title: 'Distort X' };
 
-	if (/*curr_brush*/ ctx[25].tex_distort[0] !== void 0) {
-		knob2_props.value = /*curr_brush*/ ctx[25].tex_distort[0];
+	if (/*curr_brush*/ ctx[26].tex_distort[0] !== void 0) {
+		knob2_props.value = /*curr_brush*/ ctx[26].tex_distort[0];
 	}
 
 	knob2 = new Knob_svelte({ props: knob2_props, $$inline: true });
 	binding_callbacks.push(() => bind(knob2, 'value', knob2_value_binding_1));
 
 	function knob3_value_binding(value) {
-		/*knob3_value_binding*/ ctx[76](value);
+		/*knob3_value_binding*/ ctx[78](value);
 	}
 
 	let knob3_props = { title: 'Distort Y' };
 
-	if (/*curr_brush*/ ctx[25].tex_distort[1] !== void 0) {
-		knob3_props.value = /*curr_brush*/ ctx[25].tex_distort[1];
+	if (/*curr_brush*/ ctx[26].tex_distort[1] !== void 0) {
+		knob3_props.value = /*curr_brush*/ ctx[26].tex_distort[1];
 	}
 
 	knob3 = new Knob_svelte({ props: knob3_props, $$inline: true });
 	binding_callbacks.push(() => bind(knob3, 'value', knob3_value_binding));
 
 	function sliders_value_1_binding_1(value) {
-		/*sliders_value_1_binding_1*/ ctx[77](value);
+		/*sliders_value_1_binding_1*/ ctx[79](value);
 	}
 
 	function sliders_value_2_binding_1(value) {
-		/*sliders_value_2_binding_1*/ ctx[78](value);
+		/*sliders_value_2_binding_1*/ ctx[80](value);
 	}
 
 	function sliders_value_3_binding_1(value) {
-		/*sliders_value_3_binding_1*/ ctx[79](value);
+		/*sliders_value_3_binding_1*/ ctx[81](value);
 	}
 
 	let sliders_props = { names: ["Noise V", "Noise S", "Noise H"] };
 
-	if (/*curr_brush*/ ctx[25].tex_lch_dynamics[0] !== void 0) {
-		sliders_props.value_1 = /*curr_brush*/ ctx[25].tex_lch_dynamics[0];
+	if (/*curr_brush*/ ctx[26].tex_lch_dynamics[0] !== void 0) {
+		sliders_props.value_1 = /*curr_brush*/ ctx[26].tex_lch_dynamics[0];
 	}
 
-	if (/*curr_brush*/ ctx[25].tex_lch_dynamics[1] !== void 0) {
-		sliders_props.value_2 = /*curr_brush*/ ctx[25].tex_lch_dynamics[1];
+	if (/*curr_brush*/ ctx[26].tex_lch_dynamics[1] !== void 0) {
+		sliders_props.value_2 = /*curr_brush*/ ctx[26].tex_lch_dynamics[1];
 	}
 
-	if (/*curr_brush*/ ctx[25].tex_lch_dynamics[2] !== void 0) {
-		sliders_props.value_3 = /*curr_brush*/ ctx[25].tex_lch_dynamics[2];
+	if (/*curr_brush*/ ctx[26].tex_lch_dynamics[2] !== void 0) {
+		sliders_props.value_3 = /*curr_brush*/ ctx[26].tex_lch_dynamics[2];
 	}
 
 	sliders = new Sliders_svelte({ props: sliders_props, $$inline: true });
@@ -41526,21 +41633,21 @@ function create_default_slot(ctx) {
 	binding_callbacks.push(() => bind(sliders, 'value_3', sliders_value_3_binding_1));
 
 	function texturestretchwidget_selected_brush_texture_binding(value) {
-		/*texturestretchwidget_selected_brush_texture_binding*/ ctx[80](value);
+		/*texturestretchwidget_selected_brush_texture_binding*/ ctx[82](value);
 	}
 
 	function texturestretchwidget_selected_brush_preset_binding(value) {
-		/*texturestretchwidget_selected_brush_preset_binding*/ ctx[81](value);
+		/*texturestretchwidget_selected_brush_preset_binding*/ ctx[83](value);
 	}
 
 	let texturestretchwidget_props = {};
 
-	if (/*curr_brush*/ ctx[25].selected_brush_texture !== void 0) {
-		texturestretchwidget_props.selected_brush_texture = /*curr_brush*/ ctx[25].selected_brush_texture;
+	if (/*curr_brush*/ ctx[26].selected_brush_texture !== void 0) {
+		texturestretchwidget_props.selected_brush_texture = /*curr_brush*/ ctx[26].selected_brush_texture;
 	}
 
-	if (/*curr_brush*/ ctx[25] !== void 0) {
-		texturestretchwidget_props.selected_brush_preset = /*curr_brush*/ ctx[25];
+	if (/*curr_brush*/ ctx[26] !== void 0) {
+		texturestretchwidget_props.selected_brush_preset = /*curr_brush*/ ctx[26];
 	}
 
 	texturestretchwidget = new TextureStretchWidget_svelte({
@@ -41552,21 +41659,21 @@ function create_default_slot(ctx) {
 	binding_callbacks.push(() => bind(texturestretchwidget, 'selected_brush_preset', texturestretchwidget_selected_brush_preset_binding));
 
 	function texturewidget_brush_textures_binding(value) {
-		/*texturewidget_brush_textures_binding*/ ctx[82](value);
+		/*texturewidget_brush_textures_binding*/ ctx[84](value);
 	}
 
 	function texturewidget_selected_brush_texture_binding(value) {
-		/*texturewidget_selected_brush_texture_binding*/ ctx[83](value);
+		/*texturewidget_selected_brush_texture_binding*/ ctx[85](value);
 	}
 
 	let texturewidget_props = {};
 
-	if (/*brush_textures*/ ctx[19] !== void 0) {
-		texturewidget_props.brush_textures = /*brush_textures*/ ctx[19];
+	if (/*brush_textures*/ ctx[20] !== void 0) {
+		texturewidget_props.brush_textures = /*brush_textures*/ ctx[20];
 	}
 
-	if (/*curr_brush*/ ctx[25].selected_brush_texture !== void 0) {
-		texturewidget_props.selected_brush_texture = /*curr_brush*/ ctx[25].selected_brush_texture;
+	if (/*curr_brush*/ ctx[26].selected_brush_texture !== void 0) {
+		texturewidget_props.selected_brush_texture = /*curr_brush*/ ctx[26].selected_brush_texture;
 	}
 
 	texturewidget = new TextureWidget_svelte({
@@ -41612,87 +41719,87 @@ function create_default_slot(ctx) {
 		p: function update(ctx, dirty) {
 			const knob0_changes = {};
 
-			if (!updating_value && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value = true;
-				knob0_changes.value = /*curr_brush*/ ctx[25].tex_grit;
+				knob0_changes.value = /*curr_brush*/ ctx[26].tex_grit;
 				add_flush_callback(() => updating_value = false);
 			}
 
 			knob0.$set(knob0_changes);
 			const knob1_changes = {};
 
-			if (!updating_value_1 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_1 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_1 = true;
-				knob1_changes.value = /*curr_brush*/ ctx[25].tex_distort_amt;
+				knob1_changes.value = /*curr_brush*/ ctx[26].tex_distort_amt;
 				add_flush_callback(() => updating_value_1 = false);
 			}
 
 			knob1.$set(knob1_changes);
 			const knob2_changes = {};
 
-			if (!updating_value_2 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_2 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_2 = true;
-				knob2_changes.value = /*curr_brush*/ ctx[25].tex_distort[0];
+				knob2_changes.value = /*curr_brush*/ ctx[26].tex_distort[0];
 				add_flush_callback(() => updating_value_2 = false);
 			}
 
 			knob2.$set(knob2_changes);
 			const knob3_changes = {};
 
-			if (!updating_value_3 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_3 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_3 = true;
-				knob3_changes.value = /*curr_brush*/ ctx[25].tex_distort[1];
+				knob3_changes.value = /*curr_brush*/ ctx[26].tex_distort[1];
 				add_flush_callback(() => updating_value_3 = false);
 			}
 
 			knob3.$set(knob3_changes);
 			const sliders_changes = {};
 
-			if (!updating_value_1_1 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_1_1 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_1_1 = true;
-				sliders_changes.value_1 = /*curr_brush*/ ctx[25].tex_lch_dynamics[0];
+				sliders_changes.value_1 = /*curr_brush*/ ctx[26].tex_lch_dynamics[0];
 				add_flush_callback(() => updating_value_1_1 = false);
 			}
 
-			if (!updating_value_2_1 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_2_1 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_2_1 = true;
-				sliders_changes.value_2 = /*curr_brush*/ ctx[25].tex_lch_dynamics[1];
+				sliders_changes.value_2 = /*curr_brush*/ ctx[26].tex_lch_dynamics[1];
 				add_flush_callback(() => updating_value_2_1 = false);
 			}
 
-			if (!updating_value_3_1 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_3_1 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_3_1 = true;
-				sliders_changes.value_3 = /*curr_brush*/ ctx[25].tex_lch_dynamics[2];
+				sliders_changes.value_3 = /*curr_brush*/ ctx[26].tex_lch_dynamics[2];
 				add_flush_callback(() => updating_value_3_1 = false);
 			}
 
 			sliders.$set(sliders_changes);
 			const texturestretchwidget_changes = {};
 
-			if (!updating_selected_brush_texture && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_selected_brush_texture && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_selected_brush_texture = true;
-				texturestretchwidget_changes.selected_brush_texture = /*curr_brush*/ ctx[25].selected_brush_texture;
+				texturestretchwidget_changes.selected_brush_texture = /*curr_brush*/ ctx[26].selected_brush_texture;
 				add_flush_callback(() => updating_selected_brush_texture = false);
 			}
 
-			if (!updating_selected_brush_preset && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_selected_brush_preset && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_selected_brush_preset = true;
-				texturestretchwidget_changes.selected_brush_preset = /*curr_brush*/ ctx[25];
+				texturestretchwidget_changes.selected_brush_preset = /*curr_brush*/ ctx[26];
 				add_flush_callback(() => updating_selected_brush_preset = false);
 			}
 
 			texturestretchwidget.$set(texturestretchwidget_changes);
 			const texturewidget_changes = {};
 
-			if (!updating_brush_textures && dirty[0] & /*brush_textures*/ 524288) {
+			if (!updating_brush_textures && dirty[0] & /*brush_textures*/ 1048576) {
 				updating_brush_textures = true;
-				texturewidget_changes.brush_textures = /*brush_textures*/ ctx[19];
+				texturewidget_changes.brush_textures = /*brush_textures*/ ctx[20];
 				add_flush_callback(() => updating_brush_textures = false);
 			}
 
-			if (!updating_selected_brush_texture_1 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_selected_brush_texture_1 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_selected_brush_texture_1 = true;
-				texturewidget_changes.selected_brush_texture = /*curr_brush*/ ctx[25].selected_brush_texture;
+				texturewidget_changes.selected_brush_texture = /*curr_brush*/ ctx[26].selected_brush_texture;
 				add_flush_callback(() => updating_selected_brush_texture_1 = false);
 			}
 
@@ -41743,7 +41850,7 @@ function create_default_slot(ctx) {
 		block,
 		id: create_default_slot.name,
 		type: "slot",
-		source: "(89:2) <SemiModal bind:this={texDynamicsSemiModal} knob={texDynamicsKnob}>",
+		source: "(90:2) <SemiModal bind:this={texDynamicsSemiModal} knob={texDynamicsKnob}>",
 		ctx
 	});
 
@@ -41788,6 +41895,7 @@ function App_svelte_create_fragment(ctx) {
 	let t8;
 	let gallerywidget;
 	let updating_current_project;
+	let updating_recording_pending;
 	let updating_resize_project;
 	let updating_project_has_been_modified;
 	let updating_is_safe_to_switch_to_new_project;
@@ -41813,75 +41921,75 @@ function App_svelte_create_fragment(ctx) {
 	let dispose;
 
 	function knob0_value_binding(value) {
-		/*knob0_value_binding*/ ctx[32](value);
+		/*knob0_value_binding*/ ctx[33](value);
 	}
 
 	let knob0_props = {
 		title: 'Chaos',
-		triggerModal: /*openModal*/ ctx[30],
+		triggerModal: /*openModal*/ ctx[31],
 		modal: /*chaosSemiModal*/ ctx[1]
 	};
 
-	if (/*curr_brush*/ ctx[25].chaos !== void 0) {
-		knob0_props.value = /*curr_brush*/ ctx[25].chaos;
+	if (/*curr_brush*/ ctx[26].chaos !== void 0) {
+		knob0_props.value = /*curr_brush*/ ctx[26].chaos;
 	}
 
 	knob0 = new Knob_svelte({ props: knob0_props, $$inline: true });
-	/*knob0_binding*/ ctx[31](knob0);
+	/*knob0_binding*/ ctx[32](knob0);
 	binding_callbacks.push(() => bind(knob0, 'value', knob0_value_binding));
 
 	function knob1_value_binding(value) {
-		/*knob1_value_binding*/ ctx[34](value);
+		/*knob1_value_binding*/ ctx[35](value);
 	}
 
 	let knob1_props = {
 		title: 'Dynamics',
-		triggerModal: /*openModal*/ ctx[30],
+		triggerModal: /*openModal*/ ctx[31],
 		modal: /*dynamicsSemiModal*/ ctx[2]
 	};
 
-	if (/*curr_brush*/ ctx[25].dynamics !== void 0) {
-		knob1_props.value = /*curr_brush*/ ctx[25].dynamics;
+	if (/*curr_brush*/ ctx[26].dynamics !== void 0) {
+		knob1_props.value = /*curr_brush*/ ctx[26].dynamics;
 	}
 
 	knob1 = new Knob_svelte({ props: knob1_props, $$inline: true });
-	/*knob1_binding*/ ctx[33](knob1);
+	/*knob1_binding*/ ctx[34](knob1);
 	binding_callbacks.push(() => bind(knob1, 'value', knob1_value_binding));
 
 	function knob2_value_binding(value) {
-		/*knob2_value_binding*/ ctx[36](value);
+		/*knob2_value_binding*/ ctx[37](value);
 	}
 
 	let knob2_props = {
 		title: 'Tex',
-		triggerModal: /*openModal*/ ctx[30],
+		triggerModal: /*openModal*/ ctx[31],
 		modal: /*texDynamicsSemiModal*/ ctx[3]
 	};
 
-	if (/*curr_brush*/ ctx[25].tex_dynamics !== void 0) {
-		knob2_props.value = /*curr_brush*/ ctx[25].tex_dynamics;
+	if (/*curr_brush*/ ctx[26].tex_dynamics !== void 0) {
+		knob2_props.value = /*curr_brush*/ ctx[26].tex_dynamics;
 	}
 
 	knob2 = new Knob_svelte({ props: knob2_props, $$inline: true });
-	/*knob2_binding*/ ctx[35](knob2);
+	/*knob2_binding*/ ctx[36](knob2);
 	binding_callbacks.push(() => bind(knob2, 'value', knob2_value_binding));
 
 	function brushsizewidget_brush_sz_binding(value) {
-		/*brushsizewidget_brush_sz_binding*/ ctx[37](value);
+		/*brushsizewidget_brush_sz_binding*/ ctx[38](value);
 	}
 
 	function brushsizewidget_dragging_binding(value) {
-		/*brushsizewidget_dragging_binding*/ ctx[38](value);
+		/*brushsizewidget_dragging_binding*/ ctx[39](value);
 	}
 
 	function brushsizewidget_stopped_dragging_binding(value) {
-		/*brushsizewidget_stopped_dragging_binding*/ ctx[39](value);
+		/*brushsizewidget_stopped_dragging_binding*/ ctx[40](value);
 	}
 
 	let brushsizewidget_props = {};
 
-	if (/*brush_sz*/ ctx[24] !== void 0) {
-		brushsizewidget_props.brush_sz = /*brush_sz*/ ctx[24];
+	if (/*brush_sz*/ ctx[25] !== void 0) {
+		brushsizewidget_props.brush_sz = /*brush_sz*/ ctx[25];
 	}
 
 	if (/*brush_size_widget_dragging*/ ctx[7] !== void 0) {
@@ -41902,34 +42010,34 @@ function App_svelte_create_fragment(ctx) {
 	binding_callbacks.push(() => bind(brushsizewidget, 'stopped_dragging', brushsizewidget_stopped_dragging_binding));
 
 	function rgbsliders_colour_binding(value) {
-		/*rgbsliders_colour_binding*/ ctx[40](value);
+		/*rgbsliders_colour_binding*/ ctx[41](value);
 	}
 
 	let rgbsliders_props = {};
 
-	if (/*stroke_col*/ ctx[23] !== void 0) {
-		rgbsliders_props.colour = /*stroke_col*/ ctx[23];
+	if (/*stroke_col*/ ctx[24] !== void 0) {
+		rgbsliders_props.colour = /*stroke_col*/ ctx[24];
 	}
 
 	rgbsliders = new RGBSliders_svelte({ props: rgbsliders_props, $$inline: true });
 	binding_callbacks.push(() => bind(rgbsliders, 'colour', rgbsliders_colour_binding));
 
 	function colourdisplay_colour_binding(value) {
-		/*colourdisplay_colour_binding*/ ctx[41](value);
+		/*colourdisplay_colour_binding*/ ctx[42](value);
 	}
 
 	function colourdisplay_update_display_binding(value) {
-		/*colourdisplay_update_display_binding*/ ctx[42](value);
+		/*colourdisplay_update_display_binding*/ ctx[43](value);
 	}
 
 	let colourdisplay_props = {};
 
-	if (/*stroke_col*/ ctx[23] !== void 0) {
-		colourdisplay_props.colour = /*stroke_col*/ ctx[23];
+	if (/*stroke_col*/ ctx[24] !== void 0) {
+		colourdisplay_props.colour = /*stroke_col*/ ctx[24];
 	}
 
-	if (/*trigger_colour_display_update*/ ctx[28] !== void 0) {
-		colourdisplay_props.update_display = /*trigger_colour_display_update*/ ctx[28];
+	if (/*trigger_colour_display_update*/ ctx[29] !== void 0) {
+		colourdisplay_props.update_display = /*trigger_colour_display_update*/ ctx[29];
 	}
 
 	colourdisplay = new ColourDisplay_svelte({
@@ -41941,13 +42049,13 @@ function App_svelte_create_fragment(ctx) {
 	binding_callbacks.push(() => bind(colourdisplay, 'update_display', colourdisplay_update_display_binding));
 
 	function brushtypewidget_curr_brush_binding(value) {
-		/*brushtypewidget_curr_brush_binding*/ ctx[45](value);
+		/*brushtypewidget_curr_brush_binding*/ ctx[46](value);
 	}
 
 	let brushtypewidget_props = {};
 
-	if (/*curr_brush*/ ctx[25] !== void 0) {
-		brushtypewidget_props.curr_brush = /*curr_brush*/ ctx[25];
+	if (/*curr_brush*/ ctx[26] !== void 0) {
+		brushtypewidget_props.curr_brush = /*curr_brush*/ ctx[26];
 	}
 
 	brushtypewidget = new BrushTypeWidget_svelte({
@@ -41958,21 +42066,21 @@ function App_svelte_create_fragment(ctx) {
 	binding_callbacks.push(() => bind(brushtypewidget, 'curr_brush', brushtypewidget_curr_brush_binding));
 
 	function brushpresetwidget_brush_presets_binding(value) {
-		/*brushpresetwidget_brush_presets_binding*/ ctx[46](value);
+		/*brushpresetwidget_brush_presets_binding*/ ctx[47](value);
 	}
 
 	function brushpresetwidget_selected_brush_preset_binding(value) {
-		/*brushpresetwidget_selected_brush_preset_binding*/ ctx[47](value);
+		/*brushpresetwidget_selected_brush_preset_binding*/ ctx[48](value);
 	}
 
 	let brushpresetwidget_props = {};
 
-	if (/*brush_presets*/ ctx[18] !== void 0) {
-		brushpresetwidget_props.brush_presets = /*brush_presets*/ ctx[18];
+	if (/*brush_presets*/ ctx[19] !== void 0) {
+		brushpresetwidget_props.brush_presets = /*brush_presets*/ ctx[19];
 	}
 
-	if (/*curr_brush*/ ctx[25] !== void 0) {
-		brushpresetwidget_props.selected_brush_preset = /*curr_brush*/ ctx[25];
+	if (/*curr_brush*/ ctx[26] !== void 0) {
+		brushpresetwidget_props.selected_brush_preset = /*curr_brush*/ ctx[26];
 	}
 
 	brushpresetwidget = new BrushPresetWidget_svelte({
@@ -41985,48 +42093,56 @@ function App_svelte_create_fragment(ctx) {
 
 	undoredowidget = new UndoRedoWidget_svelte({
 			props: {
-				undo: /*func*/ ctx[48],
-				redo: /*func_1*/ ctx[49]
+				undo: /*func*/ ctx[49],
+				redo: /*func_1*/ ctx[50]
 			},
 			$$inline: true
 		});
 
 	function gallerywidget_current_project_binding(value) {
-		/*gallerywidget_current_project_binding*/ ctx[53](value);
+		/*gallerywidget_current_project_binding*/ ctx[54](value);
+	}
+
+	function gallerywidget_recording_pending_binding(value) {
+		/*gallerywidget_recording_pending_binding*/ ctx[55](value);
 	}
 
 	function gallerywidget_resize_project_binding(value) {
-		/*gallerywidget_resize_project_binding*/ ctx[54](value);
+		/*gallerywidget_resize_project_binding*/ ctx[56](value);
 	}
 
 	function gallerywidget_project_has_been_modified_binding(value) {
-		/*gallerywidget_project_has_been_modified_binding*/ ctx[55](value);
+		/*gallerywidget_project_has_been_modified_binding*/ ctx[57](value);
 	}
 
 	function gallerywidget_is_safe_to_switch_to_new_project_binding(value) {
-		/*gallerywidget_is_safe_to_switch_to_new_project_binding*/ ctx[56](value);
+		/*gallerywidget_is_safe_to_switch_to_new_project_binding*/ ctx[58](value);
 	}
 
 	let gallerywidget_props = {
-		get_current_canvas_as_image: /*func_2*/ ctx[50],
-		new_project: /*func_3*/ ctx[51],
-		load_project: /*func_4*/ ctx[52]
+		get_current_canvas_as_image: /*func_2*/ ctx[51],
+		new_project: /*func_3*/ ctx[52],
+		load_project: /*func_4*/ ctx[53]
 	};
 
-	if (/*project*/ ctx[20] !== void 0) {
-		gallerywidget_props.current_project = /*project*/ ctx[20];
+	if (/*project*/ ctx[21] !== void 0) {
+		gallerywidget_props.current_project = /*project*/ ctx[21];
 	}
 
-	if (/*resize_project*/ ctx[27] !== void 0) {
-		gallerywidget_props.resize_project = /*resize_project*/ ctx[27];
+	if (/*recording_pending*/ ctx[10] !== void 0) {
+		gallerywidget_props.recording_pending = /*recording_pending*/ ctx[10];
 	}
 
-	if (/*project_has_been_modified*/ ctx[16] !== void 0) {
-		gallerywidget_props.project_has_been_modified = /*project_has_been_modified*/ ctx[16];
+	if (/*resize_project*/ ctx[28] !== void 0) {
+		gallerywidget_props.resize_project = /*resize_project*/ ctx[28];
 	}
 
-	if (/*is_safe_to_switch_to_new_project*/ ctx[17] !== void 0) {
-		gallerywidget_props.is_safe_to_switch_to_new_project = /*is_safe_to_switch_to_new_project*/ ctx[17];
+	if (/*project_has_been_modified*/ ctx[17] !== void 0) {
+		gallerywidget_props.project_has_been_modified = /*project_has_been_modified*/ ctx[17];
+	}
+
+	if (/*is_safe_to_switch_to_new_project*/ ctx[18] !== void 0) {
+		gallerywidget_props.is_safe_to_switch_to_new_project = /*is_safe_to_switch_to_new_project*/ ctx[18];
 	}
 
 	gallerywidget = new GalleryWidget_svelte({
@@ -42035,26 +42151,27 @@ function App_svelte_create_fragment(ctx) {
 		});
 
 	binding_callbacks.push(() => bind(gallerywidget, 'current_project', gallerywidget_current_project_binding));
+	binding_callbacks.push(() => bind(gallerywidget, 'recording_pending', gallerywidget_recording_pending_binding));
 	binding_callbacks.push(() => bind(gallerywidget, 'resize_project', gallerywidget_resize_project_binding));
 	binding_callbacks.push(() => bind(gallerywidget, 'project_has_been_modified', gallerywidget_project_has_been_modified_binding));
 	binding_callbacks.push(() => bind(gallerywidget, 'is_safe_to_switch_to_new_project', gallerywidget_is_safe_to_switch_to_new_project_binding));
 
 	function pickcolourwidget_picking_binding(value) {
-		/*pickcolourwidget_picking_binding*/ ctx[58](value);
+		/*pickcolourwidget_picking_binding*/ ctx[60](value);
 	}
 
 	function pickcolourwidget_just_finished_pick_binding(value) {
-		/*pickcolourwidget_just_finished_pick_binding*/ ctx[59](value);
+		/*pickcolourwidget_just_finished_pick_binding*/ ctx[61](value);
 	}
 
-	let pickcolourwidget_props = { pick_from_canvas: /*func_5*/ ctx[57] };
+	let pickcolourwidget_props = { pick_from_canvas: /*func_5*/ ctx[59] };
 
-	if (/*picking*/ ctx[14] !== void 0) {
-		pickcolourwidget_props.picking = /*picking*/ ctx[14];
+	if (/*picking*/ ctx[15] !== void 0) {
+		pickcolourwidget_props.picking = /*picking*/ ctx[15];
 	}
 
-	if (/*just_finished_pick*/ ctx[15] !== void 0) {
-		pickcolourwidget_props.just_finished_pick = /*just_finished_pick*/ ctx[15];
+	if (/*just_finished_pick*/ ctx[16] !== void 0) {
+		pickcolourwidget_props.just_finished_pick = /*just_finished_pick*/ ctx[16];
 	}
 
 	pickcolourwidget = new PickColourWidget_svelte({
@@ -42066,13 +42183,13 @@ function App_svelte_create_fragment(ctx) {
 	binding_callbacks.push(() => bind(pickcolourwidget, 'just_finished_pick', pickcolourwidget_just_finished_pick_binding));
 
 	function blendingcolourspacewidget_selected_colour_space_binding(value) {
-		/*blendingcolourspacewidget_selected_colour_space_binding*/ ctx[60](value);
+		/*blendingcolourspacewidget_selected_colour_space_binding*/ ctx[62](value);
 	}
 
 	let blendingcolourspacewidget_props = {};
 
-	if (/*blending_colour_space*/ ctx[26] !== void 0) {
-		blendingcolourspacewidget_props.selected_colour_space = /*blending_colour_space*/ ctx[26];
+	if (/*blending_colour_space*/ ctx[27] !== void 0) {
+		blendingcolourspacewidget_props.selected_colour_space = /*blending_colour_space*/ ctx[27];
 	}
 
 	blendingcolourspacewidget = new BlendingColourSpaceWidget_svelte({
@@ -42090,7 +42207,7 @@ function App_svelte_create_fragment(ctx) {
 	};
 
 	semimodal0 = new SemiModal_svelte({ props: semimodal0_props, $$inline: true });
-	/*semimodal0_binding*/ ctx[65](semimodal0);
+	/*semimodal0_binding*/ ctx[67](semimodal0);
 
 	let semimodal1_props = {
 		knob: /*dynamicsKnob*/ ctx[5],
@@ -42099,7 +42216,7 @@ function App_svelte_create_fragment(ctx) {
 	};
 
 	semimodal1 = new SemiModal_svelte({ props: semimodal1_props, $$inline: true });
-	/*semimodal1_binding*/ ctx[72](semimodal1);
+	/*semimodal1_binding*/ ctx[74](semimodal1);
 
 	let semimodal2_props = {
 		knob: /*texDynamicsKnob*/ ctx[6],
@@ -42108,7 +42225,7 @@ function App_svelte_create_fragment(ctx) {
 	};
 
 	semimodal2 = new SemiModal_svelte({ props: semimodal2_props, $$inline: true });
-	/*semimodal2_binding*/ ctx[84](semimodal2);
+	/*semimodal2_binding*/ ctx[86](semimodal2);
 
 	const block = {
 		c: function create() {
@@ -42170,7 +42287,7 @@ function App_svelte_create_fragment(ctx) {
 			add_location(div2, App_svelte_file, 1, 1, 8);
 			attr_dev(canvas, "id", "canvas");
 			attr_dev(canvas, "class", "svelte-1peai3v");
-			add_location(canvas, App_svelte_file, 102, 1, 4109);
+			add_location(canvas, App_svelte_file, 103, 1, 4157);
 			attr_dev(main, "class", "svelte-1peai3v");
 			add_location(main, App_svelte_file, 0, 0, 0);
 		},
@@ -42215,13 +42332,13 @@ function App_svelte_create_fragment(ctx) {
 			mount_component(semimodal2, div2, null);
 			append_dev(main, t15);
 			append_dev(main, canvas);
-			/*canvas_binding*/ ctx[85](canvas);
+			/*canvas_binding*/ ctx[87](canvas);
 			current = true;
 
 			if (!mounted) {
 				dispose = [
-					listen_dev(div0, "pointerenter", /*pointerenter_handler*/ ctx[43], false, false, false, false),
-					listen_dev(div0, "pointerleave", /*pointerleave_handler*/ ctx[44], false, false, false, false)
+					listen_dev(div0, "pointerenter", /*pointerenter_handler*/ ctx[44], false, false, false, false),
+					listen_dev(div0, "pointerleave", /*pointerleave_handler*/ ctx[45], false, false, false, false)
 				];
 
 				mounted = true;
@@ -42231,9 +42348,9 @@ function App_svelte_create_fragment(ctx) {
 			const knob0_changes = {};
 			if (dirty[0] & /*chaosSemiModal*/ 2) knob0_changes.modal = /*chaosSemiModal*/ ctx[1];
 
-			if (!updating_value && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value = true;
-				knob0_changes.value = /*curr_brush*/ ctx[25].chaos;
+				knob0_changes.value = /*curr_brush*/ ctx[26].chaos;
 				add_flush_callback(() => updating_value = false);
 			}
 
@@ -42241,9 +42358,9 @@ function App_svelte_create_fragment(ctx) {
 			const knob1_changes = {};
 			if (dirty[0] & /*dynamicsSemiModal*/ 4) knob1_changes.modal = /*dynamicsSemiModal*/ ctx[2];
 
-			if (!updating_value_1 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_1 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_1 = true;
-				knob1_changes.value = /*curr_brush*/ ctx[25].dynamics;
+				knob1_changes.value = /*curr_brush*/ ctx[26].dynamics;
 				add_flush_callback(() => updating_value_1 = false);
 			}
 
@@ -42251,18 +42368,18 @@ function App_svelte_create_fragment(ctx) {
 			const knob2_changes = {};
 			if (dirty[0] & /*texDynamicsSemiModal*/ 8) knob2_changes.modal = /*texDynamicsSemiModal*/ ctx[3];
 
-			if (!updating_value_2 && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_value_2 && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_value_2 = true;
-				knob2_changes.value = /*curr_brush*/ ctx[25].tex_dynamics;
+				knob2_changes.value = /*curr_brush*/ ctx[26].tex_dynamics;
 				add_flush_callback(() => updating_value_2 = false);
 			}
 
 			knob2.$set(knob2_changes);
 			const brushsizewidget_changes = {};
 
-			if (!updating_brush_sz && dirty[0] & /*brush_sz*/ 16777216) {
+			if (!updating_brush_sz && dirty[0] & /*brush_sz*/ 33554432) {
 				updating_brush_sz = true;
-				brushsizewidget_changes.brush_sz = /*brush_sz*/ ctx[24];
+				brushsizewidget_changes.brush_sz = /*brush_sz*/ ctx[25];
 				add_flush_callback(() => updating_brush_sz = false);
 			}
 
@@ -42281,106 +42398,112 @@ function App_svelte_create_fragment(ctx) {
 			brushsizewidget.$set(brushsizewidget_changes);
 			const rgbsliders_changes = {};
 
-			if (!updating_colour && dirty[0] & /*stroke_col*/ 8388608) {
+			if (!updating_colour && dirty[0] & /*stroke_col*/ 16777216) {
 				updating_colour = true;
-				rgbsliders_changes.colour = /*stroke_col*/ ctx[23];
+				rgbsliders_changes.colour = /*stroke_col*/ ctx[24];
 				add_flush_callback(() => updating_colour = false);
 			}
 
 			rgbsliders.$set(rgbsliders_changes);
 			const colourdisplay_changes = {};
 
-			if (!updating_colour_1 && dirty[0] & /*stroke_col*/ 8388608) {
+			if (!updating_colour_1 && dirty[0] & /*stroke_col*/ 16777216) {
 				updating_colour_1 = true;
-				colourdisplay_changes.colour = /*stroke_col*/ ctx[23];
+				colourdisplay_changes.colour = /*stroke_col*/ ctx[24];
 				add_flush_callback(() => updating_colour_1 = false);
 			}
 
-			if (!updating_update_display && dirty[0] & /*trigger_colour_display_update*/ 268435456) {
+			if (!updating_update_display && dirty[0] & /*trigger_colour_display_update*/ 536870912) {
 				updating_update_display = true;
-				colourdisplay_changes.update_display = /*trigger_colour_display_update*/ ctx[28];
+				colourdisplay_changes.update_display = /*trigger_colour_display_update*/ ctx[29];
 				add_flush_callback(() => updating_update_display = false);
 			}
 
 			colourdisplay.$set(colourdisplay_changes);
 			const brushtypewidget_changes = {};
 
-			if (!updating_curr_brush && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_curr_brush && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_curr_brush = true;
-				brushtypewidget_changes.curr_brush = /*curr_brush*/ ctx[25];
+				brushtypewidget_changes.curr_brush = /*curr_brush*/ ctx[26];
 				add_flush_callback(() => updating_curr_brush = false);
 			}
 
 			brushtypewidget.$set(brushtypewidget_changes);
 			const brushpresetwidget_changes = {};
 
-			if (!updating_brush_presets && dirty[0] & /*brush_presets*/ 262144) {
+			if (!updating_brush_presets && dirty[0] & /*brush_presets*/ 524288) {
 				updating_brush_presets = true;
-				brushpresetwidget_changes.brush_presets = /*brush_presets*/ ctx[18];
+				brushpresetwidget_changes.brush_presets = /*brush_presets*/ ctx[19];
 				add_flush_callback(() => updating_brush_presets = false);
 			}
 
-			if (!updating_selected_brush_preset && dirty[0] & /*curr_brush*/ 33554432) {
+			if (!updating_selected_brush_preset && dirty[0] & /*curr_brush*/ 67108864) {
 				updating_selected_brush_preset = true;
-				brushpresetwidget_changes.selected_brush_preset = /*curr_brush*/ ctx[25];
+				brushpresetwidget_changes.selected_brush_preset = /*curr_brush*/ ctx[26];
 				add_flush_callback(() => updating_selected_brush_preset = false);
 			}
 
 			brushpresetwidget.$set(brushpresetwidget_changes);
 			const undoredowidget_changes = {};
-			if (dirty[0] & /*undo_pending*/ 1024) undoredowidget_changes.undo = /*func*/ ctx[48];
-			if (dirty[0] & /*redo_pending*/ 2048) undoredowidget_changes.redo = /*func_1*/ ctx[49];
+			if (dirty[0] & /*undo_pending*/ 2048) undoredowidget_changes.undo = /*func*/ ctx[49];
+			if (dirty[0] & /*redo_pending*/ 4096) undoredowidget_changes.redo = /*func_1*/ ctx[50];
 			undoredowidget.$set(undoredowidget_changes);
 			const gallerywidget_changes = {};
-			if (dirty[0] & /*canvas_read_tex*/ 4194304) gallerywidget_changes.get_current_canvas_as_image = /*func_2*/ ctx[50];
-			if (dirty[0] & /*new_project_pending*/ 512) gallerywidget_changes.new_project = /*func_3*/ ctx[51];
-			if (dirty[0] & /*project_pending_load*/ 2097152) gallerywidget_changes.load_project = /*func_4*/ ctx[52];
+			if (dirty[0] & /*canvas_read_tex*/ 8388608) gallerywidget_changes.get_current_canvas_as_image = /*func_2*/ ctx[51];
+			if (dirty[0] & /*new_project_pending*/ 512) gallerywidget_changes.new_project = /*func_3*/ ctx[52];
+			if (dirty[0] & /*project_pending_load*/ 4194304) gallerywidget_changes.load_project = /*func_4*/ ctx[53];
 
-			if (!updating_current_project && dirty[0] & /*project*/ 1048576) {
+			if (!updating_current_project && dirty[0] & /*project*/ 2097152) {
 				updating_current_project = true;
-				gallerywidget_changes.current_project = /*project*/ ctx[20];
+				gallerywidget_changes.current_project = /*project*/ ctx[21];
 				add_flush_callback(() => updating_current_project = false);
 			}
 
-			if (!updating_resize_project && dirty[0] & /*resize_project*/ 134217728) {
+			if (!updating_recording_pending && dirty[0] & /*recording_pending*/ 1024) {
+				updating_recording_pending = true;
+				gallerywidget_changes.recording_pending = /*recording_pending*/ ctx[10];
+				add_flush_callback(() => updating_recording_pending = false);
+			}
+
+			if (!updating_resize_project && dirty[0] & /*resize_project*/ 268435456) {
 				updating_resize_project = true;
-				gallerywidget_changes.resize_project = /*resize_project*/ ctx[27];
+				gallerywidget_changes.resize_project = /*resize_project*/ ctx[28];
 				add_flush_callback(() => updating_resize_project = false);
 			}
 
-			if (!updating_project_has_been_modified && dirty[0] & /*project_has_been_modified*/ 65536) {
+			if (!updating_project_has_been_modified && dirty[0] & /*project_has_been_modified*/ 131072) {
 				updating_project_has_been_modified = true;
-				gallerywidget_changes.project_has_been_modified = /*project_has_been_modified*/ ctx[16];
+				gallerywidget_changes.project_has_been_modified = /*project_has_been_modified*/ ctx[17];
 				add_flush_callback(() => updating_project_has_been_modified = false);
 			}
 
-			if (!updating_is_safe_to_switch_to_new_project && dirty[0] & /*is_safe_to_switch_to_new_project*/ 131072) {
+			if (!updating_is_safe_to_switch_to_new_project && dirty[0] & /*is_safe_to_switch_to_new_project*/ 262144) {
 				updating_is_safe_to_switch_to_new_project = true;
-				gallerywidget_changes.is_safe_to_switch_to_new_project = /*is_safe_to_switch_to_new_project*/ ctx[17];
+				gallerywidget_changes.is_safe_to_switch_to_new_project = /*is_safe_to_switch_to_new_project*/ ctx[18];
 				add_flush_callback(() => updating_is_safe_to_switch_to_new_project = false);
 			}
 
 			gallerywidget.$set(gallerywidget_changes);
 			const pickcolourwidget_changes = {};
 
-			if (!updating_picking && dirty[0] & /*picking*/ 16384) {
+			if (!updating_picking && dirty[0] & /*picking*/ 32768) {
 				updating_picking = true;
-				pickcolourwidget_changes.picking = /*picking*/ ctx[14];
+				pickcolourwidget_changes.picking = /*picking*/ ctx[15];
 				add_flush_callback(() => updating_picking = false);
 			}
 
-			if (!updating_just_finished_pick && dirty[0] & /*just_finished_pick*/ 32768) {
+			if (!updating_just_finished_pick && dirty[0] & /*just_finished_pick*/ 65536) {
 				updating_just_finished_pick = true;
-				pickcolourwidget_changes.just_finished_pick = /*just_finished_pick*/ ctx[15];
+				pickcolourwidget_changes.just_finished_pick = /*just_finished_pick*/ ctx[16];
 				add_flush_callback(() => updating_just_finished_pick = false);
 			}
 
 			pickcolourwidget.$set(pickcolourwidget_changes);
 			const blendingcolourspacewidget_changes = {};
 
-			if (!updating_selected_colour_space && dirty[0] & /*blending_colour_space*/ 67108864) {
+			if (!updating_selected_colour_space && dirty[0] & /*blending_colour_space*/ 134217728) {
 				updating_selected_colour_space = true;
-				blendingcolourspacewidget_changes.selected_colour_space = /*blending_colour_space*/ ctx[26];
+				blendingcolourspacewidget_changes.selected_colour_space = /*blending_colour_space*/ ctx[27];
 				add_flush_callback(() => updating_selected_colour_space = false);
 			}
 
@@ -42388,7 +42511,7 @@ function App_svelte_create_fragment(ctx) {
 			const semimodal0_changes = {};
 			if (dirty[0] & /*chaosKnob*/ 16) semimodal0_changes.knob = /*chaosKnob*/ ctx[4];
 
-			if (dirty[0] & /*curr_brush*/ 33554432 | dirty[3] & /*$$scope*/ 2097152) {
+			if (dirty[0] & /*curr_brush*/ 67108864 | dirty[3] & /*$$scope*/ 33554432) {
 				semimodal0_changes.$$scope = { dirty, ctx };
 			}
 
@@ -42396,7 +42519,7 @@ function App_svelte_create_fragment(ctx) {
 			const semimodal1_changes = {};
 			if (dirty[0] & /*dynamicsKnob*/ 32) semimodal1_changes.knob = /*dynamicsKnob*/ ctx[5];
 
-			if (dirty[0] & /*curr_brush*/ 33554432 | dirty[3] & /*$$scope*/ 2097152) {
+			if (dirty[0] & /*curr_brush*/ 67108864 | dirty[3] & /*$$scope*/ 33554432) {
 				semimodal1_changes.$$scope = { dirty, ctx };
 			}
 
@@ -42404,7 +42527,7 @@ function App_svelte_create_fragment(ctx) {
 			const semimodal2_changes = {};
 			if (dirty[0] & /*texDynamicsKnob*/ 64) semimodal2_changes.knob = /*texDynamicsKnob*/ ctx[6];
 
-			if (dirty[0] & /*brush_textures, curr_brush*/ 34078720 | dirty[3] & /*$$scope*/ 2097152) {
+			if (dirty[0] & /*brush_textures, curr_brush*/ 68157440 | dirty[3] & /*$$scope*/ 33554432) {
 				semimodal2_changes.$$scope = { dirty, ctx };
 			}
 
@@ -42454,11 +42577,11 @@ function App_svelte_create_fragment(ctx) {
 				detach_dev(main);
 			}
 
-			/*knob0_binding*/ ctx[31](null);
+			/*knob0_binding*/ ctx[32](null);
 			destroy_component(knob0);
-			/*knob1_binding*/ ctx[33](null);
+			/*knob1_binding*/ ctx[34](null);
 			destroy_component(knob1);
-			/*knob2_binding*/ ctx[35](null);
+			/*knob2_binding*/ ctx[36](null);
 			destroy_component(knob2);
 			destroy_component(brushsizewidget);
 			destroy_component(rgbsliders);
@@ -42470,13 +42593,13 @@ function App_svelte_create_fragment(ctx) {
 			destroy_component(pickcolourwidget);
 			destroy_component(blendingcolourspacewidget);
 			destroy_component(floatingmodal);
-			/*semimodal0_binding*/ ctx[65](null);
+			/*semimodal0_binding*/ ctx[67](null);
 			destroy_component(semimodal0);
-			/*semimodal1_binding*/ ctx[72](null);
+			/*semimodal1_binding*/ ctx[74](null);
 			destroy_component(semimodal1);
-			/*semimodal2_binding*/ ctx[84](null);
+			/*semimodal2_binding*/ ctx[86](null);
 			destroy_component(semimodal2);
-			/*canvas_binding*/ ctx[85](null);
+			/*canvas_binding*/ ctx[87](null);
 			mounted = false;
 			utils_run_all(dispose);
 		}
@@ -42510,6 +42633,9 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 	let brush_size_widget_dragging;
 	let brush_size_widget_stopped_dragging;
 	let new_project_pending = false;
+	let recording_pending = false;
+	let recording_stroke_idx = 0;
+	let recording = false;
 	let undo_pending = false;
 	let redo_pending = false;
 	let mouse_over_colour_picker = false;
@@ -42697,31 +42823,31 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 		brush_textures.push(await BrushTexture.create((__webpack_require__(4493)/* ["default"] */ .Z), 4));
 		brush_textures.push(await BrushTexture.create((__webpack_require__(4830)/* ["default"] */ .Z), 5));
 		brush_textures.push(await BrushTexture.create((__webpack_require__(5179)/* ["default"] */ .Z), 6));
-		$$invalidate(19, brush_textures = [...brush_textures]);
+		$$invalidate(20, brush_textures = [...brush_textures]);
 
 		for (let brush of brush_presets) {
 			brush.selected_brush_texture = brush_textures[0];
 		}
 
 		{
-			$$invalidate(18, brush_presets[0].selected_brush_type = BrushType.Long, brush_presets);
-			$$invalidate(18, brush_presets[0].selected_brush_texture = brush_textures[4], brush_presets);
-			$$invalidate(18, brush_presets[0].tex_stretch[0] = 0.5 + 1 / 20, brush_presets);
-			$$invalidate(18, brush_presets[0].tex_stretch[1] = 0.5 + 1 / 20, brush_presets);
-			$$invalidate(18, brush_presets[0].tex_distort[0] = 0.294, brush_presets);
-			$$invalidate(18, brush_presets[0].tex_distort[1] = 0, brush_presets);
-			$$invalidate(18, brush_presets[0].tex_distort_amt = 0.18, brush_presets);
-			$$invalidate(25, curr_brush.tex_stretch[0] = brush_presets[0].tex_stretch[0], curr_brush);
-			$$invalidate(25, curr_brush.tex_stretch[1] = brush_presets[0].tex_stretch[1], curr_brush);
+			$$invalidate(19, brush_presets[0].selected_brush_type = BrushType.Long, brush_presets);
+			$$invalidate(19, brush_presets[0].selected_brush_texture = brush_textures[4], brush_presets);
+			$$invalidate(19, brush_presets[0].tex_stretch[0] = 0.5 + 1 / 20, brush_presets);
+			$$invalidate(19, brush_presets[0].tex_stretch[1] = 0.5 + 1 / 20, brush_presets);
+			$$invalidate(19, brush_presets[0].tex_distort[0] = 0.294, brush_presets);
+			$$invalidate(19, brush_presets[0].tex_distort[1] = 0, brush_presets);
+			$$invalidate(19, brush_presets[0].tex_distort_amt = 0.18, brush_presets);
+			$$invalidate(26, curr_brush.tex_stretch[0] = brush_presets[0].tex_stretch[0], curr_brush);
+			$$invalidate(26, curr_brush.tex_stretch[1] = brush_presets[0].tex_stretch[1], curr_brush);
 		}
 
 		{
-			$$invalidate(18, brush_presets[1].selected_brush_type = BrushType.Blobs, brush_presets);
-			$$invalidate(18, brush_presets[1].selected_brush_texture = brush_textures[0], brush_presets);
-			$$invalidate(18, brush_presets[1].tex_stretch[0] = 0.5 + 1 / 20, brush_presets);
-			$$invalidate(18, brush_presets[1].tex_stretch[1] = 0.5 + 1 / 20, brush_presets);
-			$$invalidate(18, brush_presets[1].tex_distort[0] = 0, brush_presets);
-			$$invalidate(18, brush_presets[1].tex_distort[1] = 0, brush_presets);
+			$$invalidate(19, brush_presets[1].selected_brush_type = BrushType.Blobs, brush_presets);
+			$$invalidate(19, brush_presets[1].selected_brush_texture = brush_textures[0], brush_presets);
+			$$invalidate(19, brush_presets[1].tex_stretch[0] = 0.5 + 1 / 20, brush_presets);
+			$$invalidate(19, brush_presets[1].tex_stretch[1] = 0.5 + 1 / 20, brush_presets);
+			$$invalidate(19, brush_presets[1].tex_distort[0] = 0, brush_presets);
+			$$invalidate(19, brush_presets[1].tex_distort[1] = 0, brush_presets);
 		}
 
 		modals = [chaosSemiModal, dynamicsSemiModal, texDynamicsSemiModal];
@@ -42792,7 +42918,7 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 		init_texture_uniforms(brush_long_program);
 		brush_long_program.brush_params_loc = gl.getUniformLocation(brush_long_program.program, "brush_params");
 		let frame = 0;
-		$$invalidate(22, canvas_read_tex = canvas_fb.textures[0]);
+		$$invalidate(23, canvas_read_tex = canvas_fb.textures[0]);
 		let brush_buffer = new Thing([new VertexBuffer(4, gl.FLOAT), new VertexBuffer(4, gl.FLOAT)], gl.TRIANGLES, brush_long_program);
 		gl.bindVertexArray(brush_buffer.vao);
 		let t = 0;
@@ -42955,8 +43081,8 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 			console.timeEnd("REDRAW ALL");
 		};
 
-		$$invalidate(27, resize_project = new_sz => {
-			$$invalidate(20, project.canvasRes = [...new_sz], project);
+		$$invalidate(28, resize_project = new_sz => {
+			$$invalidate(21, project.canvasRes = [...new_sz], project);
 			temp_stroke_fb.textures[0].resize(new_sz);
 			canvas_fb.back_textures[0].resize(new_sz);
 			canvas_fb.textures[0].resize(new_sz);
@@ -42970,20 +43096,20 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 			temp_undo_fb_b.recreate();
 			set_shared_uniforms();
 			full_redraw_needed = true;
-			$$invalidate(16, project_has_been_modified = false);
+			$$invalidate(17, project_has_been_modified = false);
 			redo_history_length = 0;
 		});
 
 		let load_project = new_project => {
-			$$invalidate(20, project = new Project());
-			$$invalidate(16, project_has_been_modified = false);
+			$$invalidate(21, project = new Project());
+			$$invalidate(17, project_has_been_modified = false);
 			redo_history_length = 0;
 
 			for (let key of Object.keys(new_project)) {
-				$$invalidate(20, project[key] = new_project[key], project);
+				$$invalidate(21, project[key] = new_project[key], project);
 			}
 
-			$$invalidate(20, project.canvasRes = [...new_project.canvasRes], project);
+			$$invalidate(21, project.canvasRes = [...new_project.canvasRes], project);
 			resize_project(project.canvasRes);
 			redraw_whole_project();
 		};
@@ -43008,13 +43134,13 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 		const handle_input_actions = () => {
 			if (io.getKey('AltLeft').down) {
 				if (io.getKey('AltLeft').just_pressed) {
-					$$invalidate(14, picking = true);
+					$$invalidate(15, picking = true);
 				}
 
 				pick_from_canvas();
 			} else if (io.getKey('AltLeft').just_unpressed) {
-				$$invalidate(15, just_finished_pick = true);
-				$$invalidate(14, picking = false);
+				$$invalidate(16, just_finished_pick = true);
+				$$invalidate(15, picking = false);
 			}
 
 			if (mouse_over_colour_picker || mouse_over_colour_picker_finished) {
@@ -43048,17 +43174,17 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 					let coords = Utils.screen_NDC_to_canvas_NDC([...io.mouse_pos], default_framebuffer.textures[0], canvas_fb._textures[0], zoom[0], panning);
 
 					if (coords[0] > -1 && coords[0] < 1 && coords[1] > -1 && coords[1] < 1) {
-						$$invalidate(23, stroke_col[0] = picked_col[0], stroke_col);
-						$$invalidate(23, stroke_col[1] = picked_col[1], stroke_col);
-						$$invalidate(23, stroke_col[2] = picked_col[2], stroke_col);
+						$$invalidate(24, stroke_col[0] = picked_col[0], stroke_col);
+						$$invalidate(24, stroke_col[1] = picked_col[1], stroke_col);
+						$$invalidate(24, stroke_col[2] = picked_col[2], stroke_col);
 						Utils.gamma_correct(stroke_col, true, true);
-						$$invalidate(23, stroke_col[3] = 1, stroke_col);
+						$$invalidate(24, stroke_col[3] = 1, stroke_col);
 						trigger_colour_display_update(stroke_col[0], stroke_col[1], stroke_col[2]);
 					}
 
 					console.log(coords);
-					$$invalidate(15, just_finished_pick = false);
-					$$invalidate(14, picking = false);
+					$$invalidate(16, just_finished_pick = false);
+					$$invalidate(15, picking = false);
 					console.log("finished pick");
 				}
 
@@ -43246,6 +43372,44 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 		};
 
 		const draw = _t => {
+			if (recording_pending || recording) {
+				if (!recording) {
+					canvas_fb.clear();
+					canvas_fb.pong();
+					canvas_fb.clear();
+					recording_stroke_idx = 0;
+					$$invalidate(10, recording_pending = false);
+					recording = true;
+				} else {
+					if (recording_stroke_idx === project.brush_strokes.length - 1) {
+						if (window.media_recorder.state !== "inactive") {
+							window.media_recorder.stop();
+						}
+
+						recording = false;
+					} else {
+						canvas_fb.back_textures[0].bind_to_unit(1);
+						canvas_fb.clear();
+						temp_stroke_fb.clear();
+						draw_n_strokes(recording_stroke_idx, recording_stroke_idx + 1, false);
+						gl.viewport(0, 0, default_framebuffer._textures[0].res[0], default_framebuffer._textures[0].res[1]);
+						gl.bindFramebuffer(gl.FRAMEBUFFER, default_framebuffer.fb);
+						gl.clear(gl.COLOR_BUFFER_BIT);
+						Framebuffer.currently_bound = default_framebuffer;
+						post_canvas_program.use();
+						gl.uniform1f(post_canvas_program.zoom_loc, zoom[0]);
+						gl.uniform2fv(post_canvas_program.panning_loc, panning);
+						gl.uniform1i(post_canvas_program.blending_colour_space_loc, blending_colour_space);
+						canvas_fb.back_textures[0].bind_to_unit(1);
+						gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+						recording_stroke_idx++;
+					}
+				}
+
+				requestAnimationFrame(draw);
+				return;
+			}
+
 			redraw_needed = false;
 			const new_t = _t / 1000;
 			delta_t = new_t - t;
@@ -43272,7 +43436,7 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 
 			if (project_pending_load) {
 				load_project(project_pending_load);
-				$$invalidate(21, project_pending_load = undefined);
+				$$invalidate(22, project_pending_load = undefined);
 			}
 
 			if (full_redraw_needed) {
@@ -43282,7 +43446,7 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 			handle_input_actions();
 
 			if ((io.mouse_just_pressed || io.mouse_down && io.mouse_just_moved) && io.pointerType !== 'touch') {
-				$$invalidate(16, project_has_been_modified = true);
+				$$invalidate(17, project_has_been_modified = true);
 				redraw_needed = true;
 				record_stroke();
 				temp_stroke_fb.clear();
@@ -43311,7 +43475,7 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 				project.push_stroke(brush_stroke);
 
 				if (frame % 5 === 0 || !isOnMobile) {
-					$$invalidate(20, project.brush_strokes[project.brush_strokes.length - 1].brush_texture.gpu_tex = {}, project);
+					$$invalidate(21, project.brush_strokes[project.brush_strokes.length - 1].brush_texture.gpu_tex = {}, project);
 					window.sketch_db.table("sketch").update(1, { data: project });
 				}
 
@@ -43381,10 +43545,10 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 
 			print_on_gl_error();
 			$$invalidate(8, brush_size_widget_stopped_dragging = false);
-			$$invalidate(11, redo_pending = false);
-			$$invalidate(10, undo_pending = false);
+			$$invalidate(12, redo_pending = false);
+			$$invalidate(11, undo_pending = false);
 			full_redraw_needed = false;
-			$$invalidate(13, mouse_over_colour_picker_finished = false);
+			$$invalidate(14, mouse_over_colour_picker_finished = false);
 			io.tick_end();
 			frame++;
 
@@ -43422,7 +43586,7 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 	function knob0_value_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.chaos, value)) {
 			curr_brush.chaos = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
@@ -43436,7 +43600,7 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 	function knob1_value_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.dynamics, value)) {
 			curr_brush.dynamics = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
@@ -43450,13 +43614,13 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 	function knob2_value_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.tex_dynamics, value)) {
 			curr_brush.tex_dynamics = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function brushsizewidget_brush_sz_binding(value) {
 		brush_sz = value;
-		$$invalidate(24, brush_sz);
+		$$invalidate(25, brush_sz);
 	}
 
 	function brushsizewidget_dragging_binding(value) {
@@ -43471,49 +43635,49 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 
 	function rgbsliders_colour_binding(value) {
 		stroke_col = value;
-		$$invalidate(23, stroke_col);
+		$$invalidate(24, stroke_col);
 	}
 
 	function colourdisplay_colour_binding(value) {
 		stroke_col = value;
-		$$invalidate(23, stroke_col);
+		$$invalidate(24, stroke_col);
 	}
 
 	function colourdisplay_update_display_binding(value) {
 		trigger_colour_display_update = value;
-		$$invalidate(28, trigger_colour_display_update);
+		$$invalidate(29, trigger_colour_display_update);
 	}
 
 	const pointerenter_handler = () => {
-		$$invalidate(12, mouse_over_colour_picker = true);
+		$$invalidate(13, mouse_over_colour_picker = true);
 	};
 
 	const pointerleave_handler = () => {
-		$$invalidate(12, mouse_over_colour_picker = false);
-		$$invalidate(13, mouse_over_colour_picker_finished = true);
+		$$invalidate(13, mouse_over_colour_picker = false);
+		$$invalidate(14, mouse_over_colour_picker_finished = true);
 	};
 
 	function brushtypewidget_curr_brush_binding(value) {
 		curr_brush = value;
-		$$invalidate(25, curr_brush);
+		$$invalidate(26, curr_brush);
 	}
 
 	function brushpresetwidget_brush_presets_binding(value) {
 		brush_presets = value;
-		$$invalidate(18, brush_presets);
+		$$invalidate(19, brush_presets);
 	}
 
 	function brushpresetwidget_selected_brush_preset_binding(value) {
 		curr_brush = value;
-		$$invalidate(25, curr_brush);
+		$$invalidate(26, curr_brush);
 	}
 
 	const func = () => {
-		$$invalidate(10, undo_pending = true);
+		$$invalidate(11, undo_pending = true);
 	};
 
 	const func_1 = () => {
-		$$invalidate(11, redo_pending = true);
+		$$invalidate(12, redo_pending = true);
 	};
 
 	const func_2 = async () => {
@@ -43526,71 +43690,76 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 	};
 
 	const func_4 = project => {
-		$$invalidate(21, project_pending_load = project);
+		$$invalidate(22, project_pending_load = project);
 	};
 
 	function gallerywidget_current_project_binding(value) {
 		project = value;
-		$$invalidate(20, project);
+		$$invalidate(21, project);
+	}
+
+	function gallerywidget_recording_pending_binding(value) {
+		recording_pending = value;
+		$$invalidate(10, recording_pending);
 	}
 
 	function gallerywidget_resize_project_binding(value) {
 		resize_project = value;
-		$$invalidate(27, resize_project);
+		$$invalidate(28, resize_project);
 	}
 
 	function gallerywidget_project_has_been_modified_binding(value) {
 		project_has_been_modified = value;
-		$$invalidate(16, project_has_been_modified);
+		$$invalidate(17, project_has_been_modified);
 	}
 
 	function gallerywidget_is_safe_to_switch_to_new_project_binding(value) {
 		is_safe_to_switch_to_new_project = value;
-		$$invalidate(17, is_safe_to_switch_to_new_project);
+		$$invalidate(18, is_safe_to_switch_to_new_project);
 	}
 
 	const func_5 = () => pick_from_canvas();
 
 	function pickcolourwidget_picking_binding(value) {
 		picking = value;
-		$$invalidate(14, picking);
+		$$invalidate(15, picking);
 	}
 
 	function pickcolourwidget_just_finished_pick_binding(value) {
 		just_finished_pick = value;
-		$$invalidate(15, just_finished_pick);
+		$$invalidate(16, just_finished_pick);
 	}
 
 	function blendingcolourspacewidget_selected_colour_space_binding(value) {
 		blending_colour_space = value;
-		$$invalidate(26, blending_colour_space);
+		$$invalidate(27, blending_colour_space);
 	}
 
 	function sliders_value_1_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.chaos_lch[0], value)) {
 			curr_brush.chaos_lch[0] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function sliders_value_2_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.chaos_lch[1], value)) {
 			curr_brush.chaos_lch[1] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function sliders_value_3_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.chaos_lch[2], value)) {
 			curr_brush.chaos_lch[2] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function knob_value_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.chaos_speed, value)) {
 			curr_brush.chaos_speed = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
@@ -43604,42 +43773,42 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 	function sliders0_value_1_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.stroke_opacity_dynamics[0], value)) {
 			curr_brush.stroke_opacity_dynamics[0] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function sliders0_value_2_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.stroke_opacity_dynamics[1], value)) {
 			curr_brush.stroke_opacity_dynamics[1] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function sliders1_value_1_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.stroke_size_dynamics[0], value)) {
 			curr_brush.stroke_size_dynamics[0] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function sliders1_value_2_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.stroke_size_dynamics[1], value)) {
 			curr_brush.stroke_size_dynamics[1] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function knob0_value_binding_1(value) {
 		if ($$self.$$.not_equal(curr_brush.rot_jitter, value)) {
 			curr_brush.rot_jitter = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function knob1_value_binding_1(value) {
 		if ($$self.$$.not_equal(curr_brush.pos_jitter, value)) {
 			curr_brush.pos_jitter = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
@@ -43653,73 +43822,73 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 	function knob0_value_binding_2(value) {
 		if ($$self.$$.not_equal(curr_brush.tex_grit, value)) {
 			curr_brush.tex_grit = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function knob1_value_binding_2(value) {
 		if ($$self.$$.not_equal(curr_brush.tex_distort_amt, value)) {
 			curr_brush.tex_distort_amt = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function knob2_value_binding_1(value) {
 		if ($$self.$$.not_equal(curr_brush.tex_distort[0], value)) {
 			curr_brush.tex_distort[0] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function knob3_value_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.tex_distort[1], value)) {
 			curr_brush.tex_distort[1] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function sliders_value_1_binding_1(value) {
 		if ($$self.$$.not_equal(curr_brush.tex_lch_dynamics[0], value)) {
 			curr_brush.tex_lch_dynamics[0] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function sliders_value_2_binding_1(value) {
 		if ($$self.$$.not_equal(curr_brush.tex_lch_dynamics[1], value)) {
 			curr_brush.tex_lch_dynamics[1] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function sliders_value_3_binding_1(value) {
 		if ($$self.$$.not_equal(curr_brush.tex_lch_dynamics[2], value)) {
 			curr_brush.tex_lch_dynamics[2] = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function texturestretchwidget_selected_brush_texture_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.selected_brush_texture, value)) {
 			curr_brush.selected_brush_texture = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
 	function texturestretchwidget_selected_brush_preset_binding(value) {
 		curr_brush = value;
-		$$invalidate(25, curr_brush);
+		$$invalidate(26, curr_brush);
 	}
 
 	function texturewidget_brush_textures_binding(value) {
 		brush_textures = value;
-		$$invalidate(19, brush_textures);
+		$$invalidate(20, brush_textures);
 	}
 
 	function texturewidget_selected_brush_texture_binding(value) {
 		if ($$self.$$.not_equal(curr_brush.selected_brush_texture, value)) {
 			curr_brush.selected_brush_texture = value;
-			$$invalidate(25, curr_brush);
+			$$invalidate(26, curr_brush);
 		}
 	}
 
@@ -43802,6 +43971,9 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 		brush_size_widget_dragging,
 		brush_size_widget_stopped_dragging,
 		new_project_pending,
+		recording_pending,
+		recording_stroke_idx,
+		recording,
 		undo_pending,
 		redo_pending,
 		mouse_over_colour_picker,
@@ -43864,45 +44036,48 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 		if ('brush_size_widget_dragging' in $$props) $$invalidate(7, brush_size_widget_dragging = $$props.brush_size_widget_dragging);
 		if ('brush_size_widget_stopped_dragging' in $$props) $$invalidate(8, brush_size_widget_stopped_dragging = $$props.brush_size_widget_stopped_dragging);
 		if ('new_project_pending' in $$props) $$invalidate(9, new_project_pending = $$props.new_project_pending);
-		if ('undo_pending' in $$props) $$invalidate(10, undo_pending = $$props.undo_pending);
-		if ('redo_pending' in $$props) $$invalidate(11, redo_pending = $$props.redo_pending);
-		if ('mouse_over_colour_picker' in $$props) $$invalidate(12, mouse_over_colour_picker = $$props.mouse_over_colour_picker);
-		if ('mouse_over_colour_picker_finished' in $$props) $$invalidate(13, mouse_over_colour_picker_finished = $$props.mouse_over_colour_picker_finished);
-		if ('picking' in $$props) $$invalidate(14, picking = $$props.picking);
-		if ('just_finished_pick' in $$props) $$invalidate(15, just_finished_pick = $$props.just_finished_pick);
+		if ('recording_pending' in $$props) $$invalidate(10, recording_pending = $$props.recording_pending);
+		if ('recording_stroke_idx' in $$props) recording_stroke_idx = $$props.recording_stroke_idx;
+		if ('recording' in $$props) recording = $$props.recording;
+		if ('undo_pending' in $$props) $$invalidate(11, undo_pending = $$props.undo_pending);
+		if ('redo_pending' in $$props) $$invalidate(12, redo_pending = $$props.redo_pending);
+		if ('mouse_over_colour_picker' in $$props) $$invalidate(13, mouse_over_colour_picker = $$props.mouse_over_colour_picker);
+		if ('mouse_over_colour_picker_finished' in $$props) $$invalidate(14, mouse_over_colour_picker_finished = $$props.mouse_over_colour_picker_finished);
+		if ('picking' in $$props) $$invalidate(15, picking = $$props.picking);
+		if ('just_finished_pick' in $$props) $$invalidate(16, just_finished_pick = $$props.just_finished_pick);
 		if ('picked_col' in $$props) picked_col = $$props.picked_col;
-		if ('project_has_been_modified' in $$props) $$invalidate(16, project_has_been_modified = $$props.project_has_been_modified);
-		if ('is_safe_to_switch_to_new_project' in $$props) $$invalidate(17, is_safe_to_switch_to_new_project = $$props.is_safe_to_switch_to_new_project);
+		if ('project_has_been_modified' in $$props) $$invalidate(17, project_has_been_modified = $$props.project_has_been_modified);
+		if ('is_safe_to_switch_to_new_project' in $$props) $$invalidate(18, is_safe_to_switch_to_new_project = $$props.is_safe_to_switch_to_new_project);
 		if ('full_redraw_needed' in $$props) full_redraw_needed = $$props.full_redraw_needed;
 		if ('desired_zoom' in $$props) desired_zoom = $$props.desired_zoom;
 		if ('panning' in $$props) panning = $$props.panning;
-		if ('brush_presets' in $$props) $$invalidate(18, brush_presets = $$props.brush_presets);
-		if ('brush_textures' in $$props) $$invalidate(19, brush_textures = $$props.brush_textures);
+		if ('brush_presets' in $$props) $$invalidate(19, brush_presets = $$props.brush_presets);
+		if ('brush_textures' in $$props) $$invalidate(20, brush_textures = $$props.brush_textures);
 		if ('noise_tex' in $$props) noise_tex = $$props.noise_tex;
 		if ('io' in $$props) io = $$props.io;
 		if ('gl' in $$props) gl = $$props.gl;
-		if ('project' in $$props) $$invalidate(20, project = $$props.project);
-		if ('project_pending_load' in $$props) $$invalidate(21, project_pending_load = $$props.project_pending_load);
+		if ('project' in $$props) $$invalidate(21, project = $$props.project);
+		if ('project_pending_load' in $$props) $$invalidate(22, project_pending_load = $$props.project_pending_load);
 		if ('default_framebuffer' in $$props) default_framebuffer = $$props.default_framebuffer;
 		if ('canvas_fb' in $$props) canvas_fb = $$props.canvas_fb;
-		if ('canvas_read_tex' in $$props) $$invalidate(22, canvas_read_tex = $$props.canvas_read_tex);
+		if ('canvas_read_tex' in $$props) $$invalidate(23, canvas_read_tex = $$props.canvas_read_tex);
 		if ('temp_undo_fb_a' in $$props) temp_undo_fb_a = $$props.temp_undo_fb_a;
 		if ('temp_undo_fb_b' in $$props) temp_undo_fb_b = $$props.temp_undo_fb_b;
 		if ('temp_undo_fb_a_idx' in $$props) temp_undo_fb_a_idx = $$props.temp_undo_fb_a_idx;
 		if ('temp_undo_fb_b_idx' in $$props) temp_undo_fb_b_idx = $$props.temp_undo_fb_b_idx;
 		if ('drawer' in $$props) drawer = $$props.drawer;
 		if ('ubo' in $$props) ubo = $$props.ubo;
-		if ('stroke_col' in $$props) $$invalidate(23, stroke_col = $$props.stroke_col);
+		if ('stroke_col' in $$props) $$invalidate(24, stroke_col = $$props.stroke_col);
 		if ('stroke_opacity' in $$props) stroke_opacity = $$props.stroke_opacity;
 		if ('brush_rot' in $$props) brush_rot = $$props.brush_rot;
 		if ('brush_pos_ndc_screen' in $$props) brush_pos_ndc_screen = $$props.brush_pos_ndc_screen;
 		if ('brush_pos_ndc_canvas' in $$props) brush_pos_ndc_canvas = $$props.brush_pos_ndc_canvas;
-		if ('brush_sz' in $$props) $$invalidate(24, brush_sz = $$props.brush_sz);
-		if ('curr_brush' in $$props) $$invalidate(25, curr_brush = $$props.curr_brush);
-		if ('blending_colour_space' in $$props) $$invalidate(26, blending_colour_space = $$props.blending_colour_space);
+		if ('brush_sz' in $$props) $$invalidate(25, brush_sz = $$props.brush_sz);
+		if ('curr_brush' in $$props) $$invalidate(26, curr_brush = $$props.curr_brush);
+		if ('blending_colour_space' in $$props) $$invalidate(27, blending_colour_space = $$props.blending_colour_space);
 		if ('brush_params_mat' in $$props) brush_params_mat = $$props.brush_params_mat;
-		if ('resize_project' in $$props) $$invalidate(27, resize_project = $$props.resize_project);
-		if ('trigger_colour_display_update' in $$props) $$invalidate(28, trigger_colour_display_update = $$props.trigger_colour_display_update);
+		if ('resize_project' in $$props) $$invalidate(28, resize_project = $$props.resize_project);
+		if ('trigger_colour_display_update' in $$props) $$invalidate(29, trigger_colour_display_update = $$props.trigger_colour_display_update);
 	};
 
 	if ($$props && "$$inject" in $$props) {
@@ -43920,6 +44095,7 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 		brush_size_widget_dragging,
 		brush_size_widget_stopped_dragging,
 		new_project_pending,
+		recording_pending,
 		undo_pending,
 		redo_pending,
 		mouse_over_colour_picker,
@@ -43964,6 +44140,7 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 		func_3,
 		func_4,
 		gallerywidget_current_project_binding,
+		gallerywidget_recording_pending_binding,
 		gallerywidget_resize_project_binding,
 		gallerywidget_project_has_been_modified_binding,
 		gallerywidget_is_safe_to_switch_to_new_project_binding,
