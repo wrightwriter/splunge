@@ -1,9 +1,27 @@
 import {BrushStroke} from 'brush_stroke'
 import {Texture} from 'gl/Texture'
 import {pow} from 'wmath'
+// @ts-ignore
+import Dexie from 'dexie'
 
 export function assert(v: boolean) {
 	if (!v) debugger
+}
+
+export interface DexieSketchEntry {
+	id?: number
+	data: Project
+}
+export class DexieSketchDB extends Dexie {
+	sketch!: Dexie.Table<DexieSketchEntry, number>
+
+	constructor() {
+		super('sketch')
+		// @ts-ignore
+		this.version(1).stores({
+			sketch: '++id, data',
+		})
+	}
 }
 
 export class BrushTexture {

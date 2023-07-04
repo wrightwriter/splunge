@@ -132,7 +132,7 @@
 	import chroma from 'chroma-js'
 	import {Hash, abs, pow, tau, mix, max, log2} from 'wmath'
 	import {clamp, lerp, mod, smoothstep} from '@0b5vr/experimental'
-	import {BrushTexture, Project, Utils} from 'stuff'
+	import {BrushTexture, DexieSketchDB, Project, Utils} from 'stuff'
 	import {BlendingColourSpace, BrushPreset, BrushStroke, BrushType, DrawParams} from 'brush_stroke'
 	import {Drawer} from 'drawer'
 	import { Framebuffer } from 'gl/Framebuffer'
@@ -140,12 +140,10 @@
 	import { Texture } from 'gl/Texture'
 	import { ShaderProgram } from 'gl/ShaderProgram'
 	import { Thing } from 'gl/Thing'
-	import Dexie, { type DBCoreRangeType } from "dexie"
+	// import Dexie, { type DBCoreRangeType } from "dexie"
 
-	window.sketch_db = new Dexie("sketch")
-	window.sketch_db.version(1).stores({
-    sketch: '++id, data'
-	})
+
+	window.sketch_db = new DexieSketchDB()
 
 	// let dexies = new Dexie('my db')
 
@@ -192,7 +190,7 @@
 
 
 	// Internals
-	const undo_cache_steps = 20
+	const undo_cache_steps = 5
 	const hash = new Hash()
 	let io: IO
 	let gl: WebGL2RenderingContext
@@ -613,7 +611,9 @@
 					prev_tex_stretch[0] !== new_tex_stretch[0] || 
 					prev_tex_stretch[1] !== new_tex_stretch[1] ||
 					prev_tex_distort[0] !== new_tex_distort[0] || 
-					prev_tex_distort[1] !== new_tex_distort[1] 
+					prev_tex_distort[1] !== new_tex_distort[1]  ||
+					prev_tex_distort_amt !== new_tex_distort_amt ||
+					prev_tex_grit !== new_tex_grit
 					){
 					brush_params_mat[0] = new_brush_tex_idx
 					brush_params_mat[1] = new_hsv_dynamics[0]
@@ -653,14 +653,21 @@
 				
 				if(full_redraw){
 					const offs = (end_idx % undo_cache_steps)
-					if(j === end_idx - offs - 1){
-						copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, canvas_fb._textures[0].res)
-						temp_undo_fb_a_idx = j + 1
-					} else if(j === end_idx - offs - undo_cache_steps - 1){
-						copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_b.fb, canvas_fb._textures[0].res)
-						temp_undo_fb_b_idx = j + 1
+					if(end_idx < undo_cache_steps){
+						if(j === 0){
+							// copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, canvas_fb._textures[0].res)
+							temp_undo_fb_a.clear()
+							temp_undo_fb_a_idx = 0
+						}
+					} else {
+						if(j === end_idx - offs - 1){
+							copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, canvas_fb._textures[0].res)
+							temp_undo_fb_a_idx = j + 1
+						} else if(j === end_idx - offs - undo_cache_steps - 1){
+							copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_b.fb, canvas_fb._textures[0].res)
+							temp_undo_fb_b_idx = j + 1
+						}
 					}
-					
 				}
 				
 				prev_hsv_dynamics[0] = new_hsv_dynamics[0]
@@ -675,10 +682,15 @@
 				k++
 				j++
 			}
+			if(end_idx === 0){
+				copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, canvas_fb._textures[0].res)
+				temp_undo_fb_a_idx = 0
+			} 
 			redraw_needed = true
 			temp_stroke_fb.clear()
 
 		}
+
 
 		const redraw_whole_project = () => {
 			console.log('REDRAW EVERYTHING')
@@ -725,26 +737,20 @@
 			resize_project(project.canvasRes)
 			redraw_whole_project()
 		}
-		// @ts-ignore
-		// let local_storage_proj = (await window.sketch_db.sketch.toArray())[0]
-		let local_storage_proj = await window.sketch_db.sketch.get(1)
+		let dexie_local_storage_entry = await window.sketch_db.table("sketch").get(1)
 
-		if (local_storage_proj) {
-			local_storage_proj = local_storage_proj.data
-			// @ts-ignore
-			load_project(local_storage_proj)
+		if (dexie_local_storage_entry) {
+			const proj = dexie_local_storage_entry.data
+			try{
+				load_project(proj)
+			} catch(e){
+				console.log("Couldn't load project, creating new one.")
+				load_project(new Project())
+				window.sketch_db.table("sketch").update(1, {data: project})
+			}
 		} else {
-			// load_project(new Project())
 			load_project(new Project())
-			// @ts-ignore
-			await window.sketch_db.sketch.add({data: project})
-			// window.sketch_db.transaction('rw', window.sketch_db.sketch, async()=>{
-			// 	// @ts-ignore
-			// 	const sketch = await window.sketch_db.sketch.get(1)
-			// 	sketch.data = project
-			// 	// @ts-ignore
-			// 	await window.sketch_db.sketch.put(sketch)
-			// })
+			await window.sketch_db.table("sketch").add({data: project})
 		}
 		
 		const handle_input_actions = ()=>{
@@ -950,7 +956,6 @@
 				brush_rot = [...io.tilt]
 
 				for(let i = 0; i < io.mouse_positions_during_last_frame_cnt; i++){
-					// brush_pos_ndc_screen = [...io.mouse_pos]
 					brush_pos_ndc_screen = [
 						io.mouse_positions_during_last_frame[i*2],
 						io.mouse_positions_during_last_frame[i*2 + 1]
@@ -1088,8 +1093,7 @@
 					// 	try{
 					// @ts-ignore
 					project.brush_strokes[project.brush_strokes.length - 1].brush_texture.gpu_tex = {}
-					// @ts-ignore
-					window.sketch_db.sketch.update(1, {data: project})
+					window.sketch_db.table("sketch").update(1, {data: project})
 					// 	} catch(e){
 					// 		console.log(e)
 					// 	}

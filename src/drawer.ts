@@ -286,8 +286,8 @@ export class Drawer {
 		for (let i = 0; i < iters; i++) {
 			// #define rot(a) mat2(cos(a),-sin(a),sin(a),cos(a))
 			// brush_stroke.
-			let curr_sz = stroke.sizes[i * 2]
-			let next_sz = stroke.sizes[i * 2 + 2]
+			let curr_sz = stroke.sizes[i * 2] * 0.5
+			let next_sz = stroke.sizes[i * 2 + 2] * 0.5
 
 			let curr_ang = get_circ_pos_from_ang(stroke.rotations[i * 2 + 1])
 			let next_ang = get_circ_pos_from_ang(stroke.rotations[i * 2 + 3])

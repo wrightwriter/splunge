@@ -12,34 +12,46 @@
 
   let opacity = 0
   
+  let timeouts: NodeJS.Timeout[]= []
+  
   floating_modal_message.subscribe(message=>{
     if(message){
       displayed_message = message
       opacity = 1
       fading_in = true
-      setTimeout(()=>{
-        opacity = 0
-        fading_in = false
-        setTimeout(()=>{
-          displayed_message = undefined
-        }, fade_out_t * 1000)
-      }, display_time * 1000)
+      for(let timeout of timeouts){
+        clearTimeout(timeout)
+      }
+      timeouts.length = 0
+      timeouts.push(
+        setTimeout(
+          ()=>{
+            opacity = 0
+            fading_in = false
+          }, display_time * 1000
+        )
+      )
+      timeouts.push( 
+        setTimeout(
+          ()=>{
+            displayed_message = undefined
+          }, display_time * 1000 + fade_out_t * 1000
+        )
+      )
       floating_modal_message.set(undefined)
     }
   })
 </script>
 
 
-<!-- {#if displayed_message} -->
-  <div id="floating-modal">
-   <div id="text" style={
-    `opacity: ${opacity};
-    transition: opacity ${fading_in ? fade_in_t : fade_out_t}s;`
-  } >
-    {displayed_message}
-   </div>
-  </div>
-<!-- {/if} -->
+<div id="floating-modal">
+ <div id="text" style={
+  `opacity: ${opacity};
+  transition: opacity ${fading_in ? fade_in_t : fade_out_t}s;`
+} >
+  {displayed_message}
+ </div>
+</div>
 
 <style lang="scss">
   *{

@@ -1,4 +1,5 @@
 import {UBO} from 'gl_utils'
+import {Project} from 'stuff'
 import Dexie from '../node_modules/dexie/dist/dexie'
 
 export declare global {
@@ -6,6 +7,12 @@ export declare global {
 	var ubo: UBO
 	var isOnMobile: boolean
 	var sketch_db: Dexie
+	// interface DexieSketchEntry {
+	// 	data: Project
+	// }
+	// interface Dexie {
+	// 	sketch: Dexie.Table<DexieSketchEntry, number>
+	// }
 	interface Window {
 		zoom: Float32Array
 	}
