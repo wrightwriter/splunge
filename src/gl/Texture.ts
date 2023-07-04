@@ -174,6 +174,7 @@ export class Texture {
 		read_back_res: number[] = [...this.res],
 	): Promise<[HTMLImageElement, Blob]> {
 		let data = this.read_back_array(offs, read_back_res)
+		let data_reflected: Float32Array | Uint8Array = new Float32Array(data.length)
 
 		let i = 0
 		let idx = 0
@@ -199,6 +200,17 @@ export class Texture {
 			i++
 		}
 
+		for (let y = 0; y < read_back_res[1]; y++) {
+			for (let x = 0; x < read_back_res[0]; x++) {
+				const idx = y * read_back_res[0] * 4 + x * 4
+				const idx_refl = (read_back_res[1] - y - 1) * read_back_res[0] * 4 + x * 4
+				data_reflected[idx + 0] = data[idx_refl]
+				data_reflected[idx + 1] = data[idx_refl + 1]
+				data_reflected[idx + 2] = data[idx_refl + 2]
+				data_reflected[idx + 3] = data[idx_refl + 3]
+			}
+		}
+
 		// Create a 2D canvas to store the result
 		const canvas = document.createElement('canvas')
 		canvas.width = this.res[0]
@@ -219,7 +231,7 @@ export class Texture {
 		blob = await getCanvasBlob(canvas)
 
 		const imageData = context.createImageData(canvas.width, canvas.height)
-		imageData.data.set(data)
+		imageData.data.set(data_reflected)
 		context.putImageData(imageData, 0, 0)
 		const img = new Image()
 		img.src = canvas.toDataURL()

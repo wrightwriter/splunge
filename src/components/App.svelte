@@ -383,23 +383,21 @@
 		{
 			brush_presets[0].selected_brush_type = BrushType.Long
 			brush_presets[0].selected_brush_texture = brush_textures[4]
-			// brush_presets[0].tex_stretch[0] = 1/20
-			// brush_presets[0].tex_stretch[1] = 1/40
-			brush_presets[0].tex_stretch[0] = 1.339
-			brush_presets[0].tex_stretch[1] = 1.75
+			brush_presets[0].tex_stretch[0] = 0.5 + 1/20
+			brush_presets[0].tex_stretch[1] = 0.5 + 1/20
 			brush_presets[0].tex_distort[0] = 0.294
 			brush_presets[0].tex_distort[1] = 0
 			brush_presets[0].tex_distort_amt = 0.18
 			// brush_presets[0].noise_stretch[0] = curr_brush.noise_stretch[0] = 0
 			// brush_presets[0].noise_stretch[1] = curr_brush.noise_stretch[1] = 0.1
-			curr_brush.tex_stretch[0] =  brush_presets[0].tex_stretch[0]/20
-			curr_brush.tex_stretch[1] =  brush_presets[0].tex_stretch[1]/40
+			curr_brush.tex_stretch[0] = brush_presets[0].tex_stretch[0]
+			curr_brush.tex_stretch[1] = brush_presets[0].tex_stretch[1]
 		}
 		{
 			brush_presets[1].selected_brush_type = BrushType.Blobs
 			brush_presets[1].selected_brush_texture = brush_textures[0]
-			brush_presets[1].tex_stretch[0] = 1/20
-			brush_presets[1].tex_stretch[1] = 1/40
+			brush_presets[1].tex_stretch[0] = 0.5 + 1/20
+			brush_presets[1].tex_stretch[1] = 0.5 + 1/20
 			brush_presets[1].tex_distort[0] = 0
 			brush_presets[1].tex_distort[1] = 0
 			// brush_presets[1].noise_stretch[0] = curr_brush.noise_stretch[0] = 0
@@ -941,7 +939,7 @@
 					brush_stroke = new BrushStroke(curr_brush.selected_brush_type, new DrawParams(
 						curr_brush.tex_dynamics, curr_brush.tex_lch_dynamics,
 						// curr_brush.tex_stretch,
-						[curr_brush.tex_stretch[0]*20., curr_brush.tex_stretch[1]*2.*20.],
+						[(curr_brush.tex_stretch[0] - 0.5)*20., (curr_brush.tex_stretch[1] - 0.5)*20.],
 						curr_brush.tex_distort,
 						curr_brush.tex_distort_amt,
 						curr_brush.tex_grit,
