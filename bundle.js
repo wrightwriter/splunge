@@ -13540,7 +13540,6 @@ function resizeIfNeeded(canvas, default_framebuffer, client_res, set_redraw_need
     const displayHeight = canvas.clientHeight;
     const needResize = canvas.width !== displayWidth || canvas.height !== displayHeight;
     if (needResize) {
-        let html_elem = document.querySelector('html');
         client_res[0] = canvas.width = displayWidth;
         client_res[1] = canvas.height = displayHeight;
         set_redraw_needed(true);
@@ -22525,7 +22524,7 @@ function GalleryWidget_svelte_instance($$self, $$props, $$invalidate) {
 				document.body.appendChild(a);
 				a.style = 'display: none';
 				a.href = url;
-				a.download = 'shader.mp4';
+				a.download = 'drawing.mp4';
 				a.click();
 				window.URL.revokeObjectURL(url);
 			};
@@ -28837,41 +28836,61 @@ function App_svelte_instance($$self, $$props, $$invalidate) {
 			}
 		};
 
+		const video_recording_if_needed = () => {
+			if (!recording) {
+				canvas_fb.clear();
+				canvas_fb.pong();
+				canvas_fb.clear();
+				default_framebuffer.textures[0].res = [...canvas_fb.textures[0].res];
+				$$invalidate(0, canvasElement.width = canvas_fb.textures[0].res[0], canvasElement);
+				$$invalidate(0, canvasElement.height = canvas_fb.textures[0].res[1], canvasElement);
+				set_shared_uniforms();
+				recording_stroke_idx = 0;
+				$$invalidate(10, recording_pending = false);
+				recording = true;
+				gl.uniform1f(post_canvas_program.zoom_loc, 1);
+				gl.uniform2fv(post_canvas_program.panning_loc, [0, 0]);
+			} else {
+				if (recording_stroke_idx === project.brush_strokes.length - 1) {
+					if (window.media_recorder.state !== "inactive") {
+						window.media_recorder.stop();
+					}
+
+					recording = false;
+
+					resizeIfNeeded(
+						canvasElement,
+						default_framebuffer,
+						[canvasElement.clientWidth, canvasElement.clientHeight],
+						e => {
+							
+						},
+						() => {
+							set_shared_uniforms();
+						}
+					);
+
+					full_redraw_needed = true;
+				} else {
+					canvas_fb.back_textures[0].bind_to_unit(1);
+					canvas_fb.clear();
+					temp_stroke_fb.clear();
+					draw_n_strokes(recording_stroke_idx, recording_stroke_idx + 1, false);
+					gl.viewport(0, 0, default_framebuffer._textures[0].res[0], default_framebuffer._textures[0].res[1]);
+					gl.bindFramebuffer(gl.FRAMEBUFFER, default_framebuffer.fb);
+					gl.clear(gl.COLOR_BUFFER_BIT);
+					Framebuffer.currently_bound = default_framebuffer;
+					post_canvas_program.use();
+					canvas_fb.back_textures[0].bind_to_unit(1);
+					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+					recording_stroke_idx++;
+				}
+			}
+		};
+
 		const draw = _t => {
 			if (recording_pending || recording) {
-				if (!recording) {
-					canvas_fb.clear();
-					canvas_fb.pong();
-					canvas_fb.clear();
-					recording_stroke_idx = 0;
-					$$invalidate(10, recording_pending = false);
-					recording = true;
-				} else {
-					if (recording_stroke_idx === project.brush_strokes.length - 1) {
-						if (window.media_recorder.state !== "inactive") {
-							window.media_recorder.stop();
-						}
-
-						recording = false;
-					} else {
-						canvas_fb.back_textures[0].bind_to_unit(1);
-						canvas_fb.clear();
-						temp_stroke_fb.clear();
-						draw_n_strokes(recording_stroke_idx, recording_stroke_idx + 1, false);
-						gl.viewport(0, 0, default_framebuffer._textures[0].res[0], default_framebuffer._textures[0].res[1]);
-						gl.bindFramebuffer(gl.FRAMEBUFFER, default_framebuffer.fb);
-						gl.clear(gl.COLOR_BUFFER_BIT);
-						Framebuffer.currently_bound = default_framebuffer;
-						post_canvas_program.use();
-						gl.uniform1f(post_canvas_program.zoom_loc, zoom[0]);
-						gl.uniform2fv(post_canvas_program.panning_loc, panning);
-						gl.uniform1i(post_canvas_program.blending_colour_space_loc, blending_colour_space);
-						canvas_fb.back_textures[0].bind_to_unit(1);
-						gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-						recording_stroke_idx++;
-					}
-				}
-
+				video_recording_if_needed();
 				requestAnimationFrame(draw);
 				return;
 			}
