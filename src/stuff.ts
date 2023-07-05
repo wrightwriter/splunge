@@ -8,18 +8,26 @@ export function assert(v: boolean) {
 	if (!v) debugger
 }
 
+export interface DexieImageEntry {
+	id: number
+	data: Blob
+}
 export interface DexieSketchEntry {
-	id?: number
+	id: number
 	data: Project
 }
 export class DexieSketchDB extends Dexie {
+	temp_sketch!: Dexie.Table<DexieSketchEntry, number>
 	sketch!: Dexie.Table<DexieSketchEntry, number>
+	image!: Dexie.Table<DexieImageEntry, number>
 
 	constructor() {
 		super('sketch')
 		// @ts-ignore
 		this.version(1).stores({
-			sketch: '++id, data',
+			temp_sketch: 'id, data',
+			sketch: 'id, data',
+			image: 'id, data',
 		})
 	}
 }

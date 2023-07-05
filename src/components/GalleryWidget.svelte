@@ -6,12 +6,19 @@
 		role="button"
 		tabindex="0"
 		on:click={async () => {
-			// gallery_open = !gallery_open
 			gallery_open.set(true)
-			let [_canvas_image, blob] = await get_current_canvas_as_image()
+			canvases_finished_loading = false
+			let [_canvas_image, blob] = await (get_current_canvas_as_image())
 			canvas_image = _canvas_image
 			canvas_image_src = canvas_image.src
 			canvas_image_blob = blob
+
+			if(current_project.saved){
+				await window.sketch_db.table("image").put({id: current_project.id, data: canvas_image_src})
+			}
+			refetch_canvases()
+			canvases_finished_loading = true
+
 			console.log(canvas_image.src)
 		}}>
 		{@html solveIcon}
@@ -26,7 +33,6 @@
 						role="button"
 						tabindex="0"
 						on:click={() => {
-							// gallery_open = !gallery_open
 							gallery_open.set(false)
 						}}>
 						{@html forbidIcon}
@@ -41,28 +47,8 @@
 								{@html captureIcon}
 							</div>
 						</div>
-						<div
-							id="project-save-button"
-							role="button"
-							tabindex="0"
-							on:click={async () => {
-								// localStorage.setItem(`project`,JSON.stringify(current_project))
-								// @ts-ignore
-								await window.sketch_db.transaction('rw', window.sketch_db.sketch, async () => {
-									// @ts-ignore
-									const sketch = await window.sketch_db.sketch.get(1)
-									sketch.data = current_project
-									// @ts-ignore
-									await window.sketch_db.sketch.put(sketch)
-								})
-							}}>
-							<div id="project-save-button-title">Save to localStorage</div>
-							<div class="icon" style="transform: translate(0px,0.2rem);">
-								{@html captureIcon}
-							</div>
-						</div>
 						<div id="project-save-button" role="button" tabindex="0" on:click={save_to_dropbox}>
-							<div id="project-save-button-title">Save to dropbox</div>
+							<div id="project-save-button-title">Save to storage</div>
 							<div class="icon" style="transform: translate(0px,0.2rem);">
 								{@html captureIcon}
 							</div>
@@ -115,10 +101,11 @@
 						}}
 						role="button"
 						tabindex="0">
-						<div draggable="false">Resize</div>
+						<div>Resize</div>
 						{@html resizeIcon}
+						<!-- {@html launchIcon} -->
 					</div>
-					<div id="size-modal" style={size_modal_opened ? '' : 'display: none;'}>
+					<div draggable="false"  id="size-modal" style={size_modal_opened ? '' : 'display: none;'}>
 						<div
 							id="back-button"
 							role="button"
@@ -130,7 +117,7 @@
 							{@html forbidIcon}
 						</div>
 						<div style="margin-bottom: 1rem;">Resize canvas</div>
-						<div style="margin-bottom: 1rem;">
+						<div draggable="false" style="margin-bottom: 1rem;">
 							{floor(resize_widget_canvas_size[0])} x {floor(resize_widget_canvas_size[1])}
 						</div>
 						<div
@@ -158,73 +145,44 @@
 						</div>
 					</div>
 				</div>
-				<!-- <button on:click={async()=>await log_into_dropbox()} class:hide={authed} > -->
-				<button id="db-login-button" on:click={async () => await log_into_dropbox()} class:hide={authed}>
-					LOG INTO DROPBOX
-				</button>
 				<div id="gallery-elements">
-					{#each gallery_elements as element, i}
-						<div
-							id="element"
-							on:click={async () => {
-								let safe = await is_safe_to_switch_to_new_project()
-								safe = safe ? safe : confirm('Are you sure you want to switch to another project? This one is not saved.')
-								if (safe) {
-									let proj = await dbx.filesDownload({
-										path: '/' + element.name + '.json',
-									})
-									// @ts-ignore
-									let binary = await proj.result.fileBlob.text()
-									let binary_json = JSON.parse(binary)
-									load_project(binary_json)
-									// gallery_open = false
-									gallery_open.set(false)
-								}
-							}}
-							role="button"
-							tabindex="0"
-							style={Number(element.name) === current_project.id ? 'border: 0.1rem solid white;' : ''}>
-							<!-- {element.name} -->
-							<div id="element-name">
-								{format_time(element.name)}
+					{#if canvases_finished_loading}
+						{#each gallery_elements as element, i}
+							<div
+								id="element"
+								on:click={async () => {
+									let safe = await is_safe_to_switch_to_new_project()
+									safe = safe ? safe : confirm('Are you sure you want to switch to another project? This one is not saved.')
+									if (safe) {
+										let sketches = (await window.sketch_db.table("sketch").toArray())
+										for(let e of sketches){
+											let s = e.data
+											if(s.id === Number(element.name)){
+												// @ts-ignore
+												load_project(s)
+												gallery_open.set(false)
+												return
+											}
+										}
+									}
+								}}
+								role="button"
+								tabindex="0"
+								style={Number(element.name) === current_project.id ? 'border: 0.1rem solid white;' : ''}>
+								<div id="element-name">
+									{format_time(element.name)}
+								</div>
+								{#if element.image_src}
+									<img draggable="false" src={element.image_src} id="canvas-preview-img" alt="" />
+								{/if}
 							</div>
-							<img draggable="false" src={element.image_src} id="canvas-preview-img" alt="" />
-						</div>
-					{/each}
+						{/each}
+					{/if}
 				</div>
 			</div>
 		</div>
 	{/if}
 </div>
-
-<!-- const dataURLToBlob = async (dataURL) => {
-			let BASE64_MARKER = ';base64,';
-
-			if (dataURL.indexOf(BASE64_MARKER) == -1) {
-					let parts = dataURL.split(',');
-					let contentType = parts[0].split(':')[1];
-					let raw = decodeURIComponent(parts[1]);
-
-					return new Blob([raw], {type: contentType});
-			}
-
-			let parts = dataURL.split(BASE64_MARKER);
-			let contentType = parts[0].split(':')[1];
-			let raw = window.atob(parts[1]);
-			let rawLength = raw.length;
-
-			let uInt8Array = new Uint8Array(rawLength);
-
-			for (let i = 0; i < rawLength; ++i) {
-					uInt8Array[i] = raw.charCodeAt(i);
-			}
-			// TODO: REPLACE WITH THIS??
-			const blob = await (await fetch(dataURL)).blob(); 
-			return blob
-			// add connect-src data: to your Content-Security-Policy
-
-			return new Blob([uInt8Array], {type: contentType});
-		} -->
 
 <script lang="ts">
 	import solveIcon from '/../public/solve.svg'
@@ -236,10 +194,8 @@
 	import downloadIcon from '/../public/download.svg'
 	import timeIcon from '/../public/time.svg'
 
-	import {Dropbox, DropboxAuth} from 'dropbox'
-	import type {Project} from 'stuff'
+	import type {DexieImageEntry, DexieSketchEntry, Project} from 'stuff'
 	import {onMount} from 'svelte'
-	import {DropboxAuther} from 'dropbox_auth'
 	import {floating_modal_message} from 'store'
 	import {gallery_open} from 'store'
 
@@ -247,7 +203,9 @@
 	import {floor} from 'wmath'
 
 	export let current_project: Project
+	export let is_temp_project: boolean
 	export let get_current_canvas_as_image: () => Promise<[HTMLImageElement, Blob]>
+	let canvases_finished_loading = true
 	export let resize_project: (new_size: number[]) => void
 	export let new_project: () => void
 	export let load_project: (project: Project) => void
@@ -273,6 +231,18 @@
 	let canvas_image_blob: Blob | undefined = undefined
 	let canvas_image_src: string = ''
 
+	export let recording_pending: boolean
+	const resize_widget_pixel_range = 200
+	const min = 0
+	const max = 4
+
+	let resize_widget_canvas_size = [0, 0]
+	let resize_widget_start_y = 0
+	let resize_wdiget_start_value = [0, 0]
+	let resize_widget_start_x = 0
+
+	$: valueRange = max - min
+
 	class Element {
 		name: string
 		image_src: string
@@ -282,29 +252,20 @@
 		}
 	}
 
-	let dbx: Dropbox
-	const dbx_auther = new DropboxAuther()
 
-	let authed = false
 	let gallery_elements: Element[] = []
 
-	const log_into_dropbox = async () => {
-		await dbx_auther.doAuth()
-	}
+
 
 	export const is_safe_to_switch_to_new_project = async (): Promise<boolean> => {
 		let project_is_saved_to_dropbox = false
 
-		if (!dbx_auther.authed) {
-			project_is_saved_to_dropbox = true
-		} else {
-			let response = await dbx.filesListFolder({path: ''})
-			for (let element of response.result.entries) {
-				let proj_name = Number(element.name.slice(0, -5))
-				if (proj_name === current_project.id) {
-					project_is_saved_to_dropbox = true
-					break
-				}
+		let sketches = (await window.sketch_db.table("sketch").toArray())
+		for(let e of sketches){
+			let s = e.data
+			if(s.id === current_project.id){
+				project_is_saved_to_dropbox = true
+				break
 			}
 		}
 
@@ -322,7 +283,6 @@
 		link.click()
 	}
 
-	export let recording_pending: boolean
 
 	const record_video = async () => {
 		const createMediaRecorder = (canvas: HTMLCanvasElement) => {
@@ -379,66 +339,65 @@
 		recording_pending = true
 	}
 	const refetch_canvases = async () => {
-		let response = await dbx.filesListFolder({path: ''})
-		console.log(response)
 		gallery_elements = []
-		for (let element of response.result.entries) {
-			if (element.name.endsWith('.json')) {
-				let proj_name = element.name.slice(0, -5)
-				let image = await dbx.filesDownload({
-					path: '/' + proj_name + '.png',
-				})
-				// @ts-ignore
-				let binary: Blob = image.result.fileBlob
-				const blobToDataURL = (blob: Blob): Promise<string> => {
-					return new Promise<string>((resolve, reject) => {
-						const reader = new FileReader()
-						reader.onload = (_e) => resolve(reader.result as string)
-						reader.onerror = (_e) => reject(reader.error)
-						reader.onabort = (_e) => reject(new Error('Read aborted'))
-						reader.readAsDataURL(blob)
-					})
+		const blobToDataURL = (blob: Blob): Promise<string> => {
+			return new Promise<string>((resolve, reject) => {
+				const reader = new FileReader()
+				reader.onload = (_e) => resolve(reader.result as string)
+				reader.onerror = (_e) => reject(reader.error)
+				reader.onabort = (_e) => reject(new Error('Read aborted'))
+				reader.readAsDataURL(blob)
+			})
+		}
+
+		// await curr_canvas_as_image_promise
+		let sketches: DexieSketchEntry[] = (await window.sketch_db.table("sketch").toArray())
+		let images: DexieImageEntry[] = (await window.sketch_db.table("image").toArray())
+
+		for (let element of sketches) {
+			let sketch = element.data
+			let proj_name = sketch.id
+
+			let image: Blob | undefined = undefined;
+			
+			for(let i of images){
+				if(i.id === proj_name){	
+					image = i.data
 				}
-				// console.log(
-				// 		await blobToDataURL(binary)
-				// )
-				// gallery_elements.push(new Element(
-				// 	proj_name,
-				// 	await blobToDataURL(binary)
-				// ))
-				gallery_elements = [...gallery_elements, new Element(proj_name, await blobToDataURL(binary))]
 			}
+
+			let el
+			if(image){
+				// @ts-ignore
+				el = new Element(proj_name.toString(), image)
+			} else {
+				// @ts-ignore
+				el = new Element(proj_name.toString(), undefined)
+			}
+			gallery_elements = [...gallery_elements, el]
 		}
 	}
 	const save_to_dropbox = async () => {
 		floating_modal_message.set('Starting upload to dropbox.')
-		let r = await dbx.filesUpload({
-			path: '/' + current_project.id + '.json',
-			contents: JSON.stringify(current_project),
-			// @ts-ignore
-			mode: 'overwrite',
-		})
-		r = await dbx.filesUpload({
-			path: '/' + current_project.id + '.png',
-			contents: await (await fetch((canvas_image as HTMLImageElement).src)).blob(),
-			// @ts-ignore
-			mode: 'overwrite',
-		})
+
+		current_project.saved = true
+		let new_data = { id: current_project.id, data: current_project }
+		// if(!s){
+		// 	await window.sketch_db.table("sketch").add(new_data)
+		// } else {
+		// 	await window.sketch_db.table("sketch").update(new_data.id, new_data)
+		// }
+		await window.sketch_db.table("sketch").put(new_data, new_data.id)
+
+
+		await window.sketch_db.table("image").put({id: current_project.id, data: canvas_image_src})
+
 		floating_modal_message.set('Upload to dropbox succesful.')
 		project_has_been_modified = false
+		is_temp_project = false
 		await refetch_canvases()
 	}
 
-	const resize_widget_pixel_range = 200
-	const min = 0
-	const max = 4
-
-	let resize_widget_canvas_size = [0, 0]
-	let resize_widget_start_y = 0
-	let resize_wdiget_start_value = [0, 0]
-	let resize_widget_start_x = 0
-
-	$: valueRange = max - min
 
 	function resize_widget_pointer_move({clientX, clientY}) {
 		let valueDiffY = (valueRange * (resize_widget_start_y - clientY)) / resize_widget_pixel_range
@@ -452,7 +411,6 @@
 
 	function resize_widget_pointer_down(e: PointerEvent) {
 		let {clientX, clientY} = e
-		// console.log({ clientY });
 		console.log('down')
 
 		resize_widget_start_y = clientY
@@ -470,13 +428,7 @@
 	}
 
 	onMount(async () => {
-		await dbx_auther.init()
-		await dbx_auther.try_init_dropbox()
-		authed = dbx_auther.authed
-		dbx = dbx_auther.dbx
-		if (authed) {
-			refetch_canvases()
-		}
+		// refetch_canvases()
 	})
 </script>
 
@@ -520,6 +472,7 @@
 		z-index: 101;
 		background: black;
 		justify-content: center;
+		touch-action: none;
 	}
 	#gallery-container-outer {
 		position: fixed;
@@ -564,8 +517,10 @@
 				}
 				#button {
 					display: flex;
+					align-items: center;
 					cursor: pointer;
 					padding: 0rem 0.2rem;
+					height: 100%;
 					:global(svg) {
 						height: 100%;
 					}

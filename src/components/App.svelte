@@ -60,6 +60,7 @@
 					load_project={(project)=>{ 
 						project_pending_load = project
 					}}
+					bind:is_temp_project={is_temp_project}
 					bind:recording_pending={recording_pending}
 					bind:resize_project={resize_project}
 					bind:project_has_been_modified={project_has_been_modified}
@@ -193,12 +194,13 @@
 
 
 	// Internals
-	const undo_cache_steps = 5
+	const undo_cache_steps = 15
 	const hash = new Hash()
 	let io: IO
 	let gl: WebGL2RenderingContext
 	let project = new Project()
 	let project_pending_load: Project
+	let is_temp_project: boolean
 
 	// GL stuff
 	let default_framebuffer: Framebuffer
@@ -738,20 +740,34 @@
 			resize_project(project.canvasRes)
 			redraw_whole_project()
 		}
-		let dexie_local_storage_entry = await window.sketch_db.table("sketch").get(1)
+		const create_new_project = async () => {
+			load_project(new Project())
+			await window.sketch_db.table("temp_sketch").put({id: project.id, data: project},1)
+			localStorage.setItem("curr_proj_id", String(-1))
+			is_temp_project = true
+		}
+		let local_storage_curr_proj_id = localStorage.getItem("curr_proj_id")
 
-		if (dexie_local_storage_entry) {
-			const proj = dexie_local_storage_entry.data
+		if (local_storage_curr_proj_id) {
+			is_temp_project = Number(local_storage_curr_proj_id) < 0
+			let proj: Project
+			if(is_temp_project){
+				proj = (await window.sketch_db.table("temp_sketch").toArray())[0].data
+			} else {
+				let dexie_local_storage_entry = await window.sketch_db.table("sketch").get(Number(local_storage_curr_proj_id))
+				proj = dexie_local_storage_entry.data
+			}
 			try{
 				load_project(proj)
+				localStorage.setItem(
+					"curr_proj_id", 
+					is_temp_project ? String(-1) : String(project.id)
+				)
 			} catch(e){
 				console.log("Couldn't load project, creating new one.")
-				load_project(new Project())
-				window.sketch_db.table("sketch").update(1, {data: project})
 			}
 		} else {
-			load_project(new Project())
-			await window.sketch_db.table("sketch").add({data: project})
+			await create_new_project()
 		}
 		
 		const handle_input_actions = ()=>{
@@ -1077,15 +1093,6 @@
 			},()=>{set_shared_uniforms()})
 			io.tick()
 			
-			if(new_project_pending){
-				load_project(new Project())
-				new_project_pending = false
-			}
-			if(project_pending_load){
-				load_project(project_pending_load)
-				// @ts-ignore
-				project_pending_load = undefined
-			}
 			
 			if(full_redraw_needed){
 				redraw_whole_project()
@@ -1128,30 +1135,13 @@
 			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
 				project.push_stroke(brush_stroke)
 				if(frame % 5 === 0 || !isOnMobile){
-					// localStorage.setItem('project', JSON.stringify(project))
-					// (await window.sketch_db.toArray())[0]
-					// @ts-ignore
-
-					// (async()=>{
-					// 	try{
 					// @ts-ignore
 					project.brush_strokes[project.brush_strokes.length - 1].brush_texture.gpu_tex = {}
-					window.sketch_db.table("sketch").update(1, {data: project})
-					// 	} catch(e){
-					// 		console.log(e)
-					// 	}
-						
-					// })()
-					// window.sketch_db.sketch.add
-					// window.sketch_db.transaction('rw', window.sketch_db.sketch, async()=>{
-					// 	// @ts-ignore
-					// 	const sketch = await window.sketch_db.sketch.get(1)
-					// 	// sketch.data = project
-					// 	sketch.data.brush_strokes = project.brush_strokes
-					// 	sketch.data.stroke = project.brush_strokes[0]
-					// 	// @ts-ignore
-					// 	await window.sketch_db.sketch.put(sketch)
-					// })
+					if(is_temp_project){
+						window.sketch_db.table("temp_sketch").put({id: project.id, data: project},1)
+					} else {
+						window.sketch_db.table("sketch").update(project.id, {data: project})
+					}
 				}
 				redraw_needed = true
 				composite_stroke()
@@ -1225,12 +1215,28 @@
 			undo_pending = false
 			full_redraw_needed = false
 			mouse_over_colour_picker_finished = false
+			canvas_read_tex = canvas_fb.back_textures[0]
 			io.tick_end()
 			frame++
 			for (let framebuffer of Framebuffer.framebuffers) {
 				if (framebuffer.needs_pong) {
 					framebuffer.pong()
 				}
+			}
+
+			if(new_project_pending){
+				create_new_project().then(_=>{
+					new_project_pending = false
+					requestAnimationFrame(draw)
+					return
+				})
+			}
+			if(project_pending_load){
+				load_project(project_pending_load)
+				localStorage.setItem("curr_proj_id", String(project.id))
+				is_temp_project = false
+				// @ts-ignore
+				project_pending_load = undefined
 			}
 			requestAnimationFrame(draw)
 		}
