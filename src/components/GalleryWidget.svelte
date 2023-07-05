@@ -319,7 +319,7 @@
 				// @ts-ignore
 				a.style = 'display: none'
 				a.href = url
-				a.download = 'shader.mp4'
+				a.download = 'drawing.mp4'
 				a.click()
 				window.URL.revokeObjectURL(url)
 			}

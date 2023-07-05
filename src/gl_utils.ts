@@ -61,7 +61,7 @@ export function resizeIfNeeded(
 
 	if (needResize) {
 		// font-size: 1.7vw;
-		let html_elem = document.querySelector('html') as HTMLElement
+		// let html_elem = document.querySelector('html') as HTMLElement
 		// html_elem.style.fontSize = `${html_elem.clientWidth / html_elem.clientHeight}rem`
 		client_res[0] = canvas.width = displayWidth
 		client_res[1] = canvas.height = displayHeight

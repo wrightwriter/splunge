@@ -1036,22 +1036,39 @@
 					brush_stroke.push_stroke(brush_pos_ndc_canvas, brush_rot, sz, stroke_opacity, col)
 				}
 		}
-
-		const draw = (_t: number) => {
-			if(recording_pending || recording){
+		
+		const video_recording_if_needed = () =>{
 				if(!recording){
 					canvas_fb.clear()
 					canvas_fb.pong()
 					canvas_fb.clear()
+
+					default_framebuffer.textures[0].res = [...canvas_fb.textures[0].res]
+					canvasElement.width = canvas_fb.textures[0].res[0]
+					canvasElement.height = canvas_fb.textures[0].res[1]
+					set_shared_uniforms()
+
 					recording_stroke_idx = 0
 					recording_pending = false
 					recording = true
+					gl.uniform1f(post_canvas_program.zoom_loc, 1)
+					gl.uniform2fv(post_canvas_program.panning_loc, [0,0])
 				} else {
 					if(recording_stroke_idx === project.brush_strokes.length - 1){
+						// finish
 						if (window.media_recorder.state !== "inactive") {
 								window.media_recorder.stop();
 						}                 
 						recording = false
+
+						resizeDefaultFramebufferIfNeeded(
+							canvasElement, 
+							default_framebuffer, 
+							[canvasElement.clientWidth, canvasElement.clientHeight], 
+							(e) => {}, 
+							()=>{set_shared_uniforms()}
+						)
+						full_redraw_needed = true
 					} else {
 						canvas_fb.back_textures[0].bind_to_unit(1)
 						canvas_fb.clear()
@@ -1066,9 +1083,6 @@
 						Framebuffer.currently_bound = default_framebuffer // not needed?
 
 						post_canvas_program.use()
-						gl.uniform1f(post_canvas_program.zoom_loc, zoom[0])
-						gl.uniform2fv(post_canvas_program.panning_loc, panning)
-						gl.uniform1i(post_canvas_program.blending_colour_space_loc, blending_colour_space)
 
 						canvas_fb.back_textures[0].bind_to_unit(1)
 						
@@ -1077,6 +1091,12 @@
 						recording_stroke_idx++
 					}
 				}
+			
+		}
+
+		const draw = (_t: number) => {
+			if(recording_pending || recording){
+				video_recording_if_needed()
 				requestAnimationFrame(draw)
 				return
 			}
@@ -1089,8 +1109,10 @@
 				default_framebuffer, 
 				default_framebuffer._textures[0].res, 
 				(v: boolean) => {
-				redraw_needed = v
-			},()=>{set_shared_uniforms()})
+					redraw_needed = v
+				},
+				()=>{set_shared_uniforms()}
+			)
 			io.tick()
 			
 			
