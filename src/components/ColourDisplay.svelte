@@ -39,14 +39,15 @@
 	const chroma_oklch = (col: number[]) => {
 		return chroma.oklch(col[0], col[1], col[2])
 	}
-
-	const pointerMove = ({clientX, clientY}) => {
-		const scale = 1./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
-		const valueDiffY = -(clientY - prevY)
-		const valueDiffX = clientX - prevX
-		
-		prevX = clientX
+	
+	export let colAdjustStart = (clientX: number, clientY: number, is_vs_adjusting: boolean)=>{
+		dragging = true
 		prevY = clientY
+		prevX = clientX
+		startValue = [colour[0], colour[1], colour[2], 1]
+	}
+	export let colAdjustMove = (valueDiffX: number, valueDiffY: number) => {
+		const scale = 1./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
 
     let col = chroma_gl(colour).oklch()
 
@@ -66,19 +67,29 @@
     colour[1] = col[1]
     colour[2] = col[2]
 	}
+	export let colAdjustEnd = () => {
+		dragging = false
+		stopped_dragging = true
+	}
+
+	const pointerMove = ({clientX, clientY}) => {
+		const valueDiffY = -(clientY - prevY)
+		const valueDiffX = clientX - prevX
+		colAdjustMove(valueDiffX, valueDiffY)
+		
+		prevX = clientX
+		prevY = clientY
+	}
 
 	const pointerDown = (e: PointerEvent) => {
-		dragging = true
 		const {clientX, clientY} = e
-		prevY = clientY
-		prevX = clientX
-		startValue = [colour[0], colour[1], colour[2], 1]
-
 
 		const rect = container.getBoundingClientRect();
 		const x_relative_to_element = (e.clientX - rect.left)/rect.width;
 		
 		is_vs_adjusting = x_relative_to_element > 0.5
+
+		colAdjustStart(clientX, clientY, is_vs_adjusting)
 
 		window.addEventListener('pointermove', pointerMove)
 		window.addEventListener('pointerup', pointerUp)
@@ -86,8 +97,7 @@
 	}
 
 	const pointerUp = () => {
-		dragging = false
-		stopped_dragging = true
+		colAdjustEnd()
 		window.removeEventListener('pointermove', pointerMove)
 		window.removeEventListener('pointerup', pointerUp)
 	}

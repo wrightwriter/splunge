@@ -100,6 +100,10 @@ export class IO {
 	mmb_just_pressed = false
 	mmb_down = false
 
+	pen_button_just_unpressed = false
+	pen_button_just_pressed = false
+	pen_button_down = false
+
 	mouse_wheel: number = 0
 
 	pressure: number = 0.0
@@ -140,6 +144,8 @@ export class IO {
 		this.mouse_down_prev = this.mouse_down
 		this.mmb_just_unpressed = false
 		this.mmb_just_pressed = false
+		this.pen_button_just_pressed = false
+		this.pen_button_just_unpressed = false
 		this.mouse_wheel = 0
 		this.two_finger_pinch_prev = this.two_finger_pinch
 		this.just_finished_pinch = false
@@ -191,8 +197,27 @@ export class IO {
 				l_alt.down = false
 			}
 		})
+		// window.addEventListener('pointerrawupdate', (e) => {
+		// 	console.log(e)
+		// })
 
-		window.addEventListener('pointermove', (e) => {
+		// @ts-ignore
+		window.addEventListener('pointerrawupdate', (e: PointerEvent) => {
+			// if (e.buttons > 0) {
+			// 	console.log(e)
+			// }
+			// console.log(e)
+			if (e.height > 0 && e.buttons > 0) {
+				if (!this.pen_button_down) {
+					this.pen_button_just_pressed = true
+					this.pen_button_down = true
+				}
+			} else if (e.buttons <= 0) {
+				if (this.pen_button_down) {
+					this.pen_button_just_unpressed = true
+					this.pen_button_down = false
+				}
+			}
 			const getRelativeMousePosition = (event: PointerEvent, target) => {
 				target = target || event.target
 				const rect = target.getBoundingClientRect()
@@ -311,12 +336,37 @@ export class IO {
 			touch_end(e)
 		})
 
+		// canvas_element.addEventListener('pointerleave', (e) => {
+		// 	if (this.pen_button_down) {
+		// 		this.pen_button_just_unpressed = true
+		// 		this.pen_button_down = true
+		// 	}
+		// })
+
 		canvas_element.addEventListener('pointerdown', (e) => {
+			// console.log(e)
+			// if (e.buttons > 0) {
+			// if (!this.pen_button_down) {
+			// 	this.pen_button_just_pressed = true
+			// 	this.pen_button_down = true
+			// 	console.log('pen button press')
+			// }
+			// }
+			// console.log(e)
 			this.pointerType = e.pointerType
 			if (e.pointerType === 'mouse' && e.button !== 0) return
 			this.mouse_down = true
 		})
-		window.addEventListener('pointerup', () => {
+		window.addEventListener('pointerup', (e) => {
+			// console.log(e)
+			// {
+			// 	if (this.pen_button_down) {
+			// 		this.pen_button_just_unpressed = true
+			// 		this.pen_button_down = false
+			// 		console.log('pen button unpress')
+			// 	}
+			// }
+			// console.log(e)
 			this.mouse_down = false
 		})
 	}

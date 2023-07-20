@@ -35,7 +35,11 @@
 				<RGBSliders bind:colour={stroke_col} />
 				<ColourDisplay 
 					bind:colour={stroke_col} 
-					bind:update_display={trigger_colour_display_update} />
+					bind:update_display={trigger_colour_display_update} 
+					bind:colAdjustStart={colAdjustStart}
+					bind:colAdjustMove={colAdjustMove}
+					bind:colAdjustEnd={colAdjustEnd}
+					/>
 			</div>
 			<!-- <BrushTypeWidget bind:selected_brush_type={curr_brush.selected_brush_type} /> -->
 			<BrushTypeWidget bind:curr_brush={curr_brush} />
@@ -102,7 +106,7 @@
 			<TextureWidget bind:brush_textures={brush_textures} bind:selected_brush_texture={curr_brush.selected_brush_texture} />
 		</SemiModal>
 	</div>
-	<canvas id="canvas" bind:this={canvasElement} />
+	<canvas draggable="false" id="canvas" bind:this={canvasElement} />
 </main>
 
 
@@ -177,6 +181,11 @@
 	let project_has_been_modified = false
 	let is_safe_to_switch_to_new_project
 	let full_redraw_needed: boolean = false
+
+	let colAdjustStart : (clientX: number, clientY: number, is_vs_adjusting: boolean)=>void
+	let colAdjustMove : (valueDiffX: number, valueDiffY: number)=>void
+	let colAdjustEnd : () => void
+
 	const zoom = window.zoom = Float32Array.from([1])
 	let desired_zoom = 1
 	const panning_temp_pinch = new Float32Array(2)
@@ -771,6 +780,18 @@
 		}
 		
 		const handle_input_actions = ()=>{
+			if(io.pen_button_just_pressed){
+				// console.log(e)
+				console.log('pen button press')
+				mouse_over_colour_picker = true
+				colAdjustStart(io.mouse_pos[0], io.mouse_pos[1], true)
+			} else if (io.pen_button_down){
+				colAdjustMove(io.delta_mouse_pos[0]*1000, io.delta_mouse_pos[1]*1000)
+			} else if(io.pen_button_just_unpressed){
+				mouse_over_colour_picker = false
+				redraw_needed = true
+				colAdjustEnd()
+			}
 			if (io.getKey('AltLeft').down) {
 				if (io.getKey('AltLeft').just_pressed) {
 					picking = true
