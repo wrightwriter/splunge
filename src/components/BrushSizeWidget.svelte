@@ -21,31 +21,50 @@
 	let startValue = [0, 0]
 	let startX = 0
 
-	const pointerMove = ({clientX, clientY}) => {
+	let prevX = 0
+	let prevY = 0
+
+	export let brushResizeStart = (clientX: number, clientY: number)=>{
+		dragging = true
+		prevY = startY = clientY
+		prevX = startX = clientX
+		// startValue = [...brush_sz]
+		startValue[0] = brush_sz[0]
+		startValue[1] = brush_sz[1]
+	}
+
+	export let brushResizeMove = (valueDiffX: number, valueDiffY: number) => {
 		const scale = 10./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
+		// const scale = 1./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
+		brush_sz[0] += valueDiffX * scale
+		brush_sz[1] += valueDiffY * scale
+		brush_sz[0] = clamp(brush_sz[0], 0.0, 5.0)
+		brush_sz[1] = clamp(brush_sz[1], 0.0, 5.0)
+	}
 
-		const valueDiffY = (startY - clientY) * scale
-		const valueDiffX = (startX - clientX) * scale
+	export let brushResizeEnd = () => {
+		dragging = false
+		stopped_dragging = true
+	}
 
-		brush_sz[0] = clamp(startValue[0] - valueDiffX,0,5)
-		brush_sz[1] = clamp(startValue[1] + valueDiffY,0,5)
+	const pointerMove = ({clientX, clientY}) => {
+		const valueDiffY = clientY - prevY
+		const valueDiffX = clientX - prevX 
+
+		brushResizeMove(valueDiffX, -valueDiffY)
+		prevX = clientX
+		prevY = clientY
 	}
 
 	const pointerDown = (e: PointerEvent) => {
-		dragging = true
-		const {clientX, clientY} = e
-		startY = clientY
-		startX = clientX
-		startValue = [...brush_sz]
-
+		brushResizeStart(e.clientX, e.clientY)
 		window.addEventListener('pointermove', pointerMove)
 		window.addEventListener('pointerup', pointerUp)
 		e.stopPropagation()
 	}
 
 	const pointerUp = () => {
-		dragging = false
-		stopped_dragging = true
+		brushResizeEnd()
 		window.removeEventListener('pointermove', pointerMove)
 		window.removeEventListener('pointerup', pointerUp)
 	}
@@ -54,6 +73,7 @@
 <style lang="scss">
   @import "/../styles/icon.scss" scoped; 
 	.knob-container-container {
+		width: 0px;
 		aspect-ratio: 1/1;
 
 		&:active{
