@@ -102,6 +102,7 @@ export class IO {
 
 	pen_button_just_unpressed = false
 	pen_button_just_pressed = false
+	pen_button_press_pos = new Float32Array(2)
 	pen_button_down = false
 
 	mouse_wheel: number = 0
@@ -197,56 +198,41 @@ export class IO {
 				l_alt.down = false
 			}
 		})
-		// window.addEventListener('pointerrawupdate', (e) => {
-		// 	console.log(e)
-		// })
 
 		// @ts-ignore
 		window.addEventListener('pointerrawupdate', (e: PointerEvent) => {
-			// if (e.buttons > 0) {
-			// 	console.log(e)
-			// }
-			// console.log(e)
-			if (e.height > 0 && e.buttons > 0) {
-				if (!this.pen_button_down) {
-					this.pen_button_just_pressed = true
-					this.pen_button_down = true
-				}
-			} else if (e.buttons <= 0) {
-				if (this.pen_button_down) {
-					this.pen_button_just_unpressed = true
-					this.pen_button_down = false
-				}
-			}
-			const getRelativeMousePosition = (event: PointerEvent, target) => {
-				target = target || event.target
-				const rect = target.getBoundingClientRect()
-
-				return {
-					x: event.clientX - rect.left,
-					y: event.clientY - rect.top,
-				}
-			}
-			const getNoPaddingNoBorderCanvasRelativeMousePosition = (event: PointerEvent, target) => {
-				target = target || event.target
-				const pos = getRelativeMousePosition(event, target)
-
-				pos.x = (pos.x * target.width) / target.clientWidth
-				pos.y = (pos.y * target.height) / target.clientHeight
-
-				return pos
-			}
-			// if (e.pointerType === 'pen') {
-			// console.log(e)
 			const gl = window.gl
-			const pos = getNoPaddingNoBorderCanvasRelativeMousePosition(e, gl.canvas)
 
-			const x = (pos.x / gl.canvas.width) * 2 - 1
-			const y = (pos.y / gl.canvas.height) * -2 + 1
+			// @ts-ignore
+			const rect = gl.canvas.getBoundingClientRect()
+
+			// @ts-ignore
+			let pos_x = ((e.clientX - rect.left) * gl.canvas.width) / gl.canvas.clientWidth
+			// @ts-ignore
+			let pos_y = ((e.clientY - rect.top) * gl.canvas.height) / gl.canvas.clientHeight
+
+			const x = (pos_x / gl.canvas.width) * 2 - 1
+			const y = (pos_y / gl.canvas.height) * -2 + 1
 
 			// this.mouse_pos = [x, y]
 			this.mouse_pos[0] = x
 			this.mouse_pos[1] = y
+
+			if (e.pointerType === 'pen') {
+				if (e.height > 0 && e.buttons > 0) {
+					if (!this.pen_button_down) {
+						this.pen_button_just_pressed = true
+						this.pen_button_press_pos[0] = this.mouse_pos[0]
+						this.pen_button_press_pos[1] = this.mouse_pos[1]
+						this.pen_button_down = true
+					}
+				} else if (e.buttons <= 0) {
+					if (this.pen_button_down) {
+						this.pen_button_just_unpressed = true
+						this.pen_button_down = false
+					}
+				}
+			}
 
 			const is_back = this.mouse_positions_arr_idx === 0
 			const positions = is_back ? this._mouse_positions_during_last_frame_b : this._mouse_positions_during_last_frame
@@ -357,15 +343,19 @@ export class IO {
 			if (e.pointerType === 'mouse' && e.button !== 0) return
 			this.mouse_down = true
 		})
+		canvas_element.addEventListener('pointerleave', (e) => {
+			// console.log(e)
+			{
+				if (this.pen_button_down) {
+					this.pen_button_just_unpressed = true
+					this.pen_button_down = false
+					console.log('pen button unpress')
+				}
+			}
+			this.mouse_down = false
+		})
 		window.addEventListener('pointerup', (e) => {
 			// console.log(e)
-			// {
-			// 	if (this.pen_button_down) {
-			// 		this.pen_button_just_unpressed = true
-			// 		this.pen_button_down = false
-			// 		console.log('pen button unpress')
-			// 	}
-			// }
 			// console.log(e)
 			this.mouse_down = false
 		})

@@ -4,9 +4,9 @@
   import {floating_modal_message} from "store"
   let displayed_message: string | undefined = undefined
   
-  const display_time = 1
+  const display_time = 0.5
   const fade_in_t = 0.2
-  const fade_out_t = 1
+  const fade_out_t = 0.2
   
   let fading_in = true
 
@@ -58,13 +58,14 @@
     pointer-events: none;
   }
   #floating-modal {
-		position: fixed;
+		// position: fixed;
+		position: absolute;
 		width: fit-content;
 		height: fit-content;
-    top: 50%;
+    top: 30%;
     left: 50%;
     transform: translate(-50%, -50%);
-		z-index: 100;
+		z-index: 1000000000000000;
     #text{
       backdrop-filter: blur(0.3rem) invert(0.3);
       padding: 1rem;

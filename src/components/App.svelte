@@ -18,7 +18,11 @@
 			<BrushSizeWidget
 				bind:brush_sz={brush_sz}
 				bind:dragging={brush_size_widget_dragging}
-				bind:stopped_dragging={brush_size_widget_stopped_dragging} />
+				bind:stopped_dragging={brush_size_widget_stopped_dragging}
+				bind:brushResizeStart={brushResizeStart}
+				bind:brushResizeMove={brushResizeMove}
+				bind:brushResizeEnd={brushResizeEnd}
+				 />
 			<div 
 				style={`
 					height: 100%; 
@@ -32,7 +36,7 @@
 				on:pointerenter={()=>{mouse_over_colour_picker = true}}
 				on:pointerleave={()=>{mouse_over_colour_picker = false; mouse_over_colour_picker_finished = true}}
 			>
-				<RGBSliders bind:colour={stroke_col} />
+				<!-- <RGBSliders bind:colour={stroke_col} /> -->
 				<ColourDisplay 
 					bind:colour={stroke_col} 
 					bind:update_display={trigger_colour_display_update} 
@@ -185,6 +189,10 @@
 	let colAdjustStart : (clientX: number, clientY: number, is_vs_adjusting: boolean)=>void
 	let colAdjustMove : (valueDiffX: number, valueDiffY: number)=>void
 	let colAdjustEnd : () => void
+
+	let brushResizeStart : (clientX: number, clientY: number, is_vs_adjusting: boolean)=>void
+	let brushResizeMove : (valueDiffX: number, valueDiffY: number)=>void
+	let brushResizeEnd : () => void
 
 	const zoom = window.zoom = Float32Array.from([1])
 	let desired_zoom = 1
@@ -402,6 +410,11 @@
 			brush_presets[0].tex_distort[0] = 0.294
 			brush_presets[0].tex_distort[1] = 0
 			brush_presets[0].tex_distort_amt = 0.18
+			brush_presets[0].tex_lch_dynamics[1] = 0.8
+			brush_presets[0].tex_lch_dynamics[2] = 1.0
+
+			brush_presets[0].stroke_opacity_dynamics[0] = 0.5
+			brush_presets[0].stroke_size_dynamics[0] = 0.
 			// brush_presets[0].noise_stretch[0] = curr_brush.noise_stretch[0] = 0
 			// brush_presets[0].noise_stretch[1] = curr_brush.noise_stretch[1] = 0.1
 			curr_brush.tex_stretch[0] = brush_presets[0].tex_stretch[0]
@@ -409,14 +422,41 @@
 		}
 		{
 			brush_presets[1].selected_brush_type = BrushType.Blobs
-			brush_presets[1].selected_brush_texture = brush_textures[0]
+			brush_presets[1].selected_brush_texture = brush_textures[6]
 			brush_presets[1].tex_stretch[0] = 0.5 + 1/20
 			brush_presets[1].tex_stretch[1] = 0.5 + 1/20
 			brush_presets[1].tex_distort[0] = 0
 			brush_presets[1].tex_distort[1] = 0
-			// brush_presets[1].noise_stretch[0] = curr_brush.noise_stretch[0] = 0
-			// brush_presets[1].noise_stretch[1] = curr_brush.noise_stretch[1] = 0.1
-			
+			brush_presets[1].stroke_opacity_dynamics[0] = 1
+			brush_presets[1].stroke_opacity_dynamics[1] = 1
+			brush_presets[1].stroke_size_dynamics[0] = 0
+			brush_presets[1].stroke_size_dynamics[1] = 1
+		}
+		{
+			brush_presets[2].selected_brush_type = BrushType.Tri
+			brush_presets[2].selected_brush_texture = brush_textures[5]
+			brush_presets[2].tex_stretch[0] = 0.5 + 1/20 - 1/40
+			brush_presets[2].tex_stretch[1] = 0.5 + 1/20 - 1/40
+			brush_presets[2].tex_distort[0] = 0
+			brush_presets[2].tex_distort[1] = 0
+			brush_presets[2].stroke_opacity_dynamics[0] = 1
+			brush_presets[2].stroke_opacity_dynamics[1] = 1
+			brush_presets[2].stroke_size_dynamics[0] = 0
+			brush_presets[2].stroke_size_dynamics[1] = 1
+		}
+
+
+		{
+			brush_presets[5].selected_brush_type = BrushType.Long
+			brush_presets[5].selected_brush_texture = brush_textures[4]
+			brush_presets[5].tex_grit = 1.0
+			brush_presets[5].stroke_opacity_dynamics[0] = 0
+			brush_presets[5].stroke_opacity_dynamics[1] = 1
+			brush_presets[5].stroke_size_dynamics[0] = 0
+			brush_presets[5].stroke_size_dynamics[1] = 1
+			brush_presets[5].tex_distort_amt = 0.16
+			brush_presets[5].tex_distort[0] = 0.294
+			brush_presets[5].tex_distort[1] = 0
 		}
 		modals = [chaosSemiModal, dynamicsSemiModal, texDynamicsSemiModal]
 	}
@@ -784,13 +824,31 @@
 				// console.log(e)
 				console.log('pen button press')
 				mouse_over_colour_picker = true
-				colAdjustStart(io.mouse_pos[0], io.mouse_pos[1], true)
+				if(io.pen_button_press_pos[0] > 0.){
+					colAdjustStart(
+						io.mouse_pos[0], 
+						io.mouse_pos[1], 
+						io.pen_button_press_pos[1] > 0.0
+					)
+				} else {
+					brushResizeStart(io.mouse_pos[0], io.mouse_pos[1], true)
+				}
 			} else if (io.pen_button_down){
-				colAdjustMove(io.delta_mouse_pos[0]*1000, io.delta_mouse_pos[1]*1000)
+
+				if(io.pen_button_press_pos[0] > 0.){
+					colAdjustMove(io.delta_mouse_pos[0]*250, io.delta_mouse_pos[1]*250)
+				} else {
+					brushResizeMove(io.delta_mouse_pos[0]*500, io.delta_mouse_pos[1]*500)
+				}
 			} else if(io.pen_button_just_unpressed){
 				mouse_over_colour_picker = false
 				redraw_needed = true
-				colAdjustEnd()
+
+				if(io.pen_button_press_pos[0] > 0.){
+					colAdjustEnd()
+				} else {
+					brushResizeEnd()
+				}
 			}
 			if (io.getKey('AltLeft').down) {
 				if (io.getKey('AltLeft').just_pressed) {
@@ -870,6 +928,7 @@
 				redo_history_length -= 1
 				const idx_now = idx_before + 1
 				if (redo_history_length >= 0) { 
+					floating_modal_message.set("Redo")
 					// ---- DRAW ONE
 					temp_stroke_fb.clear()
 					draw_n_strokes(idx_before,idx_now) 
@@ -897,6 +956,7 @@
 				redo_history_length += 1
 				const idx_now = idx_before - 1
 				if (redo_history_length <= project.brush_strokes.length) { 
+					floating_modal_message.set("Undo")
 					const is_undo_fb_a = ( idx_now >= temp_undo_fb_a_idx && idx_now < temp_undo_fb_a_idx + undo_cache_steps )
 					const is_undo_fb_b =  ( idx_now >= temp_undo_fb_b_idx  && idx_now < temp_undo_fb_b_idx + undo_cache_steps )
 					const undo_fb = is_undo_fb_a ? temp_undo_fb_a : is_undo_fb_b ? temp_undo_fb_b : undefined;

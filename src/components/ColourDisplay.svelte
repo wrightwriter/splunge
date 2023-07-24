@@ -40,7 +40,8 @@
 		return chroma.oklch(col[0], col[1], col[2])
 	}
 	
-	export let colAdjustStart = (clientX: number, clientY: number, is_vs_adjusting: boolean)=>{
+	export let colAdjustStart = (clientX: number, clientY: number, _is_vs_adjusting: boolean)=>{
+		is_vs_adjusting = _is_vs_adjusting
 		dragging = true
 		prevY = clientY
 		prevX = clientX
@@ -49,7 +50,19 @@
 	export let colAdjustMove = (valueDiffX: number, valueDiffY: number) => {
 		const scale = 1./min(document.documentElement.clientWidth, document.documentElement.clientHeight) 
 
-    let col = chroma_gl(colour).oklch()
+		const test = 0
+		
+		let col = [...colour]
+		if(test === 1){
+			col[0] = Math.pow(col[0], 0.454545454545)
+			col[1] = Math.pow(col[1], 0.454545454545)
+			col[2] = Math.pow(col[2], 0.454545454545)
+		} else if (test === 2){
+			col[0] = Math.pow(col[0], 1./0.454545454545)
+			col[1] = Math.pow(col[1], 1./0.454545454545)
+			col[2] = Math.pow(col[2], 1./0.454545454545)
+		}
+    col = chroma_gl(col).oklch()
 
     col[0] += valueDiffY*1.0*scale
 		if(is_vs_adjusting){
@@ -63,6 +76,16 @@
 
     // @ts-ignore
     col = chroma_oklch(col).gl()
+		if(test === 1){
+			col[0] = Math.pow(col[0], 1./0.454545454545)
+			col[1] = Math.pow(col[1], 1./0.454545454545)
+			col[2] = Math.pow(col[2], 1./0.454545454545)
+		} else if (test === 2){
+			col[0] = Math.pow(col[0], 0.454545454545)
+			col[1] = Math.pow(col[1], 0.454545454545)
+			col[2] = Math.pow(col[2], 0.454545454545)
+		}
+
     colour[0] = col[0]
     colour[1] = col[1]
     colour[2] = col[2]
