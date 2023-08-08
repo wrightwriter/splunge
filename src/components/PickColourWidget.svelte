@@ -9,15 +9,15 @@
 <script lang="ts">
 	import pickIcon from '/../public/plug.svg'
 
-	export let pick_from_canvas: () => number[]
+	export let pick_from_canvas: () => Promise<number[]>
   
   let pickerElement: HTMLElement
   
   export let picking = false
   export let just_finished_pick = false
 
-	function pointerMove({ clientX, clientY }) {
-   pick_from_canvas()
+	async function pointerMove({ clientX, clientY }) {
+  	await pick_from_canvas()
 	}
 	const pointerUp = () => {
     picking = false

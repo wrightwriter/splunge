@@ -59,7 +59,9 @@
 				<GalleryWidget
 					bind:current_project={project}
 					get_current_canvas_as_image={async () => {
-						let [img, blob] = await canvas_read_tex.read_back_image(true)
+						// let [img, blob] = await temp_stroke_fb.back_textures[0].read_back_image(true)
+						let [img, blob] = await canvas_fb.back_textures[0].read_back_image(true)
+
 						return [img, blob]
 					}} 
 					new_project={()=>{ 
@@ -75,7 +77,7 @@
 					bind:is_safe_to_switch_to_new_project={is_safe_to_switch_to_new_project}
 					/>
 				<PickColourWidget
-					pick_from_canvas={() => pick_from_canvas()}
+					pick_from_canvas={async () => await pick_from_canvas()}
 					bind:picking={picking}
 					bind:just_finished_pick={just_finished_pick} />
 			<!-- </FourIconsWidget> -->
@@ -119,7 +121,7 @@
 	import {onDestroy} from 'svelte'
 	import {floating_modal_message} from 'store'
 
-	import {resizeIfNeeded as resizeDefaultFramebufferIfNeeded, print_on_gl_error, init_gl_error_handling, copy_fb_to_texture, copy_fb_to_fb} from 'gl_utils'
+	import {resizeIfNeeded as resizeDefaultFrameBufferIfNeeded} from 'gl_utils'
 
 	import Knob from './Knob.svelte'
 	import BrushSizeWidget from './BrushSizeWidget.svelte'
@@ -139,19 +141,21 @@
 	import SemiModal from './SemiModal.svelte'
 	import FourIconsWidget from './FourIconsWidget.svelte'
 	import {IO} from 'IO'
-	import chroma from 'chroma-js'
+	import chroma, { lab } from 'chroma-js'
 	import {Hash, abs, pow, tau, mix, max, log2} from 'wmath'
 	import {clamp, lerp, mod, smoothstep} from '@0b5vr/experimental'
 	import {BrushTexture, DexieSketchDB, Project, Utils} from 'stuff'
 	import {BlendingColourSpace, BrushPreset, BrushStroke, BrushType, DrawParams} from 'brush_stroke'
 	import {Drawer} from 'drawer'
-	import { Framebuffer } from 'gl/Framebuffer'
-	import { VertexBuffer, UBO } from 'gl/Buffer'
-	import { Texture } from 'gl/Texture'
-	import { ShaderProgram } from 'gl/ShaderProgram'
-	import { Thing } from 'gl/Thing'
+	import { VertexBuffer } from 'gl/wvertexbuffer'
+	import { FrameBuffer, QuadVerts, Shader, StorageBuffer, Texture, Thing, UniformBuffer, WrightGPU } from 'gl/wgpu'
+	import { BindGroup, type BindGroupElement } from 'gl/wbindgroup'
+	// import { FrameBuffer } from 'gl/FrameBuffer'
+	// import { VertexBuffer, UBO } from 'gl/Buffer'
+	// import { Texture } from 'gl/Texture'
+	// import { ShaderProgram } from 'gl/ShaderProgram'
+	// import { Thing } from 'gl/Thing'
 	// import Dexie, { type DBCoreRangeType } from "dexie"
-
 
 	window.sketch_db = new DexieSketchDB()
 
@@ -211,7 +215,8 @@
 
 
 	// Internals
-	const undo_cache_steps = 15
+	const undo_cache_steps = 60
+	const temp_fbs_count = 15
 	const hash = new Hash()
 	let io: IO
 	let gl: WebGL2RenderingContext
@@ -220,17 +225,36 @@
 	let is_temp_project: boolean
 
 	// GL stuff
-	let default_framebuffer: Framebuffer
-	let canvas_fb: Framebuffer
-	let canvas_read_tex: Texture
-	let temp_undo_fb_a: Framebuffer
-	let temp_undo_fb_b: Framebuffer
+	let default_framebuffer: FrameBuffer
+	let canvas_fb: FrameBuffer
+	// let temp_stroke_fb: FrameBuffer
+	let temp_stroke_fbs: FrameBuffer[]
+	let temp_stroke_fbs_bind_group: BindGroup
+	let temp_undo_fb_a: FrameBuffer
+	let temp_undo_fb_b: FrameBuffer
+
+	let webgpu_back_texture: Texture
 	
+	let compositeThing: Thing
+	let brushStrokeThing: Thing
+	let postThing: Thing
+	let brushPreviewThing: Thing
+	let pickerPreviewThing: Thing
+	let colourPreviewThing: Thing
+	
+	let param_buff: VertexBuffer	
+	let quad_buff: VertexBuffer	
+	let drawer_buff_a: VertexBuffer
+	let drawer_buff_b: VertexBuffer
+
 	let temp_undo_fb_a_idx = 100000
 	let temp_undo_fb_b_idx = 100000
+	
+	let sharedBindGroup: BindGroup
+	let sharedBindGroupTempTextures: BindGroup
 
 	let drawer: Drawer
-	let ubo: UBO
+	let ubo: UniformBuffer
 
 	// Drawing params
 	let stroke_col: Array<number> = [0.5, 0.4, 0.3, 1]
@@ -246,36 +270,59 @@
 	let brush_params_mat = new Float32Array(16)
 
 	// Funcs
-	let resize_project: (sz: number[])=>void
+	let resize_project: (sz: number[])=>Promise<void>
 	let trigger_colour_display_update: (colour_r, colour_g, colour_b)=>void
 
 	const set_shared_uniforms = () => {
-		ubo.buff.sz = 0
-		ubo.buff.cpu_buff[0] = canvas_fb._textures[0].res[0]
-		ubo.buff.cpu_buff[1] = canvas_fb._textures[0].res[1]
-		ubo.buff.cpu_buff[2] = default_framebuffer.textures[0].res[0]
-		ubo.buff.cpu_buff[3] = default_framebuffer.textures[0].res[1]
-		ubo.buff.cpu_buff[4] = isOnMobile ? 1 : 0
-		ubo.buff.upload()
+		// ubo.sz = 0
+		ubo.mappedArr[0] = canvas_fb._textures[0].res[0]
+		ubo.mappedArr[1] = canvas_fb._textures[0].res[1]
+		ubo.mappedArr[2] = default_framebuffer.textures[0].res[0]
+		ubo.mappedArr[3] = default_framebuffer.textures[0].res[1]
+		ubo.mappedArr[4] = isOnMobile ? 1 : 0
+		ubo.mappedArr[5] = zoom[0]
+		ubo.mappedArr[6] = panning[0]
+		ubo.mappedArr[7] = panning[1]
+		ubo.mappedArr[8] = blending_colour_space
+		ubo.mappedArr[15 - 3 - 4] = stroke_col[0]
+		ubo.mappedArr[15 - 2 - 4] =stroke_col[1] 
+		ubo.mappedArr[15 - 1 - 4] =stroke_col[2] 
+		// ubo.mappedArr[15 - 1 - 1] = brush_sz[0]
+		// ubo.mappedArr[15 - 4] =brush_sz[0] 
+		ubo.mappedArr[15 - 3] = io.mouse_pos[0]
+		ubo.mappedArr[15 - 2] = io.mouse_pos[1] 
+		ubo.mappedArr[15 - 1] = brush_sz[0]
+		ubo.mappedArr[15] = brush_sz[1] 
+
+		ubo.mappedArr[15 + 1] = picked_col[0]
+		ubo.mappedArr[15 + 2] = picked_col[1] 
+		ubo.mappedArr[15 + 3] = picked_col[2] 
+		ubo.mappedArr[16 + 4] = temp_stroke_fbs.length
+		// ubo.mappedArr[15 - 0] = zoom[0]
+		// ubo.upload()
+		ubo.sz = 32
+		ubo.upload()
 	}
 
-	const pick_from_canvas = () => {
+	const pick_from_canvas = async () => {
+		
 		let coord = Utils.texture_NDC_to_texture_pixel_coords(
-			Utils.screen_NDC_to_canvas_NDC([...io.mouse_pos], default_framebuffer.textures[0], canvas_read_tex, zoom[0], panning),
-			canvas_read_tex,
+			Utils.screen_NDC_to_canvas_NDC([...io.mouse_pos], default_framebuffer.textures[0], canvas_fb.back_textures[0], zoom[0], panning),
+			canvas_fb.back_textures[0],
 		)
-		let c = canvas_read_tex.read_back_pixel(coord)
+		let c = await canvas_fb.back_textures[0].read_back_pixel(coord)
 		// console.log(c)
 
 		picked_col = [...c]
-		picked_col[0] = c[0] / 255
-		picked_col[1] = c[1] / 255
-		picked_col[2] = c[2] / 255
-		picked_col[0] = pow(picked_col[0], 0.45454545454545)
-		picked_col[1] = pow(picked_col[1], 0.45454545454545)
-		picked_col[2] = pow(picked_col[2], 0.45454545454545)
+		// picked_col[0] = c[0] / 255
+		// picked_col[1] = c[1] / 255
+		// picked_col[2] = c[2] / 255
+		// picked_col[0] = pow(picked_col[0], 0.45454545454545)
+		// picked_col[1] = pow(picked_col[1], 0.45454545454545)
+		// picked_col[2] = pow(picked_col[2], 0.45454545454545)
 		picked_col.pop()
 		return c
+		// return [1,1,1]
 	}
 
 	const openModal = (modal: SemiModal) => {
@@ -296,82 +343,15 @@
 		}
 	}
 
-	const init_web_gl = () => {
+	const init_web_gl = async () => {
+		window.wgpu = new WrightGPU(canvasElement)
+		await window.wgpu.initializeGPU()
+		default_framebuffer = wgpu.defaultFramebuffer
 		window.isOnMobile = Utils.isOnMobile()
-		window.gl = gl = canvasElement.getContext('webgl2', {
-			preserveDrawingBuffer: true,
-			alpha: false,
-			premultipliedAlpha: false,
-			antialias: true
-		}) as WebGL2RenderingContext
-		gl.getExtension('OES_texture_float');
-		gl.getExtension('OES_texture_float_linear');
-		gl.getExtension('EXT_color_buffer_float');
-
-
-		gl.debugEnabled = process.env.NODE_ENV === 'development'
-		gl.debugEnabled = false
-		init_gl_error_handling()
 
 		const userAgentRes = [canvasElement.clientWidth, canvasElement.clientWidth]
 
-		default_framebuffer = Object.create(Framebuffer.prototype)
-		default_framebuffer.default = true
-		default_framebuffer.pongable = false
-		default_framebuffer.needs_pong = false
-		default_framebuffer.pong_idx = 0
-		// @ts-ignore
-		default_framebuffer._fb = null
-		default_framebuffer._textures = [Object.create(Texture.prototype)]
-		default_framebuffer.textures[0].res = [...userAgentRes]
 
-		default_framebuffer.bind()
-
-		canvas_fb = new Framebuffer([
-			new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, !isOnMobile) 
-		], true)
-
-		temp_undo_fb_a = new Framebuffer([
-			new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, false) 
-		], false)
-
-		temp_undo_fb_b = new Framebuffer([
-			new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, false) 
-		], false)
-
-		
-
-		ubo = new UBO()
-		window.ubo = ubo
-		
-
-		resizeDefaultFramebufferIfNeeded(canvasElement, default_framebuffer, userAgentRes, (e) => {}, ()=>{set_shared_uniforms()})
-		set_shared_uniforms()
-
-		gl.disable(gl.CULL_FACE)
-		gl.disable(gl.DEPTH_TEST)
-		gl.enable(gl.BLEND)
-		
-		gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA,);
-		gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD) 
-	}
-	const init_other_stuff = async () => {
-		window.addEventListener("dragstart",(event)=>{
-			event.preventDefault();
-		})
-		if ("wakeLock" in navigator) {
-			try{
-				const wakeLock = await navigator.wakeLock.request("screen");
-			} catch(_){
-
-			}
-		} 
-		io = new IO()
-		document.addEventListener('contextmenu', (event) => event.preventDefault())
-		window.history.pushState(null, "", window.location.href);
-		window.addEventListener('popstate', ()=> {
-			window.history.pushState(null, "", window.location.href);
-		});
 
 		noise_tex = await Texture.from_image_path(require("../../public/images/noise_tex.webp").default)
 
@@ -397,6 +377,230 @@
 			await BrushTexture.create(require("../../public/images/square.webp").default, 6)
 		)
 		brush_textures = [...brush_textures]
+
+		quad_buff = new VertexBuffer({bufferDataArray: QuadVerts, pads: [2]})
+
+		canvas_fb = new FrameBuffer({depth: false, pongable: true, format: "rgba32float", label: "canvas_fb", attachmentTextures: [
+			new Texture({label: "canvas_fb_tex"}),
+		]});
+
+
+    param_buff = new VertexBuffer(
+      { bufferDataArray: new Float32Array(16 * 1_000_00) ,pads: [2]}
+    )
+		
+		
+		temp_stroke_fbs = []
+		let temp_stroke_textures = []
+		for(let i = 0; i < temp_fbs_count; i++){
+			temp_stroke_fbs.push(
+				new FrameBuffer({depth: false, pongable: false, format: "rgba32float", label: "stroke_fb_" + i, attachmentTextures: [
+					new Texture({label: "stroke_fb_tex_" + i}),
+				]})
+			)
+			temp_stroke_textures.push(temp_stroke_fbs[temp_stroke_fbs.length - 1].textures[0])
+		}
+		temp_stroke_fbs_bind_group = new BindGroup(temp_stroke_textures)
+
+
+		temp_undo_fb_a = new FrameBuffer({depth: false, pongable: false, format: "rgba16float", label: "temp_undo_fb", attachmentTextures: [
+			new Texture({label: "temp_undo_fb_tex"}),
+		]})
+		temp_undo_fb_b = new FrameBuffer({depth: false, pongable: false, format: "rgba16float", label: "temp_undo_fb_b", attachmentTextures: [
+			new Texture({label: "temp_undo_fb_b_tex"}),
+		]})
+		// webgpu_back_fb = new FrameBuffer({depth: false, pongable: false, format: "rgba16float", label: "temp_undo_fb_b", attachmentTextures: [
+		// 	new Texture({label: "webgpu_back_fb"}),
+		// ]})
+		webgpu_back_texture = new Texture({
+			label: "webgpu_back_texture",
+			format: "bgra8unorm",
+			usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.COPY_DST,
+			height: wgpu.height,
+			width: wgpu.width
+		})
+
+    
+    drawer_buff_a = new VertexBuffer(
+      { bufferDataArray: new Float32Array(312500 * 10) ,pads: [2]}
+    )
+    drawer_buff_b = new VertexBuffer(
+      { bufferDataArray: new Float32Array(312500 * 10) ,pads: [2]}
+    )    
+		
+
+		window.ubo = ubo
+		sharedBindGroup = new BindGroup([
+      ubo = new UniformBuffer(),
+      {
+        addressModeU: "repeat",
+        addressModeV: "repeat",
+        magFilter: "linear",
+        minFilter: "linear",
+        mipmapFilter: "linear",
+      },
+      drawer_buff_a,
+      drawer_buff_b,
+      param_buff,
+      noise_tex,
+      brush_textures[0].gpu_tex,
+      brush_textures[1].gpu_tex,
+      brush_textures[2].gpu_tex,
+      brush_textures[3].gpu_tex,
+      brush_textures[4].gpu_tex,
+      brush_textures[5].gpu_tex,
+      brush_textures[6].gpu_tex,
+    ])
+		const sharedBindGroupTempTexturesElements: BindGroupElement[] = [
+      ubo,
+      {
+        addressModeU: "repeat",
+        addressModeV: "repeat",
+        magFilter: "linear",
+        minFilter: "linear",
+        mipmapFilter: "linear",
+      },
+      drawer_buff_a,
+      drawer_buff_b,
+      param_buff,
+    ]
+		for(let temp_tex of temp_stroke_textures){
+			sharedBindGroupTempTexturesElements.push(temp_tex)
+		}
+
+		sharedBindGroupTempTextures = new BindGroup(sharedBindGroupTempTexturesElements)
+		brushStrokeThing = new Thing(
+			[], 
+			new Shader(
+				require("../shaders/brush_long_vert.wgsl"),
+				require("../shaders/brush_long_frag.wgsl"),
+				"brush_long_vert",
+				"brush_long_frag",
+			),
+      canvas_fb, 
+      // [Sketch.sharedBindGroup, new BindGroup([canvasFb.textures[0]])]
+      [
+        sharedBindGroup, 
+        // new BindGroup([canvasFb.textures[0]])
+      ],{
+        colorStates: [
+          {
+              format: 'bgra8unorm',
+              blend:{
+                color:{
+                  operation: "add",
+                  srcFactor: "src-alpha",
+                  dstFactor: "one-minus-src-alpha",
+                },
+                alpha: {
+                  operation: "add",
+                  srcFactor: "one",
+                  dstFactor: "one-minus-src-alpha",
+                }
+              }
+          },
+        ],
+				label: "brush_stroke_thing"
+      }
+		)
+		const composite_stroke_to_canvas_program = new Shader(
+      wgpu.getFullScreenQuadVert(),
+			require("../shaders/composite_frag.wgsl"),
+			"composite_vert",
+			"composite_frag",
+		)
+
+    compositeThing = new Thing([],
+      composite_stroke_to_canvas_program,
+      canvas_fb, 
+      [
+        sharedBindGroupTempTextures,
+        new BindGroup([canvas_fb.textures[0]]),
+        // new BindGroup([temp_stroke_fbs[0].textures[0]]),
+				// temp_stroke_fbs_bind_group
+      ],{label: "composite_thing"}
+    )
+		postThing = new Thing([],new Shader(
+			require("../shaders/post_vert.wgsl"),
+			require("../shaders/post_frag.wgsl"),
+				"post_vert",
+				"post_frag",
+			),
+      wgpu.defaultFramebuffer, 
+      [
+        sharedBindGroup,
+        new BindGroup([canvas_fb.textures[0]]),
+        new BindGroup([temp_stroke_fbs[0].textures[0]]),
+				// temp_stroke_fbs_bind_group
+      ],{label: "post_thing"}
+    )
+		brushPreviewThing = new Thing([],new Shader(
+			require("../shaders/brush_preview_vert.wgsl"),
+			require("../shaders/brush_preview_frag.wgsl"),
+				"brush_preview_vert",
+				"brush_preview_frag",
+			),
+      wgpu.defaultFramebuffer, 
+      [
+        sharedBindGroup,
+      ],{label: "brush_preview_thing"}
+    )
+		pickerPreviewThing = new Thing([],new Shader(
+			require("../shaders/picker_preview_vert.wgsl"),
+			require("../shaders/picker_preview_frag.wgsl"),
+				"picker_preview_vert",
+				"picker_preview_frag",
+			),
+      wgpu.defaultFramebuffer, 
+      [
+        sharedBindGroup,
+      ],{label: "picker_preview_thing"}
+    )
+		colourPreviewThing = new Thing([],new Shader(
+			require("../shaders/colour_preview_vert.wgsl"),
+			require("../shaders/colour_preview_frag.wgsl"),
+				"colour_preview_vert",
+				"colour_preview_frag",
+			),
+      wgpu.defaultFramebuffer, 
+      [
+        sharedBindGroup,
+      ],{label: "picker_preview_thing"}
+    )
+	// let brushPreviewThing: Thing
+	// let pickerPreviewThing: Thing
+	// let colourPreviewThing: Thing
+
+  
+			
+			
+
+		resizeDefaultFrameBufferIfNeeded(
+			canvasElement,
+			default_framebuffer,
+			webgpu_back_texture,
+			userAgentRes,
+			(e) => {},
+			()=>{set_shared_uniforms()}
+		)
+	}
+	const init_other_stuff = async () => {
+		window.addEventListener("dragstart",(event)=>{
+			event.preventDefault();
+		})
+		if ("wakeLock" in navigator) {
+			try{
+				const wakeLock = await navigator.wakeLock.request("screen");
+			} catch(_){
+
+			}
+		} 
+		document.addEventListener('contextmenu', (event) => event.preventDefault())
+		window.history.pushState(null, "", window.location.href);
+		window.addEventListener('popstate', ()=> {
+			window.history.pushState(null, "", window.location.href);
+		});
+
 
 		for(let brush of brush_presets){
 			brush.selected_brush_texture = brush_textures[0]
@@ -462,95 +666,18 @@
 	}
 
 	onMount(async () => {
-		init_web_gl()
+		io = new IO()
+		await init_web_gl()
 		await init_other_stuff()
-
-		default_framebuffer.bind()
-		default_framebuffer.clear([0, 0, 0, 1])
- 
-		canvas_fb.clear([0, 0, 0, 0])
-		canvas_fb.pong()
-		canvas_fb.back_textures[0].bind_to_unit(1)
-		canvas_fb.clear([0, 0, 0, 0])
-
-		const temp_stroke_fb = new Framebuffer([
-			new Texture([project.canvasRes[0], project.canvasRes[1]], gl.RGBA16F, !isOnMobile)
-		])
-		temp_stroke_fb.clear([0, 0, 0, 0])
-
-		//! ------------------- SHADERS
-		const init_texture_uniforms = (program: ShaderProgram) =>{
-			program.setUniformTexture('temp_tex', temp_stroke_fb.textures[0], 0)
-			program.setUniformTexture('canvas_back', canvas_fb.back_textures[0], 1)
-			program.setUniformTexture('canvas_b', canvas_fb._textures[0], 2)
-			program.setUniformTexture('canvas_a', canvas_fb._back_textures[0], 3)
-			
-			const brush_tex_start_idx = 5
-			brush_textures.forEach((brush_tex, i )=>{
-				const name = `brush_texture[${i}]`
-				console.log(name)
-				const brush_textures_loc = gl.getUniformLocation(program.program, name)
-				brush_tex.gpu_tex.bind_to_unit(brush_tex_start_idx + i)				
-				gl.uniform1i(brush_textures_loc, brush_tex_start_idx + i);
-			})
-			 
-			noise_tex.bind_to_unit(brush_tex_start_idx + brush_textures.length)				
-			const noise_tex_loc = gl.getUniformLocation(program.program, "noise_tex")
-			gl.uniform1i(noise_tex_loc, brush_tex_start_idx + brush_textures.length);
-			// gl.activeTexture(gl.TEXTURE0) // TODELETE
-			gl.activeTexture(gl.TEXTURE0) // TODELETE
-		}
-		const brush_preview_program = new ShaderProgram(require('shaders/brush_preview.vert'), require('shaders/brush_preview.frag'))
-		const colour_preview_program = new ShaderProgram(require('shaders/colour_preview.vert'), require('shaders/colour_preview.frag'))
-		const picker_program = new ShaderProgram(require('shaders/picker.vert'), require('shaders/picker.frag'))
-		const composite_stroke_to_canvas_program = new ShaderProgram(
-			require('shaders/composite_temp_stroke_to_canvas.vert'),
-			require('shaders/composite_temp_stroke_to_canvas.frag'),
-		)
-		const composite_stroke_to_canvas_b_program = new ShaderProgram(
-			require('shaders/composite_temp_stroke_to_canvas.vert'),
-			require('shaders/composite_temp_stroke_to_canvas_b.frag'),
-		)
-		const post_canvas_program = new ShaderProgram(require('shaders/post_canvas.vert'), require('shaders/post_canvas.frag'))
-		post_canvas_program.zoom_loc = gl.getUniformLocation(post_canvas_program.program, "zoom")
-		post_canvas_program.panning_loc = gl.getUniformLocation(post_canvas_program.program, "panning")
-		post_canvas_program.blending_colour_space_loc = gl.getUniformLocation(post_canvas_program.program, "blending_colour_space")
+		// post_canvas_program.zoom_loc = gl.getUniformLocation(post_canvas_program.program, "zoom")
+		// post_canvas_program.panning_loc = gl.getUniformLocation(post_canvas_program.program, "panning")
+		// post_canvas_program.blending_colour_space_loc = gl.getUniformLocation(post_canvas_program.program, "blending_colour_space")
 		
-		const brush_long_program = new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag'))
-
-		brush_preview_program.use()
-		init_texture_uniforms(brush_preview_program)
-		colour_preview_program.use()
-		init_texture_uniforms(colour_preview_program)
-		picker_program.use()
-		init_texture_uniforms(picker_program)
-		composite_stroke_to_canvas_program.use()
-		init_texture_uniforms(composite_stroke_to_canvas_program)
-		composite_stroke_to_canvas_b_program.use()
-		init_texture_uniforms(composite_stroke_to_canvas_b_program)
-		composite_stroke_to_canvas_program.blending_colour_space_loc = gl.getUniformLocation(composite_stroke_to_canvas_program.program, "blending_colour_space")
-		composite_stroke_to_canvas_b_program.blending_colour_space_loc = gl.getUniformLocation(composite_stroke_to_canvas_b_program.program, "blending_colour_space")
-
-		post_canvas_program.use()
-		init_texture_uniforms(post_canvas_program)
-
-		brush_long_program.use()
-		init_texture_uniforms(brush_long_program)
-		brush_long_program.brush_params_loc = gl.getUniformLocation(brush_long_program.program, "brush_params")
+		// const brush_long_program = new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag'))
 		
 
 		//! ------------------- POST
 		let frame = 0
-		canvas_read_tex = canvas_fb.textures[0]
-
-
-		let brush_buffer = new Thing(
-			[new VertexBuffer(4, gl.FLOAT), new VertexBuffer(4, gl.FLOAT)],
-			gl.TRIANGLES,
-			brush_long_program
-		)
-		gl.bindVertexArray(brush_buffer.vao)
-		
 
 		let t: number = 0
 		let delta_t: number = 0
@@ -575,210 +702,209 @@
 
 
 		drawer = new Drawer(
-			gl,
-			canvas_fb.textures[0],
-			default_framebuffer,
-		)
-		const composite_stroke = () => {
-			canvas_fb.bind()
-			canvas_fb.clear()
+      canvas_fb.textures[0],
+      wgpu.defaultFramebuffer,
+      drawer_buff_a, drawer_buff_b, param_buff
+    )
+    const composite_stroke = () => {
+		  // TO WRITE
+      let encoder = canvas_fb.startPass()
 
-			const comp_program = canvas_fb.pong_idx === 0 ? composite_stroke_to_canvas_program : composite_stroke_to_canvas_b_program
-			if(canvas_fb.pong_idx === 0){
-				
-			}
-			comp_program.use()
-			gl.uniform1i(comp_program.blending_colour_space_loc, blending_colour_space)
-			canvas_fb.back_textures[0].bind_to_unit(1)
-			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-			temp_stroke_fb.clear()
+			compositeThing.bind_pipeline(encoder)
+      compositeThing.bindGroups[0].bind_to_idx(encoder, 0)
+      canvas_fb.bind_group_back.bind_to_idx(encoder, 1)
+      // compositeThing.bindGroups[2].bind_to_idx(encoder, 2)
+      
+      // quad_buff.bind(encoder, 0)
+			encoder.draw(
+				quad_buff.vertCnt,
+				1,
+				0,
+				project.brush_strokes.length - 1
+			)
+
+			canvas_fb.endPass()
+			// temp_stroke_fb.clear()
 		}
 		
-		const draw_n_strokes = (start_idx: number | undefined, end_idx: number | undefined, full_redraw: boolean = false)=>{
+		const draw_n_strokes =  (start_idx: number | undefined, end_idx: number | undefined, full_redraw: boolean = false): number=>{
 			let k = 0
-			
-			drawer.brush_buffer = brush_buffer
-			drawer.reset()
-			
+
 			start_idx = start_idx ?? 0
 			end_idx = end_idx ?? project.brush_strokes.length
 			
-			for(k = start_idx; k < end_idx; k++){
-				const stroke = project.brush_strokes[k]
-				drawer.push_any_stroke(stroke)
+			if (full_redraw){
+				drawer.reset()
+				param_buff.offs = 0
+				param_buff.sz = 0
+				for(k = 0; k < project.brush_strokes.length; k++){
+					const stroke = project.brush_strokes[k]
+					drawer.push_any_stroke(stroke, false)
+				}
+
+				drawer_buff_a.upload()
+				drawer_buff_b.upload()
+				param_buff.upload()
 			}
-
-			drawer.brush_buffer.upload_all_buffs()
-			const brush_shader = drawer.brush_buffer.shader
-			brush_shader.use()
-
-			let prev_colour_space = -1
-			let prev_colour_space_b = -1
-			let prev_brush_tex_idx = -1
 			
-			let prev_hsv_dynamics = [-9999,-9999,-9999]
-			// let prev_noise_stretch = [-9999,-9999]
-			let prev_tex_stretch = [-9999,-9999]
-			let prev_tex_distort = [-9999,-9999]
-			let prev_tex_distort_amt = -9999
-			let prev_tex_grit = -9999
-
-
-			gl.useProgram(composite_stroke_to_canvas_program.program)
-
-			canvas_fb._textures[0].bind_to_unit(2)
-			canvas_fb._back_textures[0].bind_to_unit(3)
-
-			gl.activeTexture(gl.TEXTURE15)
-			let comp_program = composite_stroke_to_canvas_program
-			gl.clearColor(0,0,0,0)
-			gl.viewport(0, 0, project.canvasRes[0], project.canvasRes[1])
 
 			k = start_idx
+
+
+			let modulo = (end_idx - start_idx) % temp_stroke_fbs.length
+			modulo = temp_stroke_fbs.length - modulo
+
+			
 			let j = 0
 			
-			for(let amogus of drawer.recorded_drawcalls){
-				// const new_noise_stretch = project.brush_strokes[k].draw_params.noise_stretch
-				const new_tex_stretch = project.brush_strokes[k].draw_params.tex_stretch
-				const new_tex_distort = project.brush_strokes[k].draw_params.tex_distort
-				const new_tex_distort_amt = project.brush_strokes[k].draw_params.tex_distort_amt
-				const new_tex_grit = project.brush_strokes[k].draw_params.tex_grit
-				const new_hsv_dynamics = project.brush_strokes[k].draw_params.tex_lch_dynamics
-
-				const new_brush_tex_idx = project.brush_strokes[k].brush_texture.idx
-				const new_col_space = project.brush_strokes[k].draw_params.blending_colour_space
-
-				gl.bindFramebuffer(gl.FRAMEBUFFER, temp_stroke_fb.fb)
-				gl.clear(gl.COLOR_BUFFER_BIT)
-
-				brush_shader.use()
-
-				if(
-					new_brush_tex_idx !== prev_brush_tex_idx ||
-					prev_hsv_dynamics[0] !== new_hsv_dynamics[0] || 
-					prev_hsv_dynamics[1] !== new_hsv_dynamics[1] || 
-					prev_hsv_dynamics[2] !== new_hsv_dynamics[2] ||
-					// prev_noise_stretch[0] !== new_noise_stretch[0] || 
-					// prev_noise_stretch[1] !== new_noise_stretch[1] ||
-					prev_tex_stretch[0] !== new_tex_stretch[0] || 
-					prev_tex_stretch[1] !== new_tex_stretch[1] ||
-					prev_tex_distort[0] !== new_tex_distort[0] || 
-					prev_tex_distort[1] !== new_tex_distort[1]  ||
-					prev_tex_distort_amt !== new_tex_distort_amt ||
-					prev_tex_grit !== new_tex_grit
-					){
-					brush_params_mat[0] = new_brush_tex_idx
-					brush_params_mat[1] = new_hsv_dynamics[0]
-					brush_params_mat[2] = new_hsv_dynamics[1]
-					brush_params_mat[3] = new_hsv_dynamics[2]
-					// brush_params_mat[4] = new_noise_stretch[0]
-					// brush_params_mat[5] = new_noise_stretch[1]
-					brush_params_mat[6] = new_tex_stretch[0]
-					brush_params_mat[7] = new_tex_stretch[1] 
-					brush_params_mat[8] = new_tex_distort[0]
-					brush_params_mat[9] = new_tex_distort[1] 
-				  brush_params_mat[10] = new_tex_distort_amt
-				  brush_params_mat[11] = new_tex_grit
-					gl.uniformMatrix4fv(brush_shader.brush_params_loc, false, brush_params_mat)
+			const total_its = Math.floor((end_idx + modulo - start_idx - 0.5 ) /(temp_fbs_count )  + 1);
+			let iters_temp_stroke: number = 0
+			
+      wgpu.beginCommandEncoder()
+			// for(let amogus of drawer.recorded_drawcalls){
+			let passEncoder: GPURenderPassEncoder
+			for(;k < end_idx + modulo; ){
+				j = 0
+				iters_temp_stroke = temp_stroke_fbs.length
+				// iters_temp_stroke = 1
+				const is_last_iter = k + temp_stroke_fbs.length === end_idx + modulo 
+				if(is_last_iter){ 
+					iters_temp_stroke -= modulo
 				}
 
-				drawer.draw_stroke_idx(j)
-
-				gl.bindFramebuffer(gl.FRAMEBUFFER, canvas_fb.fb)
-
-				comp_program = canvas_fb.pong_idx === 0 ? composite_stroke_to_canvas_program : composite_stroke_to_canvas_b_program
-				comp_program.use()
-
-				if(canvas_fb.pong_idx === 0){
-					if(new_col_space !== prev_colour_space){
-						gl.uniform1i(comp_program.blending_colour_space_loc, prev_colour_space = new_col_space)
+				for(; j < temp_stroke_fbs.length; j++){
+					if(j >= iters_temp_stroke && total_its === 1){
+						const potato = 3
+						break
 					}
-				} else {
-					if(new_col_space !== prev_colour_space_b){
-						gl.uniform1i(comp_program.blending_colour_space_loc, prev_colour_space_b = new_col_space)
+					passEncoder = temp_stroke_fbs[j].startPass()
+					if(j < iters_temp_stroke) {
+						brushStrokeThing.bind_pipeline(passEncoder)
+						brushStrokeThing.bindGroups[0].bind_to_idx(passEncoder, 0)
+						drawer.draw_stroke_idx(k + j, passEncoder)
 					}
+					temp_stroke_fbs[j].endPass()
 				}
 
-				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
-				canvas_fb.pong()
+        passEncoder = canvas_fb.startPass()
+        {
+          compositeThing.bind_pipeline(passEncoder)
+
+          compositeThing.bindGroups[0].bind_to_idx(passEncoder, 0)
+          canvas_fb.bind_group_back.bind_to_idx(passEncoder, 1)
+          passEncoder.draw(quad_buff.vertCnt, 1, 0, k)
+        }
+        canvas_fb.endPass()
+
+        canvas_fb.pong()
 				
+				k += temp_stroke_fbs.length
 				if(full_redraw){
-					const offs = (end_idx % undo_cache_steps)
+					const undo_offs = (end_idx % undo_cache_steps)
 					if(end_idx < undo_cache_steps){
-						if(j === 0){
-							// copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, canvas_fb._textures[0].res)
-							temp_undo_fb_a.clear()
+						if(k === temp_stroke_fbs.length){
+							// temp_undo_fb_a.clear()
+							temp_undo_fb_a.startPass() // needed?
+							temp_undo_fb_a.endPass()
 							temp_undo_fb_a_idx = 0
 						}
 					} else {
-						if(j === end_idx - offs - 1){
-							copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, canvas_fb._textures[0].res)
-							temp_undo_fb_a_idx = j + 1
-						} else if(j === end_idx - offs - undo_cache_steps - 1){
-							copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_b.fb, canvas_fb._textures[0].res)
-							temp_undo_fb_b_idx = j + 1
+						if(k === end_idx - undo_offs){
+							// copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, canvas_fb._textures[0].res)
+							wgpu.copy_texture_to_texture(
+								canvas_fb.back_textures[0],
+								temp_undo_fb_a.textures[0],
+							)
+							temp_undo_fb_a_idx = k
+						} else if(k === end_idx - undo_offs - undo_cache_steps){
+							// copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_b.fb, canvas_fb._textures[0].res)
+							wgpu.copy_texture_to_texture(
+								canvas_fb.back_textures[0],
+								temp_undo_fb_b.textures[0],
+							)
+							temp_undo_fb_b_idx = k
 						}
 					}
 				}
-				
-				prev_hsv_dynamics[0] = new_hsv_dynamics[0]
-				prev_hsv_dynamics[1] = new_hsv_dynamics[1]
-				prev_hsv_dynamics[2] = new_hsv_dynamics[2] 
-				prev_tex_stretch[0] = new_tex_stretch[0]
-				prev_tex_stretch[1] = new_tex_stretch[1]
-				prev_tex_distort[0] = new_tex_distort[0]
-				prev_tex_distort[1] = new_tex_distort[1]
-				prev_tex_distort_amt = new_tex_distort_amt
-				prev_tex_grit = new_tex_grit
-				k++
-				j++
+
 			}
+			for(let i = 0; i < iters_temp_stroke; i++){
+				temp_stroke_fbs[i].startPass()
+				temp_stroke_fbs[i].endPass()
+			}
+			temp_stroke_fbs[0].startPass()
+			temp_stroke_fbs[0].endPass()
+			// if(its === 1){
+
+			// }
+			// if(its === 1){
+			// 	for(let i = 0; i < iters_temp_stroke; i++){
+			// 		temp_stroke_fbs[i].startPass()
+			// 		temp_stroke_fbs[i].endPass()					
+			// 	}
+			// } else {
+			// 	temp_stroke_fbs[0].startPass()
+			// 	temp_stroke_fbs[0].endPass()
+			// }
+
 			if(end_idx === 0){
-				copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, canvas_fb._textures[0].res)
+				wgpu.copy_texture_to_texture(
+					canvas_fb.back_textures[0],
+					temp_undo_fb_a.textures[0],
+				)
 				temp_undo_fb_a_idx = 0
 			} 
 			redraw_needed = true
-			temp_stroke_fb.clear()
 
+			return j
 		}
 
 
-		const redraw_whole_project = () => {
+		const redraw_whole_project = async () => {
 			console.log('REDRAW EVERYTHING')
 			console.time("REDRAW ALL")
-			canvas_fb.clear()
+
+			canvas_fb.startPass()
+			canvas_fb.endPass() 
 			canvas_fb.pong()
-			canvas_fb.back_textures[0].bind_to_unit(1)
-			canvas_fb.clear()
-			temp_stroke_fb.clear()
 
-
-			draw_n_strokes(0, project.brush_strokes.length - redo_history_length, true)
+			draw_n_strokes(
+        0,
+        project.brush_strokes.length 
+        // - redo_history_length
+        , true
+			)
 
 			console.timeEnd("REDRAW ALL")
 		}
-		resize_project = (new_sz: number[]): void => {
+
+		resize_project = async (new_sz: number[]) => {
 			project.canvasRes = [...new_sz]
-			temp_stroke_fb.textures[0].resize(new_sz)
-			canvas_fb.back_textures[0].resize(new_sz)
-			canvas_fb.textures[0].resize(new_sz)
-			canvas_fb.recreate()
-			canvas_fb.back_textures[0].bind_to_unit(1)
-			temp_stroke_fb.recreate()
-			temp_stroke_fb.textures[0].bind_to_unit(0)
+			for(let fb of temp_stroke_fbs){
+				fb.textures[0].resize(new_sz)
+			}
+			canvas_fb._back_textures[0].resize(new_sz)
+			canvas_fb._textures[0].resize(new_sz)
 			temp_undo_fb_a.textures[0].resize(new_sz)
-			temp_undo_fb_a.recreate()
 			temp_undo_fb_b.textures[0].resize(new_sz)
-			temp_undo_fb_b.recreate()
+			for(let tex of Texture.textures){
+				if(tex.bind_groups)
+					for(let bind_group of tex.bind_groups){
+						bind_group.rebuild()
+					}
+			}
 			set_shared_uniforms()
 			full_redraw_needed = true
 			project_has_been_modified = false
 			redo_history_length = 0
+			await wgpu.flushPasses()
 		}
 		
-		let load_project = (new_project: Project) =>{
+		let load_project = async (new_project: Project) =>{
 			project = new Project()
+			project.canvasRes[0] = Math.floor(project.canvasRes[0]) // ???
+			project.canvasRes[1] = Math.floor(project.canvasRes[1]) // ???
 			project_has_been_modified = false
 			redo_history_length = 0
 			for (let key of Object.keys(new_project as Object)) {
@@ -786,8 +912,20 @@
 				project[key] = new_project[key]
 			}
 			project.canvasRes = [...new_project.canvasRes]
-			resize_project(project.canvasRes)
-			redraw_whole_project()
+			await wgpu.flushPasses()
+			await resize_project(project.canvasRes)
+			await wgpu.flushPasses()
+			temp_undo_fb_a.startPass()
+			temp_undo_fb_a.endPass()
+			temp_undo_fb_b.startPass()
+			temp_undo_fb_b.endPass()
+			canvas_fb.startPass()
+			canvas_fb.endPass()
+			temp_stroke_fbs[0].startPass()
+			temp_stroke_fbs[0].endPass()
+			await redraw_whole_project()
+      await wgpu.flushPasses()
+			console.log(project)
 		}
 		const create_new_project = async () => {
 			load_project(new Project())
@@ -819,7 +957,7 @@
 			await create_new_project()
 		}
 		
-		const handle_input_actions = ()=>{
+		const handle_input_actions = async ()=>{
 			if(io.pen_button_just_pressed){
 				// console.log(e)
 				console.log('pen button press')
@@ -854,7 +992,7 @@
 				if (io.getKey('AltLeft').just_pressed) {
 					picking = true
 				}
-				pick_from_canvas()
+				await pick_from_canvas()
 			} else if (io.getKey('AltLeft').just_unpressed) {
 				just_finished_pick = true
 				picking = false
@@ -930,17 +1068,26 @@
 				if (redo_history_length >= 0) { 
 					floating_modal_message.set("Redo")
 					// ---- DRAW ONE
-					temp_stroke_fb.clear()
 					draw_n_strokes(idx_before,idx_now) 
 					if(idx_now % undo_cache_steps === 0){
 						// ---- HIT CACHE
 						// save to cache
 						const res = canvas_fb.textures[0].res
 						if(temp_undo_fb_a_idx === idx_now){
-							copy_fb_to_fb( canvas_fb.fb_back, temp_undo_fb_a.fb, res)
+							wgpu.copy_texture_to_texture(
+								canvas_fb.back_textures[0],
+								temp_undo_fb_a.textures[0],
+							)
 						} else {
-							copy_fb_to_fb( temp_undo_fb_a.fb, temp_undo_fb_b.fb, res) // needless copy
-							copy_fb_to_fb( canvas_fb.fb_back, temp_undo_fb_a.fb, res)
+							// ) // needless copy
+							wgpu.copy_texture_to_texture(
+								temp_undo_fb_a.textures[0],
+								temp_undo_fb_b.textures[0],
+							)
+							wgpu.copy_texture_to_texture(
+								canvas_fb.back_textures[0],
+								temp_undo_fb_a.textures[0],
+							)
 							temp_undo_fb_b_idx = temp_undo_fb_a_idx 
 							temp_undo_fb_a_idx = idx_now 
 						}
@@ -967,65 +1114,61 @@
 							// ---- DIDN'T HIT UNDO FB
 							const res = canvas_fb.textures[0].res
 
-							canvas_fb.clear()
+
+							canvas_fb.startPass()
+							canvas_fb.endPass()
 							canvas_fb.pong()
-						  canvas_fb.back_textures[0].bind_to_unit(1)
-							canvas_fb.clear()
 
 							let idx = idx_before - undo_cache_steps * 2
 							if(idx < 0.){
 								// GENERATE B CACHE
-								temp_stroke_fb.clear()
 								draw_n_strokes(0, temp_undo_fb_a_idx = idx_before - undo_cache_steps)
 
-								copy_fb_to_fb(
-									canvas_fb.fb_back,
-									temp_undo_fb_a.fb, 
-									res
+								wgpu.copy_texture_to_texture(
+									canvas_fb.back_textures[0],
+									temp_undo_fb_a.textures[0],
 								)
 								
 							} else {
 								// GENERATE B CACHE
-								temp_stroke_fb.clear()
 								draw_n_strokes(0, temp_undo_fb_b_idx = idx)
-								// write b cache
-								copy_fb_to_fb(
-									canvas_fb.fb_back,
-									temp_undo_fb_b.fb, 
-									res
+								wgpu.copy_texture_to_texture(
+									canvas_fb.back_textures[0],
+									temp_undo_fb_b.textures[0],
 								)
 
-								temp_stroke_fb.clear()
 								draw_n_strokes(temp_undo_fb_b_idx, temp_undo_fb_a_idx = idx_before - undo_cache_steps)
 
-								copy_fb_to_fb(
-									canvas_fb.fb_back,
-									temp_undo_fb_a.fb, 
-									res
+								wgpu.copy_texture_to_texture(
+									canvas_fb.back_textures[0],
+									temp_undo_fb_a.textures[0],
 								)
 							}
 							// DRAW FROM PREV CACHE TO CANVAS
-							temp_stroke_fb.clear()
 							draw_n_strokes( idx_before - undo_cache_steps, project.brush_strokes.length - redo_history_length)
 						} else {
 							// HIT UNDO FB
-							copy_fb_to_fb(undo_fb.fb,canvas_fb.fb_back, canvas_fb.textures[0].res)
+							wgpu.copy_texture_to_texture(
+								undo_fb.textures[0],
+								canvas_fb.back_textures[0],
+							)
 							// DRAW FROM PREV CACHE TO CANVAS
-							temp_stroke_fb.clear()
 							draw_n_strokes( idx_before - undo_cache_steps, idx_now)
 						}
 					} else {
 						// ---- NO CACHE HIT
 						// DRAW FROM PREV CACHE TO CANVAS
 						{
-							copy_fb_to_fb((undo_fb as Framebuffer).fb,canvas_fb.fb_back, canvas_fb.textures[0].res)
-							canvas_fb.back_textures[0].bind_to_unit(1)
-							temp_stroke_fb.clear()
+							wgpu.copy_texture_to_texture(
+								undo_fb.textures[0],
+								canvas_fb.back_textures[0],
+							)
 							const undo_mod_offs = idx_now % undo_cache_steps
 							draw_n_strokes( idx_now - undo_mod_offs, idx_now)
 						}
 					}
-					gl.activeTexture(gl.TEXTURE15)
+					// gl.activeTexture(gl.TEXTURE15)
+					// canvas_fb.pong()
 				} else { 
 					// clamp
 					redo_history_length -= 1 
@@ -1046,6 +1189,7 @@
 						blending_colour_space
 						), curr_brush.selected_brush_texture)
 					for (let i = 0; i < redo_history_length; i++) {
+						drawer.pop_stroke()
 						project.brush_strokes.pop()
 					}
 					redo_history_length = 0
@@ -1061,7 +1205,7 @@
 					brush_pos_ndc_canvas = Utils.screen_NDC_to_canvas_NDC(
 						brush_pos_ndc_screen,
 						default_framebuffer.textures[0],
-						canvas_read_tex,
+						canvas_fb._textures[0],
 						zoom[0],
 						panning,
 					)
@@ -1117,129 +1261,221 @@
 					brush_stroke.push_stroke(brush_pos_ndc_canvas, brush_rot, sz, stroke_opacity, col)
 				}
 		}
-		
-		const video_recording_if_needed = () =>{
-				if(!recording){
-					canvas_fb.clear()
-					canvas_fb.pong()
-					canvas_fb.clear()
 
-					default_framebuffer.textures[0].res = [...canvas_fb.textures[0].res]
-					canvasElement.width = canvas_fb.textures[0].res[0]
-					canvasElement.height = canvas_fb.textures[0].res[1]
+		const create_media_recorder = (canvas: HTMLCanvasElement) => {
+			let options: any = {audioBitsPerSecond: 0, videoBitsPerSecond: 8000000}
+
+			const types = ['video/webm;codecs=h264', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8']
+
+			for (let type of types) {
+				if (MediaRecorder.isTypeSupported(type)) {
+					options.mimeType = type
+				}
+			}
+			if (!options.mimeType) {
+				options.mimeType = 'video/webm'
+			}
+
+			const mediaRecorder = new MediaRecorder(canvas.captureStream(), options)
+			const chunks = []
+			// mediaRecorder.set
+
+			mediaRecorder.ondataavailable = function (e) {
+				if (e.data.size > 0) {
+					// @ts-ignore
+					chunks.push(e.data)
+				}
+			}
+
+			mediaRecorder.onstop = function () {
+				let blob = new Blob(chunks, {type: 'video/mp4'})
+				const url = window.URL.createObjectURL(blob)
+				let a = document.createElement('a')
+				document.body.appendChild(a)
+				// @ts-ignore
+				a.style = 'display: none'
+				a.href = url
+				a.download = 'drawing.mp4'
+				a.click()
+				window.URL.revokeObjectURL(url)
+				chunks.length = 0
+			}
+
+			return mediaRecorder
+		}
+		
+		const video_recording_if_needed = async () =>{
+				if(!recording && recording_pending){
+					// canvas_fb.clear()
+					// canvas_fb.pong()
+					// canvas_fb.clear()
+					canvas_fb.startPass()
+					canvas_fb.endPass()
+					canvas_fb.pong()
+
+					default_framebuffer.textures[0].res = [canvas_fb.textures[0].width, canvas_fb.textures[0].height]
+					canvasElement.width = default_framebuffer.textures[0].width = default_framebuffer.textures[0].res[0]
+					canvasElement.height = default_framebuffer.textures[0].height = default_framebuffer.textures[0].res[1]
+
+
+					// @ts-ignore
+					// if (!window.media_recorder) {
+					window.media_recorder = create_media_recorder(canvasElement)
+					// }
+
+					
+					
+					zoom[0] = 1
+					panning[0] = 0
+					panning[1] = 0
 					set_shared_uniforms()
 
 					recording_stroke_idx = 0
 					recording_pending = false
 					recording = true
-					gl.uniform1f(post_canvas_program.zoom_loc, 1)
-					gl.uniform2fv(post_canvas_program.panning_loc, [0,0])
 				} else {
+					if (window.media_recorder.state === 'inactive') {
+						window.media_recorder.start()
+					}
+					wgpu.defaultFramebuffer.textures[0].texture = wgpu.context.getCurrentTexture()
+					wgpu.defaultFramebuffer.renderPassDescriptor.colorAttachments[0].view = 
+						wgpu.defaultFramebuffer.textures[0].view = 
+							wgpu.defaultFramebuffer.textures[0].texture.createView()
 					if(recording_stroke_idx === project.brush_strokes.length - 1){
 						// finish
-						if (window.media_recorder.state !== "inactive") {
+						// if (window.media_recorder.state !== "inactive") {
 								window.media_recorder.stop();
-						}                 
+						// }                 
+						recording_stroke_idx += 1
+					} else if(recording_stroke_idx === project.brush_strokes.length){
 						recording = false
+						recording_pending = false
 
-						resizeDefaultFramebufferIfNeeded(
+						resizeDefaultFrameBufferIfNeeded(
 							canvasElement, 
 							default_framebuffer, 
+							webgpu_back_texture,
 							[canvasElement.clientWidth, canvasElement.clientHeight], 
 							(e) => {}, 
 							()=>{set_shared_uniforms()}
 						)
+						// for(let tex of Texture.textures){
+						// 	if(tex.bind_groups)
+						// 		for(let bind_group of tex.bind_groups){
+						// 			bind_group.rebuild()
+						// 		}
+						// }
 						full_redraw_needed = true
 					} else {
-						canvas_fb.back_textures[0].bind_to_unit(1)
-						canvas_fb.clear()
-						temp_stroke_fb.clear()
+						// canvas_fb.back_textures[0].bind_to_unit(1)
+						// canvas_fb.clear()
+						// temp_stroke_fb.clear()
+						// canvas_fb.startPass()
 
 						draw_n_strokes(recording_stroke_idx, recording_stroke_idx + 1, false)
 
-						gl.viewport(0, 0, default_framebuffer._textures[0].res[0], default_framebuffer._textures[0].res[1])
-						gl.bindFramebuffer(gl.FRAMEBUFFER, default_framebuffer.fb)
-						gl.clear(gl.COLOR_BUFFER_BIT)
 
-						Framebuffer.currently_bound = default_framebuffer // not needed?
 
-						post_canvas_program.use()
+						default_framebuffer.startPass()
+						let passEncoder = wgpu.currPass.passEncoder as GPURenderPassEncoder
+						{ 
 
-						canvas_fb.back_textures[0].bind_to_unit(1)
+							postThing.bind_pipeline(passEncoder)
+							// quad_buff.bind(passEncoder )
+							// sharedBindGroup.bind_to_idx(passEncoder, 0)
+							postThing.bindGroups[0].bind_to_idx(passEncoder, 0)
+							canvas_fb.bind_group_back.bind_to_idx(passEncoder, 1)
+							postThing.bindGroups[2].bind_to_idx(passEncoder, 2)
+							passEncoder.draw(quad_buff.vertCnt, 1, 0, project.brush_strokes.length - 1)
+						}
+						default_framebuffer.endPass()
 						
-						gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+						// canvas_fb.pong()
+						// gl.viewport(0, 0, default_framebuffer._textures[0].res[0], default_framebuffer._textures[0].res[1])
+						// gl.bindFrameBuffer(gl.FRAMEBUFFER, default_framebuffer.fb)
+						// gl.clear(gl.COLOR_BUFFER_BIT)
+
+						// FrameBuffer.currently_bound = default_framebuffer // not needed?
+
+						// post_canvas_program.use()
+
+						// canvas_fb.back_textures[0].bind_to_unit(1)
+						
+						// gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+						// canvas_fb.pong()
 						
 						recording_stroke_idx++
 					}
 				}
-			
-		}
 
-		const draw = (_t: number) => {
+				await wgpu.flushPasses()
+		}
+		
+
+		const draw = async (_t: number) => {
 			if(recording_pending || recording){
-				video_recording_if_needed()
+				await video_recording_if_needed()
 				requestAnimationFrame(draw)
 				return
 			}
 			redraw_needed = false
+			if (frame === 1){
+				redraw_needed = true
+			}
 			const new_t = _t / 1000
 			delta_t = new_t - t
 			t = new_t
-			resizeDefaultFramebufferIfNeeded(
+			io.tick()
+			resizeDefaultFrameBufferIfNeeded(
 				canvasElement, 
 				default_framebuffer, 
+				webgpu_back_texture,
 				default_framebuffer._textures[0].res, 
 				(v: boolean) => {
 					redraw_needed = v
 				},
 				()=>{set_shared_uniforms()}
 			)
-			io.tick()
-			
-			
+      wgpu.defaultFramebuffer.textures[0].texture = wgpu.context.getCurrentTexture()
+      wgpu.defaultFramebuffer.renderPassDescriptor.colorAttachments[0].view = 
+        wgpu.defaultFramebuffer.textures[0].view = 
+          wgpu.defaultFramebuffer.textures[0].texture.createView()
+
 			if(full_redraw_needed){
 				redraw_whole_project()
 			}
 
-			handle_input_actions()
+			await handle_input_actions()
 
 			// ----- RECORD STROKE / DRAW
 			if ((io.mouse_just_pressed || (io.mouse_down && io.mouse_just_moved)) && io.pointerType !== 'touch') {
 				project_has_been_modified = true
 				redraw_needed = true
 				record_stroke()
-				temp_stroke_fb.clear()
-				temp_stroke_fb.bind()
-				drawer.brush_buffer = brush_buffer
-				drawer.reset()
-				drawer.push_any_stroke(brush_stroke)
-				drawer.brush_buffer.upload_all_buffs()
-				const brush_shader = drawer.brush_buffer.shader
-				brush_shader.use()
-
-				brush_params_mat[0] = curr_brush.selected_brush_texture.idx
-				brush_params_mat[1] = brush_stroke.draw_params.tex_lch_dynamics[0]
-				brush_params_mat[2] = brush_stroke.draw_params.tex_lch_dynamics[1]
-				brush_params_mat[3] = brush_stroke.draw_params.tex_lch_dynamics[2]
-				// brush_params_mat[4] = brush_stroke.draw_params.noise_stretch[0]
-				// brush_params_mat[5] = brush_stroke.draw_params.noise_stretch[1]
-				brush_params_mat[6] = brush_stroke.draw_params.tex_stretch[0]
-				brush_params_mat[7] = brush_stroke.draw_params.tex_stretch[1] 
-				brush_params_mat[8] = brush_stroke.draw_params.tex_distort[0]
-				brush_params_mat[9] = brush_stroke.draw_params.tex_distort[1] 
-				brush_params_mat[10] = brush_stroke.draw_params.tex_distort_amt
-				brush_params_mat[11] = brush_stroke.draw_params.tex_grit
-
-				gl.uniformMatrix4fv(brush_shader.brush_params_loc, false, brush_params_mat)
-
-				drawer.draw_stroke_idx(0)
+				
+				if(drawer.recorded_drawcalls.length === project.brush_strokes.length + 1){
+					drawer.pop_stroke()
+				}
+				let p = wgpu.currPass
+				drawer.push_any_stroke(brush_stroke, true)
+				
+				let passEncoder = temp_stroke_fbs[0].startPass()
+				{
+          brushStrokeThing.bind_pipeline(passEncoder)
+          brushStrokeThing.bindGroups[0].bind_to_idx(passEncoder, 0)
+          drawer.draw_stroke_idx(drawer.recorded_drawcalls.length - 1, passEncoder)
+				}
+				temp_stroke_fbs[0].endPass()
 			}
 			// ----- COMPOSITE NEW STROKE
 			if (io.mouse_just_unpressed && io.pointerType !== 'touch' && !(undo_pending || redo_pending)) {
 				project.push_stroke(brush_stroke)
 				if(frame % 5 === 0 || !isOnMobile){
 					// @ts-ignore
-					project.brush_strokes[project.brush_strokes.length - 1].brush_texture.gpu_tex = {}
+					// project.brush_strokes[project.brush_strokes.length - 1].brush_texture.gpu_tex = {}
+					brush_stroke.brush_texture.gpu_tex = {}
+					// brush_stroke.brush_texture = {}
 					if(is_temp_project){
 						window.sketch_db.table("temp_sketch").put({id: project.id, data: project},1)
 					} else {
@@ -1247,85 +1483,108 @@
 					}
 				}
 				redraw_needed = true
+
+				ubo.mappedArr[16 + 4] = 1
+				ubo.upload()
 				composite_stroke()
 				canvas_fb.pong()
-				canvas_fb.back_textures[0].bind_to_unit(1)
 				if(project.brush_strokes.length % undo_cache_steps === 0){
-					const res = canvas_fb.textures[0].res
-					copy_fb_to_fb(temp_undo_fb_a.fb, temp_undo_fb_b.fb, res) // needless copy
-					copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, res)
+					wgpu.copy_texture_to_texture(
+						temp_undo_fb_a.textures[0],
+						temp_undo_fb_b.textures[0],
+					)
+					wgpu.copy_texture_to_texture(
+						canvas_fb.back_textures[0],
+						temp_undo_fb_a.textures[0],
+					)
 					temp_undo_fb_b_idx = temp_undo_fb_a_idx 
 					temp_undo_fb_a_idx = project.brush_strokes.length
 				}
+				temp_stroke_fbs[0].startPass()
+				temp_stroke_fbs[0].endPass()
 			}
 
 			if (brush_size_widget_dragging || brush_size_widget_stopped_dragging) redraw_needed = true
 
 			// ----- REDRAW
 			if (redraw_needed) {
-				if(canvas_fb._textures[0].mipmapped){
-					gl.bindTexture(gl.TEXTURE_2D, canvas_fb._textures[0].tex)
-					gl.generateMipmap(gl.TEXTURE_2D)
-					gl.bindTexture(gl.TEXTURE_2D, canvas_fb._back_textures[0].tex)
-					gl.generateMipmap(gl.TEXTURE_2D)
-					gl.bindTexture(gl.TEXTURE_2D, null)
-				}
-				if(temp_stroke_fb.textures[0].mipmapped){
-					gl.bindTexture(gl.TEXTURE_2D, temp_stroke_fb.textures[0].tex)
-					gl.generateMipmap(gl.TEXTURE_2D)
-					gl.bindTexture(gl.TEXTURE_2D, null)
-				}
-
-				// gl.clearColor(0,0,0,1)
-				gl.viewport(0, 0, default_framebuffer._textures[0].res[0], default_framebuffer._textures[0].res[1])
-				gl.bindFramebuffer(gl.FRAMEBUFFER, default_framebuffer.fb)
-				gl.clear(gl.COLOR_BUFFER_BIT)
-
-				Framebuffer.currently_bound = default_framebuffer // not needed?
-
-				post_canvas_program.use()
-
-				gl.uniform1f(post_canvas_program.zoom_loc, zoom[0])
-				gl.uniform2fv(post_canvas_program.panning_loc, panning)
-				gl.uniform1i(post_canvas_program.blending_colour_space_loc, blending_colour_space)
-				canvas_fb.back_textures[0].bind_to_unit(1)
-				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 				
-				if((mouse_over_colour_picker && !brush_size_widget_dragging)){
-					colour_preview_program.use()
-					colour_preview_program.setUniformVec("brush_sz", brush_sz)
-					colour_preview_program.setUniformVec("colour", stroke_col)
-					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-				}
+				set_shared_uniforms()
 
-				if (brush_size_widget_dragging) {
-					brush_preview_program.use()
-					brush_preview_program.setUniformFloat("zoom", zoom[0])
-					brush_preview_program.setUniformVec("brush_sz", brush_sz)
-					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-				}
+				// ------- MIPMAPS
+				// if(canvas_fb._textures[0].props.mipmapped){
+				// 	gl.bindTexture(gl.TEXTURE_2D, canvas_fb._textures[0].tex)
+				// 	gl.generateMipmap(gl.TEXTURE_2D)
+				// 	gl.bindTexture(gl.TEXTURE_2D, canvas_fb._back_textures[0].tex)
+				// 	gl.generateMipmap(gl.TEXTURE_2D)
+				// 	gl.bindTexture(gl.TEXTURE_2D, null)
+				// }
+				// if(temp_stroke_fb.textures[0].props.mipmapped){
+				// 	gl.bindTexture(gl.TEXTURE_2D, temp_stroke_fb.textures[0].tex)
+				// 	gl.generateMipmap(gl.TEXTURE_2D)
+				// 	gl.bindTexture(gl.TEXTURE_2D, null)
+				// }
 
-				if (picking) {
-					picker_program.use()
-					picker_program.setUniformVec('picked_col', picked_col)
-					picker_program.setUniformVec('picker_pos', [...io.mouse_pos])
-					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+				let passEncoder = wgpu.defaultFramebuffer.startPass()
+				// encoder = wgpu.currPass
+				{
+					// @ts-ignore
+					postThing.bind_pipeline(passEncoder)
+					// let i = 0
+					// for(let bind_group of postThing.bindGroups){
+					// 	bind_group.bind_to_idx(passEncoder, i++)
+					// }
+					postThing.bindGroups[0].bind_to_idx(passEncoder, 0)
+					canvas_fb.bind_group_back.bind_to_idx(passEncoder, 1)
+					postThing.bindGroups[2].bind_to_idx(passEncoder, 2)
+
+					// quad_buff.bind(passEncoder )
+					// quad_buff.draw(passEncoder )
+					passEncoder.draw(
+						quad_buff.vertCnt,
+						1,
+						0,
+						// project.brush_strokes.length - 1
+						0
+					)
+
+					if (brush_size_widget_dragging) {
+						brushPreviewThing.bind_pipeline(passEncoder)
+						passEncoder.draw(quad_buff.vertCnt, 1, 0, 0)
+					}
+					if((mouse_over_colour_picker && !brush_size_widget_dragging)){
+						colourPreviewThing.bind_pipeline(passEncoder)
+						passEncoder.draw(quad_buff.vertCnt, 1, 0, 0)
+					}
+					if (picking) {
+						pickerPreviewThing.bind_pipeline(passEncoder)
+						passEncoder.draw(quad_buff.vertCnt, 1, 0, 0)
+					}
 				}
+				wgpu.defaultFramebuffer.endPass()
+
+				wgpu.copy_texture_to_texture(
+					wgpu.defaultFramebuffer.textures[0],
+					webgpu_back_texture,
+				)
+			} else {
+				wgpu.copy_texture_to_texture(
+					webgpu_back_texture,
+					wgpu.defaultFramebuffer.textures[0]
+				)
 			}
-			print_on_gl_error()
+
+      await wgpu.flushPasses()
+			
+      
 			brush_size_widget_stopped_dragging = false
 			redo_pending = false
 			undo_pending = false
 			full_redraw_needed = false
 			mouse_over_colour_picker_finished = false
-			canvas_read_tex = canvas_fb.back_textures[0]
 			io.tick_end()
 			frame++
-			for (let framebuffer of Framebuffer.framebuffers) {
-				if (framebuffer.needs_pong) {
-					framebuffer.pong()
-				}
-			}
 
 			if(new_project_pending){
 				create_new_project().then(_=>{

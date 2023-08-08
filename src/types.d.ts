@@ -1,9 +1,9 @@
+import {WrightGPU} from 'gl/wgpu'
 import {UBO} from 'gl_utils'
 import {Project} from 'stuff'
 import Dexie from '../node_modules/dexie/dist/dexie'
 
 export declare global {
-	var gl: WebGL2RenderingContext
 	var ubo: UBO
 	var isOnMobile: boolean
 	var sketch_db: Dexie
@@ -13,6 +13,7 @@ export declare global {
 	// interface Dexie {
 	// 	sketch: Dexie.Table<DexieSketchEntry, number>
 	// }
+	var wgpu: WrightGPU
 	interface Window {
 		zoom: Float32Array
 		media_recorder: MediaRecorder

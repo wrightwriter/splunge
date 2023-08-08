@@ -179,19 +179,19 @@ module.exports.default = {
 				// },
 			},
 			{
-				test: /\.(glsl|vs|fs|vert|frag)$/,
+				test: /\.(glsl|vs|fs|vert|frag|wgsl)$/,
 				exclude: /node_modules/,
 				type: 'asset/source',
 				// type: 'javascript/auto',
-				use: [
-					'raw-loader',
-					{
-						loader: 'glslify-loader',
-						options: {
-							transform: ['glslify-import'],
-						},
-					},
-				],
+				// use: [
+				// 	'raw-loader',
+				// 	// {
+				// 	// 	loader: 'glslify-loader',
+				// 	// 	options: {
+				// 	// 		transform: ['glslify-import'],
+				// 	// 	},
+				// 	// },
+				// ],
 			},
 		],
 	},

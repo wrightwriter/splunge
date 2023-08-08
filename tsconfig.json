@@ -15,6 +15,9 @@
     
 
     
+    
+    "strictNullChecks": false, // OMG
+
     "sourceMap": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": false,
@@ -31,8 +34,10 @@
     "traceResolution": true,
     "allowSyntheticDefaultImports": true,
 
+    // "typeRoots": [ "./node_modules/@webgpu/types", "./node_modules/@types"],
     // "typeRoots": ["./node_modules/@types", "./src/@types"],
 		"types": [
+      "./node_modules/@webgpu/types",
 			"svelte",
 			"svelte/store",
 			"svelte/motion",

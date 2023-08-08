@@ -8,18 +8,8 @@
 		on:click={async () => {
 			gallery_open.set(true)
 			canvases_finished_loading = false
-			let [_canvas_image, blob] = await (get_current_canvas_as_image())
-			canvas_image = _canvas_image
-			canvas_image_src = canvas_image.src
-			canvas_image_blob = blob
-
-			if(current_project.saved){
-				await window.sketch_db.table("image").put({id: current_project.id, data: canvas_image_src})
-			}
-			refetch_canvases()
+			// refetch_canvases()
 			canvases_finished_loading = true
-
-			console.log(canvas_image.src)
 		}}>
 		{@html solveIcon}
 	</div>
@@ -92,6 +82,36 @@
 						<div>New file</div>
 						{@html launchIcon}
 					</div>
+					<!-- <input type="file" id="fileInput" style="display:none;" /> -->
+					<div
+						id="button"
+						on:click={async () => {
+							// let blob = await exportDB(window.sketch_db)
+							// download(blob, "dexie-export.json", "application/json")
+						}}
+						role="button"
+						tabindex="0">
+						<div>Export</div>
+						{@html launchIcon}
+					</div>
+					<div
+						id="button"
+						on:click={async () => {
+							document.querySelector("#fileInput").addEventListener('change', async (event) => {
+								// // @ts-ignore
+								// const file = event.target.files[0]; // Get the selected file
+								// // @ts-ignore
+								// // readFileContents(file);
+								// await importDB(window.sketch_db, file)
+							});
+							// @ts-ignore
+							document.querySelector("#fileInput").click()
+						}}
+						role="button"
+						tabindex="0">
+						<div>Import</div>
+						{@html launchIcon}
+					</div>
 					<div
 						id="button"
 						on:click={async () => {
@@ -155,14 +175,17 @@
 									safe = safe ? safe : confirm('Are you sure you want to switch to another project? This one is not saved.')
 									if (safe) {
 										let sketches = (await window.sketch_db.table("sketch").toArray())
+										let k = 0
 										for(let e of sketches){
 											let s = e.data
-											if(s.id === Number(element.name)){
+											// if(s.id === Number(element.name)){
+											if(k === i){
 												// @ts-ignore
 												load_project(s)
 												gallery_open.set(false)
 												return
 											}
+											k++
 										}
 									}
 								}}
@@ -201,15 +224,24 @@
 
 	import {fade} from 'svelte/transition'
 	import {floor} from 'wmath'
+	
+	// import {importDB, exportDB, importInto, peakImportFile} from "dexie-export-import";
+	
+	// import download from "downloadjs"
+	
+
+
 
 	export let current_project: Project
 	export let is_temp_project: boolean
 	export let get_current_canvas_as_image: () => Promise<[HTMLImageElement, Blob]>
 	let canvases_finished_loading = true
-	export let resize_project: (new_size: number[]) => void
+	export let resize_project: (new_size: number[]) => Promise<void>
 	export let new_project: () => void
 	export let load_project: (project: Project) => void
 	export let project_has_been_modified: boolean
+	
+	
 
 	const format_time = (t: number | string): string => {
 		return new Date(Number(t))
@@ -260,6 +292,7 @@
 	export const is_safe_to_switch_to_new_project = async (): Promise<boolean> => {
 		let project_is_saved_to_dropbox = false
 
+
 		let sketches = (await window.sketch_db.table("sketch").toArray())
 		for(let e of sketches){
 			let s = e.data
@@ -275,8 +308,16 @@
 			return true
 		}
 	}
+	
+	const fetch_image = async () =>{
+		const [_canvas_image, blob] = await get_current_canvas_as_image();
+		canvas_image = _canvas_image
+		canvas_image_src = canvas_image.src
+		canvas_image_blob = blob
+	}
 
 	const download_image = async () => {
+		await fetch_image()
 		const link = document.createElement('a')
 		link.href = (canvas_image as HTMLImageElement).src
 		link.download = current_project.id + '.png'
@@ -285,57 +326,6 @@
 
 
 	const record_video = async () => {
-		const createMediaRecorder = (canvas: HTMLCanvasElement) => {
-			let options: any = {audioBitsPerSecond: 0, videoBitsPerSecond: 8000000}
-
-			const types = ['video/webm;codecs=h264', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8']
-
-			for (let type of types) {
-				if (MediaRecorder.isTypeSupported(type)) {
-					options.mimeType = type
-				}
-			}
-			if (!options.mimeType) {
-				options.mimeType = 'video/webm'
-			}
-
-			const mediaRecorder = new MediaRecorder(canvas.captureStream(), options)
-			const chunks = []
-			// mediaRecorder.set
-
-			mediaRecorder.ondataavailable = function (e) {
-				if (e.data.size > 0) {
-					// @ts-ignore
-					chunks.push(e.data)
-				}
-			}
-
-			mediaRecorder.onstop = function () {
-				let blob = new Blob(chunks, {type: 'video/mp4'})
-				chunks.length = 0
-				const url = window.URL.createObjectURL(blob)
-				let a = document.createElement('a')
-				document.body.appendChild(a)
-				// @ts-ignore
-				a.style = 'display: none'
-				a.href = url
-				a.download = 'drawing.mp4'
-				a.click()
-				window.URL.revokeObjectURL(url)
-			}
-
-			return mediaRecorder
-		}
-
-		// @ts-ignore
-
-		if (!window.media_recorder) {
-			window.media_recorder = createMediaRecorder(document.querySelector('canvas') as HTMLCanvasElement)
-		}
-
-		if (window.media_recorder.state === 'inactive') {
-			window.media_recorder.start()
-		}
 		recording_pending = true
 	}
 	const refetch_canvases = async () => {
@@ -351,20 +341,22 @@
 		}
 
 		// await curr_canvas_as_image_promise
-		let sketches: DexieSketchEntry[] = (await window.sketch_db.table("sketch").toArray())
+		// let sketches: DexieSketchEntry[] = (await window.sketch_db.table("sketch").toArray())
 		let images: DexieImageEntry[] = (await window.sketch_db.table("image").toArray())
 
-		for (let element of sketches) {
-			let sketch = element.data
-			let proj_name = sketch.id
+		// for (let element of sketches) {
+		for (let img of images) {
+			// let sketch = element.data
+			let proj_name = "0"
 
 			let image: Blob | undefined = undefined;
 			
-			for(let i of images){
-				if(i.id === proj_name){	
-					image = i.data
-				}
-			}
+			image = img.data
+			// for(let i of images){
+			// 	if(i.id === proj_name){	
+			// 		image = i.data
+			// 	}
+			// }
 
 			let el
 			if(image){
@@ -378,6 +370,15 @@
 		}
 	}
 	const save_to_dropbox = async () => {
+		await fetch_image()
+
+		window.sketch_db.table("image").put({id: current_project.id, data: canvas_image_src})
+
+					// if(is_temp_project){
+					// 	window.sketch_db.table("temp_sketch").put({id: project.id, data: project},1)
+					// } else {
+					// 	window.sketch_db.table("sketch").update(project.id, {data: project})
+					// }
 		floating_modal_message.set('Starting upload to dropbox.')
 
 		current_project.saved = true
@@ -387,10 +388,12 @@
 		// } else {
 		// 	await window.sketch_db.table("sketch").update(new_data.id, new_data)
 		// }
-		await window.sketch_db.table("sketch").put(new_data, new_data.id)
-
-
-		await window.sketch_db.table("image").put({id: current_project.id, data: canvas_image_src})
+		try{
+			await window.sketch_db.table("sketch").put(new_data, new_data.id)
+			await window.sketch_db.table("image").put({id: current_project.id, data: canvas_image_src})
+		} catch (e){
+			alert(e)
+		}
 
 		floating_modal_message.set('Upload to dropbox succesful.')
 		project_has_been_modified = false
@@ -411,7 +414,6 @@
 
 	function resize_widget_pointer_down(e: PointerEvent) {
 		let {clientX, clientY} = e
-		console.log('down')
 
 		resize_widget_start_y = clientY
 		resize_widget_start_x = clientX
@@ -428,7 +430,7 @@
 	}
 
 	onMount(async () => {
-		// refetch_canvases()
+		refetch_canvases()
 	})
 </script>
 

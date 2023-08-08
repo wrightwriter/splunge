@@ -201,18 +201,16 @@ export class IO {
 
 		// @ts-ignore
 		window.addEventListener('pointerrawupdate', (e: PointerEvent) => {
-			const gl = window.gl
+			// @ts-ignore
+			const rect = window.wgpu.canvas.getBoundingClientRect()
 
 			// @ts-ignore
-			const rect = gl.canvas.getBoundingClientRect()
-
+			let pos_x = ((e.clientX - rect.left) * window.wgpu.canvas.width) / window.wgpu.canvas.clientWidth
 			// @ts-ignore
-			let pos_x = ((e.clientX - rect.left) * gl.canvas.width) / gl.canvas.clientWidth
-			// @ts-ignore
-			let pos_y = ((e.clientY - rect.top) * gl.canvas.height) / gl.canvas.clientHeight
+			let pos_y = ((e.clientY - rect.top) * window.wgpu.canvas.height) / window.wgpu.canvas.clientHeight
 
-			const x = (pos_x / gl.canvas.width) * 2 - 1
-			const y = (pos_y / gl.canvas.height) * -2 + 1
+			const x = (pos_x / window.wgpu.canvas.width) * 2 - 1
+			const y = (pos_y / window.wgpu.canvas.height) * -2 + 1
 
 			// this.mouse_pos = [x, y]
 			this.mouse_pos[0] = x

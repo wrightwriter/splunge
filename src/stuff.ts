@@ -1,8 +1,9 @@
 import {BrushStroke} from 'brush_stroke'
-import {Texture} from 'gl/Texture'
+// import {Texture} from 'gl/Texture'
 import {pow} from 'wmath'
 // @ts-ignore
 import Dexie from 'dexie'
+import {Texture} from 'gl/wtexture'
 
 export function assert(v: boolean) {
 	if (!v) debugger

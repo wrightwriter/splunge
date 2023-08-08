@@ -73,7 +73,7 @@
 <style lang="scss">
   @import "/../styles/icon.scss" scoped; 
 	.knob-container-container {
-		width: 0px;
+		// width: 0px;
 		aspect-ratio: 1/1;
 
 		&:active{
