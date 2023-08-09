@@ -143,6 +143,7 @@ export class WrightGPU {
 	readonly canvas!: HTMLCanvasElement
 	readonly context!: GPUCanvasContext
 	readonly limits!: GPUSupportedLimits
+	readonly presentation_format!: GPUTextureFormat
 
 	width: number
 	height: number
@@ -242,10 +243,13 @@ export class WrightGPU {
 		// @ts-ignore
 		this.limits = this.adapter.limits
 
+		// @ts-ignore
+		this.presentation_format = navigator.gpu.getPreferredCanvasFormat()
+
 		this.context.configure({
 			device: this.device,
 			// size: [this.width, this.height],
-			format: 'bgra8unorm',
+			format: this.presentation_format,
 			usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.COPY_DST, // ?
 			// @ts-ignore
 			alphaMode: 'opaque',
@@ -270,7 +274,7 @@ export class WrightGPU {
 			depthTex: false,
 			// @ts-ignore
 			usage: GPUTextureUsage.RENDER_ATTACHMENT,
-			format: 'bgra8unorm',
+			format: this.presentation_format,
 		}
 		Texture.textures.push(wDefaultTex)
 

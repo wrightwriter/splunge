@@ -59,9 +59,7 @@
 				<GalleryWidget
 					bind:current_project={project}
 					get_current_canvas_as_image={async () => {
-						// let [img, blob] = await temp_stroke_fb.back_textures[0].read_back_image(true)
 						let [img, blob] = await canvas_fb.back_textures[0].read_back_image(true)
-
 						return [img, blob]
 					}} 
 					new_project={()=>{ 
@@ -135,11 +133,9 @@
 	import TextureStretchWidget from './TextureStretchWidget.svelte'
 	import BlendingColourSpaceWidget from './BlendingColourSpaceWidget.svelte'
 
-	import RGBSliders from './RGBSliders.svelte'
 	import Sliders from './Sliders.svelte'
 	import ColourDisplay from './ColourDisplay.svelte'
 	import SemiModal from './SemiModal.svelte'
-	import FourIconsWidget from './FourIconsWidget.svelte'
 	import {IO} from 'IO'
 	import chroma, { lab } from 'chroma-js'
 	import {Hash, abs, pow, tau, mix, max, log2} from 'wmath'
@@ -150,16 +146,8 @@
 	import { VertexBuffer } from 'gl/wvertexbuffer'
 	import { FrameBuffer, QuadVerts, Shader, StorageBuffer, Texture, Thing, UniformBuffer, WrightGPU } from 'gl/wgpu'
 	import { BindGroup, type BindGroupElement } from 'gl/wbindgroup'
-	// import { FrameBuffer } from 'gl/FrameBuffer'
-	// import { VertexBuffer, UBO } from 'gl/Buffer'
-	// import { Texture } from 'gl/Texture'
-	// import { ShaderProgram } from 'gl/ShaderProgram'
-	// import { Thing } from 'gl/Thing'
-	// import Dexie, { type DBCoreRangeType } from "dexie"
 
 	window.sketch_db = new DexieSketchDB()
-
-	// let dexies = new Dexie('my db')
 
 	// Elements
 	let canvasElement: HTMLCanvasElement
@@ -219,7 +207,6 @@
 	const temp_fbs_count = 15
 	const hash = new Hash()
 	let io: IO
-	let gl: WebGL2RenderingContext
 	let project = new Project()
 	let project_pending_load: Project
 	let is_temp_project: boolean
@@ -227,20 +214,18 @@
 	// GL stuff
 	let default_framebuffer: FrameBuffer
 	let canvas_fb: FrameBuffer
-	// let temp_stroke_fb: FrameBuffer
 	let temp_stroke_fbs: FrameBuffer[]
-	let temp_stroke_fbs_bind_group: BindGroup
 	let temp_undo_fb_a: FrameBuffer
 	let temp_undo_fb_b: FrameBuffer
 
 	let webgpu_back_texture: Texture
 	
-	let compositeThing: Thing
-	let brushStrokeThing: Thing
-	let postThing: Thing
-	let brushPreviewThing: Thing
-	let pickerPreviewThing: Thing
-	let colourPreviewThing: Thing
+	let composite_thing: Thing
+	let brush_stroke_thing: Thing
+	let post_thing: Thing
+	let brush_preview_thing: Thing
+	let picker_preview_thing: Thing
+	let colour_preview_thing: Thing
 	
 	let param_buff: VertexBuffer	
 	let quad_buff: VertexBuffer	
@@ -250,8 +235,9 @@
 	let temp_undo_fb_a_idx = 100000
 	let temp_undo_fb_b_idx = 100000
 	
-	let sharedBindGroup: BindGroup
-	let sharedBindGroupTempTextures: BindGroup
+	let shared_bind_group: BindGroup
+	let shared_bind_group_with_temp_textures: BindGroup
+
 
 	let drawer: Drawer
 	let ubo: UniformBuffer
@@ -267,14 +253,11 @@
 	let curr_brush: BrushPreset = brush_presets[0]
 	let blending_colour_space = BlendingColourSpace.OkLCH
 
-	let brush_params_mat = new Float32Array(16)
-
 	// Funcs
 	let resize_project: (sz: number[])=>Promise<void>
 	let trigger_colour_display_update: (colour_r, colour_g, colour_b)=>void
 
 	const set_shared_uniforms = () => {
-		// ubo.sz = 0
 		ubo.mappedArr[0] = canvas_fb._textures[0].res[0]
 		ubo.mappedArr[1] = canvas_fb._textures[0].res[1]
 		ubo.mappedArr[2] = default_framebuffer.textures[0].res[0]
@@ -287,8 +270,6 @@
 		ubo.mappedArr[15 - 3 - 4] = stroke_col[0]
 		ubo.mappedArr[15 - 2 - 4] =stroke_col[1] 
 		ubo.mappedArr[15 - 1 - 4] =stroke_col[2] 
-		// ubo.mappedArr[15 - 1 - 1] = brush_sz[0]
-		// ubo.mappedArr[15 - 4] =brush_sz[0] 
 		ubo.mappedArr[15 - 3] = io.mouse_pos[0]
 		ubo.mappedArr[15 - 2] = io.mouse_pos[1] 
 		ubo.mappedArr[15 - 1] = brush_sz[0]
@@ -298,8 +279,6 @@
 		ubo.mappedArr[15 + 2] = picked_col[1] 
 		ubo.mappedArr[15 + 3] = picked_col[2] 
 		ubo.mappedArr[16 + 4] = temp_stroke_fbs.length
-		// ubo.mappedArr[15 - 0] = zoom[0]
-		// ubo.upload()
 		ubo.sz = 32
 		ubo.upload()
 	}
@@ -311,18 +290,10 @@
 			canvas_fb.back_textures[0],
 		)
 		let c = await canvas_fb.back_textures[0].read_back_pixel(coord)
-		// console.log(c)
 
 		picked_col = [...c]
-		// picked_col[0] = c[0] / 255
-		// picked_col[1] = c[1] / 255
-		// picked_col[2] = c[2] / 255
-		// picked_col[0] = pow(picked_col[0], 0.45454545454545)
-		// picked_col[1] = pow(picked_col[1], 0.45454545454545)
-		// picked_col[2] = pow(picked_col[2], 0.45454545454545)
 		picked_col.pop()
 		return c
-		// return [1,1,1]
 	}
 
 	const openModal = (modal: SemiModal) => {
@@ -343,7 +314,7 @@
 		}
 	}
 
-	const init_web_gl = async () => {
+	const init_web_gpu = async () => {
 		window.wgpu = new WrightGPU(canvasElement)
 		await window.wgpu.initializeGPU()
 		default_framebuffer = wgpu.defaultFramebuffer
@@ -400,7 +371,6 @@
 			)
 			temp_stroke_textures.push(temp_stroke_fbs[temp_stroke_fbs.length - 1].textures[0])
 		}
-		temp_stroke_fbs_bind_group = new BindGroup(temp_stroke_textures)
 
 
 		temp_undo_fb_a = new FrameBuffer({depth: false, pongable: false, format: "rgba16float", label: "temp_undo_fb", attachmentTextures: [
@@ -409,28 +379,28 @@
 		temp_undo_fb_b = new FrameBuffer({depth: false, pongable: false, format: "rgba16float", label: "temp_undo_fb_b", attachmentTextures: [
 			new Texture({label: "temp_undo_fb_b_tex"}),
 		]})
-		// webgpu_back_fb = new FrameBuffer({depth: false, pongable: false, format: "rgba16float", label: "temp_undo_fb_b", attachmentTextures: [
-		// 	new Texture({label: "webgpu_back_fb"}),
-		// ]})
 		webgpu_back_texture = new Texture({
 			label: "webgpu_back_texture",
-			format: "bgra8unorm",
+			format: wgpu.presentation_format,
 			usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.COPY_DST,
 			height: wgpu.height,
 			width: wgpu.width
 		})
 
+		const vert_sz = 8
+		const max_verts_count = 20000
+		// const size_in_bytes = 
     
     drawer_buff_a = new VertexBuffer(
-      { bufferDataArray: new Float32Array(312500 * 10) ,pads: [2]}
+      { bufferDataArray: new Float32Array((vert_sz * 100 * max_verts_count)) ,pads: [2]}
     )
     drawer_buff_b = new VertexBuffer(
-      { bufferDataArray: new Float32Array(312500 * 10) ,pads: [2]}
+      { bufferDataArray: new Float32Array((vert_sz * 100 * max_verts_count)) ,pads: [2]}
     )    
 		
 
 		window.ubo = ubo
-		sharedBindGroup = new BindGroup([
+		shared_bind_group = new BindGroup([
       ubo = new UniformBuffer(),
       {
         addressModeU: "repeat",
@@ -468,8 +438,8 @@
 			sharedBindGroupTempTexturesElements.push(temp_tex)
 		}
 
-		sharedBindGroupTempTextures = new BindGroup(sharedBindGroupTempTexturesElements)
-		brushStrokeThing = new Thing(
+		shared_bind_group_with_temp_textures = new BindGroup(sharedBindGroupTempTexturesElements)
+		brush_stroke_thing = new Thing(
 			[], 
 			new Shader(
 				require("../shaders/brush_long_vert.wgsl"),
@@ -478,14 +448,12 @@
 				"brush_long_frag",
 			),
       canvas_fb, 
-      // [Sketch.sharedBindGroup, new BindGroup([canvasFb.textures[0]])]
       [
-        sharedBindGroup, 
-        // new BindGroup([canvasFb.textures[0]])
+        shared_bind_group, 
       ],{
         colorStates: [
           {
-              format: 'bgra8unorm',
+              format: wgpu.presentation_format,
               blend:{
                 color:{
                   operation: "add",
@@ -510,17 +478,15 @@
 			"composite_frag",
 		)
 
-    compositeThing = new Thing([],
+    composite_thing = new Thing([],
       composite_stroke_to_canvas_program,
       canvas_fb, 
       [
-        sharedBindGroupTempTextures,
+        shared_bind_group_with_temp_textures,
         new BindGroup([canvas_fb.textures[0]]),
-        // new BindGroup([temp_stroke_fbs[0].textures[0]]),
-				// temp_stroke_fbs_bind_group
       ],{label: "composite_thing"}
     )
-		postThing = new Thing([],new Shader(
+		post_thing = new Thing([],new Shader(
 			require("../shaders/post_vert.wgsl"),
 			require("../shaders/post_frag.wgsl"),
 				"post_vert",
@@ -528,13 +494,12 @@
 			),
       wgpu.defaultFramebuffer, 
       [
-        sharedBindGroup,
+        shared_bind_group,
         new BindGroup([canvas_fb.textures[0]]),
         new BindGroup([temp_stroke_fbs[0].textures[0]]),
-				// temp_stroke_fbs_bind_group
       ],{label: "post_thing"}
     )
-		brushPreviewThing = new Thing([],new Shader(
+		brush_preview_thing = new Thing([],new Shader(
 			require("../shaders/brush_preview_vert.wgsl"),
 			require("../shaders/brush_preview_frag.wgsl"),
 				"brush_preview_vert",
@@ -542,10 +507,10 @@
 			),
       wgpu.defaultFramebuffer, 
       [
-        sharedBindGroup,
+        shared_bind_group,
       ],{label: "brush_preview_thing"}
     )
-		pickerPreviewThing = new Thing([],new Shader(
+		picker_preview_thing = new Thing([],new Shader(
 			require("../shaders/picker_preview_vert.wgsl"),
 			require("../shaders/picker_preview_frag.wgsl"),
 				"picker_preview_vert",
@@ -553,10 +518,10 @@
 			),
       wgpu.defaultFramebuffer, 
       [
-        sharedBindGroup,
+        shared_bind_group,
       ],{label: "picker_preview_thing"}
     )
-		colourPreviewThing = new Thing([],new Shader(
+		colour_preview_thing = new Thing([],new Shader(
 			require("../shaders/colour_preview_vert.wgsl"),
 			require("../shaders/colour_preview_frag.wgsl"),
 				"colour_preview_vert",
@@ -564,15 +529,9 @@
 			),
       wgpu.defaultFramebuffer, 
       [
-        sharedBindGroup,
+        shared_bind_group,
       ],{label: "picker_preview_thing"}
     )
-	// let brushPreviewThing: Thing
-	// let pickerPreviewThing: Thing
-	// let colourPreviewThing: Thing
-
-  
-			
 			
 
 		resizeDefaultFrameBufferIfNeeded(
@@ -590,7 +549,7 @@
 		})
 		if ("wakeLock" in navigator) {
 			try{
-				const wakeLock = await navigator.wakeLock.request("screen");
+				navigator.wakeLock.request("screen");
 			} catch(_){
 
 			}
@@ -667,13 +626,8 @@
 
 	onMount(async () => {
 		io = new IO()
-		await init_web_gl()
+		await init_web_gpu()
 		await init_other_stuff()
-		// post_canvas_program.zoom_loc = gl.getUniformLocation(post_canvas_program.program, "zoom")
-		// post_canvas_program.panning_loc = gl.getUniformLocation(post_canvas_program.program, "panning")
-		// post_canvas_program.blending_colour_space_loc = gl.getUniformLocation(post_canvas_program.program, "blending_colour_space")
-		
-		// const brush_long_program = new ShaderProgram(require('shaders/brush_long.vert'), require('shaders/brush_long.frag'))
 		
 
 		//! ------------------- POST
@@ -707,15 +661,11 @@
       drawer_buff_a, drawer_buff_b, param_buff
     )
     const composite_stroke = () => {
-		  // TO WRITE
       let encoder = canvas_fb.startPass()
 
-			compositeThing.bind_pipeline(encoder)
-      compositeThing.bindGroups[0].bind_to_idx(encoder, 0)
+			composite_thing.bind_pipeline(encoder)
+      composite_thing.bindGroups[0].bind_to_idx(encoder, 0)
       canvas_fb.bind_group_back.bind_to_idx(encoder, 1)
-      // compositeThing.bindGroups[2].bind_to_idx(encoder, 2)
-      
-      // quad_buff.bind(encoder, 0)
 			encoder.draw(
 				quad_buff.vertCnt,
 				1,
@@ -724,7 +674,6 @@
 			)
 
 			canvas_fb.endPass()
-			// temp_stroke_fb.clear()
 		}
 		
 		const draw_n_strokes =  (start_idx: number | undefined, end_idx: number | undefined, full_redraw: boolean = false): number=>{
@@ -761,12 +710,10 @@
 			let iters_temp_stroke: number = 0
 			
       wgpu.beginCommandEncoder()
-			// for(let amogus of drawer.recorded_drawcalls){
 			let passEncoder: GPURenderPassEncoder
 			for(;k < end_idx + modulo; ){
 				j = 0
 				iters_temp_stroke = temp_stroke_fbs.length
-				// iters_temp_stroke = 1
 				const is_last_iter = k + temp_stroke_fbs.length === end_idx + modulo 
 				if(is_last_iter){ 
 					iters_temp_stroke -= modulo
@@ -774,13 +721,12 @@
 
 				for(; j < temp_stroke_fbs.length; j++){
 					if(j >= iters_temp_stroke && total_its === 1){
-						const potato = 3
 						break
 					}
 					passEncoder = temp_stroke_fbs[j].startPass()
 					if(j < iters_temp_stroke) {
-						brushStrokeThing.bind_pipeline(passEncoder)
-						brushStrokeThing.bindGroups[0].bind_to_idx(passEncoder, 0)
+						brush_stroke_thing.bind_pipeline(passEncoder)
+						brush_stroke_thing.bindGroups[0].bind_to_idx(passEncoder, 0)
 						drawer.draw_stroke_idx(k + j, passEncoder)
 					}
 					temp_stroke_fbs[j].endPass()
@@ -789,9 +735,9 @@
 
         passEncoder = canvas_fb.startPass()
         {
-          compositeThing.bind_pipeline(passEncoder)
+          composite_thing.bind_pipeline(passEncoder)
 
-          compositeThing.bindGroups[0].bind_to_idx(passEncoder, 0)
+          composite_thing.bindGroups[0].bind_to_idx(passEncoder, 0)
           canvas_fb.bind_group_back.bind_to_idx(passEncoder, 1)
           passEncoder.draw(quad_buff.vertCnt, 1, 0, k)
         }
@@ -804,21 +750,18 @@
 					const undo_offs = (end_idx % undo_cache_steps)
 					if(end_idx < undo_cache_steps){
 						if(k === temp_stroke_fbs.length){
-							// temp_undo_fb_a.clear()
 							temp_undo_fb_a.startPass() // needed?
 							temp_undo_fb_a.endPass()
 							temp_undo_fb_a_idx = 0
 						}
 					} else {
 						if(k === end_idx - undo_offs){
-							// copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_a.fb, canvas_fb._textures[0].res)
 							wgpu.copy_texture_to_texture(
 								canvas_fb.back_textures[0],
 								temp_undo_fb_a.textures[0],
 							)
 							temp_undo_fb_a_idx = k
 						} else if(k === end_idx - undo_offs - undo_cache_steps){
-							// copy_fb_to_fb(canvas_fb.fb_back, temp_undo_fb_b.fb, canvas_fb._textures[0].res)
 							wgpu.copy_texture_to_texture(
 								canvas_fb.back_textures[0],
 								temp_undo_fb_b.textures[0],
@@ -835,18 +778,6 @@
 			}
 			temp_stroke_fbs[0].startPass()
 			temp_stroke_fbs[0].endPass()
-			// if(its === 1){
-
-			// }
-			// if(its === 1){
-			// 	for(let i = 0; i < iters_temp_stroke; i++){
-			// 		temp_stroke_fbs[i].startPass()
-			// 		temp_stroke_fbs[i].endPass()					
-			// 	}
-			// } else {
-			// 	temp_stroke_fbs[0].startPass()
-			// 	temp_stroke_fbs[0].endPass()
-			// }
 
 			if(end_idx === 0){
 				wgpu.copy_texture_to_texture(
@@ -1380,12 +1311,12 @@
 						let passEncoder = wgpu.currPass.passEncoder as GPURenderPassEncoder
 						{ 
 
-							postThing.bind_pipeline(passEncoder)
+							post_thing.bind_pipeline(passEncoder)
 							// quad_buff.bind(passEncoder )
 							// sharedBindGroup.bind_to_idx(passEncoder, 0)
-							postThing.bindGroups[0].bind_to_idx(passEncoder, 0)
+							post_thing.bindGroups[0].bind_to_idx(passEncoder, 0)
 							canvas_fb.bind_group_back.bind_to_idx(passEncoder, 1)
-							postThing.bindGroups[2].bind_to_idx(passEncoder, 2)
+							post_thing.bindGroups[2].bind_to_idx(passEncoder, 2)
 							passEncoder.draw(quad_buff.vertCnt, 1, 0, project.brush_strokes.length - 1)
 						}
 						default_framebuffer.endPass()
@@ -1462,8 +1393,8 @@
 				
 				let passEncoder = temp_stroke_fbs[0].startPass()
 				{
-          brushStrokeThing.bind_pipeline(passEncoder)
-          brushStrokeThing.bindGroups[0].bind_to_idx(passEncoder, 0)
+          brush_stroke_thing.bind_pipeline(passEncoder)
+          brush_stroke_thing.bindGroups[0].bind_to_idx(passEncoder, 0)
           drawer.draw_stroke_idx(drawer.recorded_drawcalls.length - 1, passEncoder)
 				}
 				temp_stroke_fbs[0].endPass()
@@ -1530,14 +1461,14 @@
 				// encoder = wgpu.currPass
 				{
 					// @ts-ignore
-					postThing.bind_pipeline(passEncoder)
+					post_thing.bind_pipeline(passEncoder)
 					// let i = 0
 					// for(let bind_group of postThing.bindGroups){
 					// 	bind_group.bind_to_idx(passEncoder, i++)
 					// }
-					postThing.bindGroups[0].bind_to_idx(passEncoder, 0)
+					post_thing.bindGroups[0].bind_to_idx(passEncoder, 0)
 					canvas_fb.bind_group_back.bind_to_idx(passEncoder, 1)
-					postThing.bindGroups[2].bind_to_idx(passEncoder, 2)
+					post_thing.bindGroups[2].bind_to_idx(passEncoder, 2)
 
 					// quad_buff.bind(passEncoder )
 					// quad_buff.draw(passEncoder )
@@ -1550,15 +1481,15 @@
 					)
 
 					if (brush_size_widget_dragging) {
-						brushPreviewThing.bind_pipeline(passEncoder)
+						brush_preview_thing.bind_pipeline(passEncoder)
 						passEncoder.draw(quad_buff.vertCnt, 1, 0, 0)
 					}
 					if((mouse_over_colour_picker && !brush_size_widget_dragging)){
-						colourPreviewThing.bind_pipeline(passEncoder)
+						colour_preview_thing.bind_pipeline(passEncoder)
 						passEncoder.draw(quad_buff.vertCnt, 1, 0, 0)
 					}
 					if (picking) {
-						pickerPreviewThing.bind_pipeline(passEncoder)
+						picker_preview_thing.bind_pipeline(passEncoder)
 						passEncoder.draw(quad_buff.vertCnt, 1, 0, 0)
 					}
 				}

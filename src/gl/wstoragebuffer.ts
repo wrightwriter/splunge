@@ -37,16 +37,16 @@ export class StorageBuffer {
 		this.totalFloatSz = size
 
 		this._buff = wgpu.device.createBuffer({
-			mappedAtCreation: true,
+			mappedAtCreation: false,
 			size: size * 4,
 			usage,
 		})
 
-		let arrayBuffer: ArrayBuffer = this._buff.getMappedRange()
+		// let arrayBuffer: ArrayBuffer = this._buff.getMappedRange()
 
-		new Float32Array(arrayBuffer).set(this.mappedArr)
+		// new Float32Array(arrayBuffer).set(this.mappedArr)
 
-		this._buff.unmap()
+		// this._buff.unmap()
 
 		return this
 	}
