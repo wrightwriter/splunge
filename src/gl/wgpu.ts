@@ -350,6 +350,7 @@ export class Shader {
 }
 
 export const ShaderImports = /* wgsl */ `
+	diagnostic(off,derivative_uniformity);
   alias iv4 = vec4<i32>;
   alias iv3 = vec3<i32>;
   alias iv2 = vec2<i32>;
