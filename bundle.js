@@ -4960,6 +4960,8 @@ ResizeObserverSingleton.entries = "WeakMap" in globals ? new WeakMap() : undefin
 ;// CONCATENATED MODULE: ./node_modules/svelte/src/runtime/internal/dom.js
 
 
+
+
 // Track which nodes are claimed during hydration. Unclaimed nodes can then be removed from the DOM
 // at the end of hydration without touching the remaining nodes.
 let is_hydrating = false;
@@ -5010,14 +5012,14 @@ function init_hydrate(target) {
 	let children = /** @type {ArrayLike<NodeEx2>} */ (target.childNodes);
 	// If target is <head>, there may be children without claim_order
 	if (target.nodeName === 'HEAD') {
-		const myChildren = [];
+		const my_children = [];
 		for (let i = 0; i < children.length; i++) {
 			const node = children[i];
 			if (node.claim_order !== undefined) {
-				myChildren.push(node);
+				my_children.push(node);
 			}
 		}
-		children = myChildren;
+		children = my_children;
 	}
 	/*
 	 * Reorder claimed children optimally.
@@ -5047,15 +5049,15 @@ function init_hydrate(target) {
 		// Find the largest subsequence length such that it ends in a value less than our current value
 		// upper_bound returns first greater value, so we subtract one
 		// with fast path for when we are on the current longest subsequence
-		const seqLen =
+		const seq_len =
 			(longest > 0 && children[m[longest]].claim_order <= current
 				? longest + 1
 				: upper_bound(1, longest, (idx) => children[m[idx]].claim_order, current)) - 1;
-		p[i] = m[seqLen] + 1;
-		const newLen = seqLen + 1;
+		p[i] = m[seq_len] + 1;
+		const new_len = seq_len + 1;
 		// We can guarantee that current is the smallest value. Otherwise, we would have generated a longer sequence.
-		m[newLen] = i;
-		longest = Math.max(newLen, longest);
+		m[new_len] = i;
+		longest = Math.max(new_len, longest);
 	}
 	// The longest increasing subsequence of nodes (initially reversed)
 
@@ -5068,28 +5070,28 @@ function init_hydrate(target) {
 	/**
 	 * @type {NodeEx2[]}
 	 */
-	const toMove = [];
+	const to_move = [];
 	let last = children.length - 1;
 	for (let cur = m[longest] + 1; cur != 0; cur = p[cur - 1]) {
 		lis.push(children[cur - 1]);
 		for (; last >= cur; last--) {
-			toMove.push(children[last]);
+			to_move.push(children[last]);
 		}
 		last--;
 	}
 	for (; last >= 0; last--) {
-		toMove.push(children[last]);
+		to_move.push(children[last]);
 	}
 	lis.reverse();
 	// We sort the nodes being moved to guarantee that their insertion order matches the claim order
-	toMove.sort((a, b) => a.claim_order - b.claim_order);
+	to_move.sort((a, b) => a.claim_order - b.claim_order);
 	// Finally, we move the nodes
-	for (let i = 0, j = 0; i < toMove.length; i++) {
-		while (j < lis.length && toMove[i].claim_order >= lis[j].claim_order) {
+	for (let i = 0, j = 0; i < to_move.length; i++) {
+		while (j < lis.length && to_move[i].claim_order >= lis[j].claim_order) {
 			j++;
 		}
 		const anchor = j < lis.length ? lis[j] : null;
-		target.insertBefore(toMove[i], anchor);
+		target.insertBefore(to_move[i], anchor);
 	}
 }
 
@@ -5584,26 +5586,26 @@ function init_claim_info(nodes) {
  * @template {ChildNodeEx} R
  * @param {ChildNodeArray} nodes
  * @param {(node: ChildNodeEx) => node is R} predicate
- * @param {(node: ChildNodeEx) => ChildNodeEx | undefined} processNode
- * @param {() => R} createNode
- * @param {boolean} dontUpdateLastIndex
+ * @param {(node: ChildNodeEx) => ChildNodeEx | undefined} process_node
+ * @param {() => R} create_node
+ * @param {boolean} dont_update_last_index
  * @returns {R}
  */
-function claim_node(nodes, predicate, processNode, createNode, dontUpdateLastIndex = false) {
+function claim_node(nodes, predicate, process_node, create_node, dont_update_last_index = false) {
 	// Try to find nodes in an order such that we lengthen the longest increasing subsequence
 	init_claim_info(nodes);
-	const resultNode = (() => {
+	const result_node = (() => {
 		// We first try to find an element after the previous one
 		for (let i = nodes.claim_info.last_index; i < nodes.length; i++) {
 			const node = nodes[i];
 			if (predicate(node)) {
-				const replacement = processNode(node);
+				const replacement = process_node(node);
 				if (replacement === undefined) {
 					nodes.splice(i, 1);
 				} else {
 					nodes[i] = replacement;
 				}
-				if (!dontUpdateLastIndex) {
+				if (!dont_update_last_index) {
 					nodes.claim_info.last_index = i;
 				}
 				return node;
@@ -5614,13 +5616,13 @@ function claim_node(nodes, predicate, processNode, createNode, dontUpdateLastInd
 		for (let i = nodes.claim_info.last_index - 1; i >= 0; i--) {
 			const node = nodes[i];
 			if (predicate(node)) {
-				const replacement = processNode(node);
+				const replacement = process_node(node);
 				if (replacement === undefined) {
 					nodes.splice(i, 1);
 				} else {
 					nodes[i] = replacement;
 				}
-				if (!dontUpdateLastIndex) {
+				if (!dont_update_last_index) {
 					nodes.claim_info.last_index = i;
 				} else if (replacement === undefined) {
 					// Since we spliced before the last_index, we decrease it
@@ -5630,11 +5632,11 @@ function claim_node(nodes, predicate, processNode, createNode, dontUpdateLastInd
 			}
 		}
 		// If we can't find any matching node, we create a new one
-		return createNode();
+		return create_node();
 	})();
-	resultNode.claim_order = nodes.claim_info.total_claimed;
+	result_node.claim_order = nodes.claim_info.total_claimed;
 	nodes.claim_info.total_claimed += 1;
-	return resultNode;
+	return result_node;
 }
 
 /**
@@ -5696,13 +5698,13 @@ function claim_text(nodes, data) {
 		(node) => node.nodeType === 3,
 		/** @param {Text} node */
 		(node) => {
-			const dataStr = '' + data;
-			if (node.data.startsWith(dataStr)) {
-				if (node.data.length !== dataStr.length) {
-					return node.splitText(dataStr.length);
+			const data_str = '' + data;
+			if (node.data.startsWith(data_str)) {
+				if (node.data.length !== data_str.length) {
+					return node.splitText(data_str.length);
 				}
 			} else {
-				node.data = dataStr;
+				node.data = data_str;
 			}
 		},
 		() => dom_text(data),
@@ -7725,7 +7727,17 @@ function make_dirty(component, i) {
 	component.$$.dirty[(i / 31) | 0] |= 1 << i % 31;
 }
 
-/** @returns {void} */
+// TODO: Document the other params
+/**
+ * @param {SvelteComponent} component
+ * @param {import('./public.js').ComponentConstructorOptions} options
+ *
+ * @param {import('./utils.js')['not_equal']} not_equal Used to compare props and state values.
+ * @param {(target: Element | ShadowRoot) => void} [append_styles] Function that appends styles to the DOM when the component is first initialised.
+ * This will be the `add_css` function from the compiled component.
+ *
+ * @returns {void}
+ */
 function init(
 	component,
 	options,
@@ -7733,7 +7745,7 @@ function init(
 	create_fragment,
 	not_equal,
 	props,
-	append_styles,
+	append_styles = null,
 	dirty = [-1]
 ) {
 	const parent_component = lifecycle_current_component;
@@ -7780,8 +7792,9 @@ function init(
 	if (options.target) {
 		if (options.hydrate) {
 			start_hydrating();
+			// TODO: what is the correct type here?
+			// @ts-expect-error
 			const nodes = children(options.target);
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 			$$.fragment && $$.fragment.l(nodes);
 			nodes.forEach(detach);
 		} else {
@@ -7924,7 +7937,7 @@ if (typeof HTMLElement === 'function') {
 								'toAttribute'
 							);
 							if (attribute_value == null) {
-								this.removeAttribute(key);
+								this.removeAttribute(this.$$p_d[key].attribute || key);
 							} else {
 								this.setAttribute(this.$$p_d[key].attribute || key, attribute_value);
 							}
@@ -8149,7 +8162,7 @@ class SvelteComponent {
  * https://svelte.dev/docs/svelte-compiler#svelte-version
  * @type {string}
  */
-const VERSION = '4.1.2';
+const VERSION = '4.2.1';
 const PUBLIC_VERSION = '4';
 
 ;// CONCATENATED MODULE: ./node_modules/svelte/src/runtime/internal/dev.js
@@ -13742,7 +13755,7 @@ function crossfade({ fallback, ...defaults }) {
 }
 
 ;// CONCATENATED MODULE: ./src/components/SemiModal.svelte
-/* src/components/SemiModal.svelte generated by Svelte v4.1.2 */
+/* src/components/SemiModal.svelte generated by Svelte v4.2.1 */
 
 
 
@@ -14001,7 +14014,7 @@ class SemiModal extends SvelteComponentDev {
 
 /* harmony default export */ const SemiModal_svelte = (SemiModal);
 ;// CONCATENATED MODULE: ./src/components/Knob.svelte
-/* src/components/Knob.svelte generated by Svelte v4.1.2 */
+/* src/components/Knob.svelte generated by Svelte v4.2.1 */
 
 
 
@@ -14369,7 +14382,7 @@ class Knob extends SvelteComponentDev {
 var copy = __webpack_require__(399);
 var copy_default = /*#__PURE__*/__webpack_require__.n(copy);
 ;// CONCATENATED MODULE: ./src/components/BrushSizeWidget.svelte
-/* src/components/BrushSizeWidget.svelte generated by Svelte v4.1.2 */
+/* src/components/BrushSizeWidget.svelte generated by Svelte v4.2.1 */
 
 
 
@@ -20486,7 +20499,7 @@ var brush_triangles_default = /*#__PURE__*/__webpack_require__.n(brush_triangles
 // EXTERNAL MODULE: querystring (ignored)
 var querystring_ignored_ = __webpack_require__(389);
 ;// CONCATENATED MODULE: ./src/components/BrushTypeWidget.svelte
-/* src/components/BrushTypeWidget.svelte generated by Svelte v4.1.2 */
+/* src/components/BrushTypeWidget.svelte generated by Svelte v4.2.1 */
 
 
 const { Object: Object_1 } = globals;
@@ -20819,7 +20832,7 @@ class BrushTypeWidget extends SvelteComponentDev {
 
 /* harmony default export */ const BrushTypeWidget_svelte = (BrushTypeWidget);
 ;// CONCATENATED MODULE: ./src/components/BrushPresetWidget.svelte
-/* src/components/BrushPresetWidget.svelte generated by Svelte v4.1.2 */
+/* src/components/BrushPresetWidget.svelte generated by Svelte v4.2.1 */
 
 
 
@@ -21186,7 +21199,7 @@ var undo_default = /*#__PURE__*/__webpack_require__.n(public_undo);
 var public_redo = __webpack_require__(56);
 var redo_default = /*#__PURE__*/__webpack_require__.n(public_redo);
 ;// CONCATENATED MODULE: ./src/components/UndoRedoWidget.svelte
-/* src/components/UndoRedoWidget.svelte generated by Svelte v4.1.2 */
+/* src/components/UndoRedoWidget.svelte generated by Svelte v4.2.1 */
 
 
 
@@ -21372,7 +21385,7 @@ var download_default = /*#__PURE__*/__webpack_require__.n(download);
 var time = __webpack_require__(179);
 var time_default = /*#__PURE__*/__webpack_require__.n(time);
 ;// CONCATENATED MODULE: ./src/components/GalleryWidget.svelte
-/* src/components/GalleryWidget.svelte generated by Svelte v4.1.2 */
+/* src/components/GalleryWidget.svelte generated by Svelte v4.2.1 */
 
 
 const { Error: Error_1 } = globals;
@@ -22719,7 +22732,7 @@ class GalleryWidget extends SvelteComponentDev {
 
 /* harmony default export */ const GalleryWidget_svelte = (GalleryWidget);
 ;// CONCATENATED MODULE: ./src/components/FloatingModal.svelte
-/* src/components/FloatingModal.svelte generated by Svelte v4.1.2 */
+/* src/components/FloatingModal.svelte generated by Svelte v4.2.1 */
 
 
 
@@ -22881,7 +22894,7 @@ class FloatingModal extends SvelteComponentDev {
 var plug = __webpack_require__(801);
 var plug_default = /*#__PURE__*/__webpack_require__.n(plug);
 ;// CONCATENATED MODULE: ./src/components/PickColourWidget.svelte
-/* src/components/PickColourWidget.svelte generated by Svelte v4.1.2 */
+/* src/components/PickColourWidget.svelte generated by Svelte v4.2.1 */
 
 
 
@@ -23090,7 +23103,7 @@ class PickColourWidget extends SvelteComponentDev {
 
 /* harmony default export */ const PickColourWidget_svelte = (PickColourWidget);
 ;// CONCATENATED MODULE: ./src/components/TextureWidget.svelte
-/* src/components/TextureWidget.svelte generated by Svelte v4.1.2 */
+/* src/components/TextureWidget.svelte generated by Svelte v4.2.1 */
 
 
 
@@ -23489,7 +23502,7 @@ class TextureWidget extends SvelteComponentDev {
 
 /* harmony default export */ const TextureWidget_svelte = (TextureWidget);
 ;// CONCATENATED MODULE: ./src/components/TextureStretchWidget.svelte
-/* src/components/TextureStretchWidget.svelte generated by Svelte v4.1.2 */
+/* src/components/TextureStretchWidget.svelte generated by Svelte v4.2.1 */
 
 
 
@@ -23733,7 +23746,7 @@ class TextureStretchWidget extends SvelteComponentDev {
 
 /* harmony default export */ const TextureStretchWidget_svelte = (TextureStretchWidget);
 ;// CONCATENATED MODULE: ./src/components/BlendingColourSpaceWidget.svelte
-/* src/components/BlendingColourSpaceWidget.svelte generated by Svelte v4.1.2 */
+/* src/components/BlendingColourSpaceWidget.svelte generated by Svelte v4.2.1 */
 
 
 const { Object: BlendingColourSpaceWidget_svelte_Object_1 } = globals;
@@ -24148,7 +24161,7 @@ class BlendingColourSpaceWidget extends SvelteComponentDev {
 
 /* harmony default export */ const BlendingColourSpaceWidget_svelte = (BlendingColourSpaceWidget);
 ;// CONCATENATED MODULE: ./src/components/Sliders.svelte
-/* src/components/Sliders.svelte generated by Svelte v4.1.2 */
+/* src/components/Sliders.svelte generated by Svelte v4.2.1 */
 
 
 
@@ -24602,7 +24615,7 @@ class Sliders extends SvelteComponentDev {
 var chroma = __webpack_require__(302);
 var chroma_default = /*#__PURE__*/__webpack_require__.n(chroma);
 ;// CONCATENATED MODULE: ./src/components/ColourDisplay.svelte
-/* src/components/ColourDisplay.svelte generated by Svelte v4.1.2 */
+/* src/components/ColourDisplay.svelte generated by Svelte v4.2.1 */
 
 
 
@@ -25787,6 +25800,7 @@ class Shader {
     }
 }
 const ShaderImports = `
+	diagnostic(off,derivative_uniformity);
   alias iv4 = vec4<i32>;
   alias iv3 = vec3<i32>;
   alias iv2 = vec2<i32>;
@@ -26431,7 +26445,7 @@ class Drawer {
 }
 
 ;// CONCATENATED MODULE: ./src/components/App.svelte
-/* src/components/App.svelte generated by Svelte v4.1.2 */
+/* src/components/App.svelte generated by Svelte v4.2.1 */
 
 
 const { Object: App_svelte_Object_1, console: console_1 } = globals;
